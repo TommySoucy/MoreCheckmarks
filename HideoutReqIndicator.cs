@@ -38,7 +38,35 @@ namespace HideoutRequirementIndicator
             GClass1251 hideoutInstance = Comfort.Common.Singleton<GClass1251>.Instance;
             foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
             {
-                EFT.Hideout.RelatedRequirements requirements = ad.NextStage.Requirements;
+                EFT.Hideout.Stage actualNextStage = ad.NextStage;
+
+                // TODO: the following should depend on config
+                // If we don't want to get requirement of locked to construct areas, skip if it is locked to construct
+                //if(/* !config.showLockedModules &&*/ ad.Status == EFT.Hideout.EAreaStatus.LockedToConstruct)
+                //{
+                //    continue;
+                //}
+
+                // If the area has no future upgrade, skip
+                if (ad.Status == EFT.Hideout.EAreaStatus.NoFutureUpgrades)
+                {
+                    continue;
+                }
+
+                // If in process of constructing or upgrading, go to actual next stage if it exists
+                if(ad.Status == EFT.Hideout.EAreaStatus.Constructing ||
+                   ad.Status == EFT.Hideout.EAreaStatus.Upgrading)
+                {
+                    actualNextStage = ad.StageAt(ad.NextStage.Level + 1);
+
+                    // If there are not StageAt given level, it will return a new stage, so level will be 0
+                    if (actualNextStage.Level == 0)
+                    {
+                        continue;
+                    }
+                }
+
+                EFT.Hideout.RelatedRequirements requirements = actualNextStage.Requirements;
 
                 foreach (GClass1278 requirement in requirements)
                 {
