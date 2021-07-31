@@ -3,14 +3,123 @@ using UnityEngine;
 using UnityEngine.UI;
 using HarmonyLib;
 using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
+using Newtonsoft.Json.Linq;
+using System;
+
+using Requirement = GClass1278; // EFT.Hideout.RelatedRequirements as Data field (list)
+using HideoutInstance = GClass1251; // search for AreaDatas (Member)
 
 namespace HideoutRequirementIndicator
 {
+
     public class HideoutRequirementIndicatorMod : MelonMod
     {
+        public static bool blueAnyCanBeUpgraded = false;
+        public static bool prioritizeQuest = false;
+        public static bool showLockedModules = true;
+
         public override void OnApplicationStart()
         {
+            Init();
+
             DoPatching();
+        }
+
+        private static void Init()
+        {
+            ServicePointManager.ServerCertificateValidationCallback +=
+            delegate (
+                object sender,
+                X509Certificate certificate,
+                X509Chain chain,
+                SslPolicyErrors sslPolicyErrors)
+            {
+                return true;
+            };
+
+            HttpClient client = new HttpClient();
+            client.BaseAddress = new System.Uri("https://127.0.0.1:443/");
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            HttpResponseMessage response = client.GetAsync("server/config/checkmarksfail").Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    JObject o = JObject.Parse(response.Content.ReadAsStringAsync().Result);
+
+                    blueAnyCanBeUpgraded = bool.Parse(o["blueAnyCanBeUpgraded"].ToString());
+                    prioritizeQuest = bool.Parse(o["prioritizeQuest"].ToString());
+                    showLockedModules = bool.Parse(o["showLockedModules"].ToString());
+                }
+                catch
+                {
+                    // If route doesn't exist on server, the response status will be success but json will throw exception on parse, so load local config instead
+                    LoadLocalConfig();
+                }
+            }
+            else
+            {
+                // If for any reason response is not success, load local config instead
+                LoadLocalConfig();
+            }
+
+            client.Dispose();
+        }
+
+        private static void LoadLocalConfig()
+        {
+            try
+            {
+                string[] lines = File.ReadAllLines("Mods/HideoutRequirementIndicatorConfig.txt");
+
+                foreach (string line in lines)
+                {
+                    if (line.Length == 0 || line[0] == '#')
+                    {
+                        continue;
+                    }
+
+                    string trimmedLine = line.Trim();
+                    string[] tokens = trimmedLine.Split(' ');
+
+                    if (tokens.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    if (tokens[0].Equals("blueAnyCanBeUpgraded"))
+                    {
+                        if (trimmedLine.IndexOf("true") > -1)
+                        {
+                            blueAnyCanBeUpgraded = true;
+                        }
+                    }
+                    else if (tokens[0].Equals("prioritizeQuest"))
+                    {
+                        if (trimmedLine.IndexOf("true") > -1)
+                        {
+                            prioritizeQuest = true;
+                        }
+                    }
+                    else if (tokens[0].Equals("showLockedModules"))
+                    {
+                        if (trimmedLine.IndexOf("false") > -1)
+                        {
+                            showLockedModules = false;
+                        }
+                    }
+                }
+            }
+            catch(FileNotFoundException) { /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */ }
+            catch(Exception ex) { MelonLogger.Msg("Couldn't read HideoutRequirementIndicatorConfig.txt, using default settings instead. Error: "+ex.Message); }
         }
 
         public static void DoPatching()
@@ -34,18 +143,18 @@ namespace HideoutRequirementIndicator
             bool foundNeeded = false;
             bool foundFullfilled = false;
             List<string> areaNames = new List<string>();
+            bool questItem = item.QuestItem || (___string_3 != null && ___string_3.Contains("quest"));
 
-            GClass1251 hideoutInstance = Comfort.Common.Singleton<GClass1251>.Instance;
+            HideoutInstance hideoutInstance = Comfort.Common.Singleton<HideoutInstance>.Instance;
             foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
             {
                 EFT.Hideout.Stage actualNextStage = ad.NextStage;
 
-                // TODO: the following should depend on config
                 // If we don't want to get requirement of locked to construct areas, skip if it is locked to construct
-                //if(/* !config.showLockedModules &&*/ ad.Status == EFT.Hideout.EAreaStatus.LockedToConstruct)
-                //{
-                //    continue;
-                //}
+                if (!HideoutRequirementIndicatorMod.showLockedModules && ad.Status == EFT.Hideout.EAreaStatus.LockedToConstruct)
+                {
+                    continue;
+                }
 
                 // If the area has no future upgrade, skip
                 if (ad.Status == EFT.Hideout.EAreaStatus.NoFutureUpgrades)
@@ -68,7 +177,7 @@ namespace HideoutRequirementIndicator
 
                 EFT.Hideout.RelatedRequirements requirements = actualNextStage.Requirements;
 
-                foreach (GClass1278 requirement in requirements)
+                foreach (Requirement requirement in requirements)
                 {
                     EFT.Hideout.ItemRequirement itemRequirement = requirement as EFT.Hideout.ItemRequirement;
                     if (itemRequirement != null)
@@ -84,11 +193,15 @@ namespace HideoutRequirementIndicator
                                 // So only set color to fulfilled if not needed
                                 if (!foundNeeded && !foundFullfilled)
                                 {
-                                    // Following calls base class method ShowGameObject()
-                                    // To call base methods without reverse patch, must modify IL code for this line from callvirt to call
-                                    (__instance as EFT.UI.UIElement).ShowGameObject(false);
-                                    ____questIconImage.sprite = ____foundInRaidSprite;
-                                    ____questIconImage.color = new Color(0.23137f, 0.93725f, 1);
+                                    // If we want to prioritize quest checkmark, only change the sprite if not a quest item
+                                    if(!questItem || !HideoutRequirementIndicatorMod.prioritizeQuest) 
+                                    { 
+                                        // Following calls base class method ShowGameObject()
+                                        // To call base methods without reverse patch, must modify IL code for this line from callvirt to call
+                                        (__instance as EFT.UI.UIElement).ShowGameObject(false);
+                                        ____questIconImage.sprite = ____foundInRaidSprite;
+                                        ____questIconImage.color = new Color(0.23137f, 0.93725f, 1);
+                                    }
 
                                     foundFullfilled = true;
                                 }
@@ -99,9 +212,12 @@ namespace HideoutRequirementIndicator
                             {
                                 if (!foundNeeded)
                                 {
-                                    (__instance as EFT.UI.UIElement).ShowGameObject(false);
-                                    ____questIconImage.sprite = ____foundInRaidSprite;
-                                    ____questIconImage.color = new Color(0.23922f, 1, 0.44314f);
+                                    if(!questItem || !HideoutRequirementIndicatorMod.prioritizeQuest) 
+                                    { 
+                                        (__instance as EFT.UI.UIElement).ShowGameObject(false);
+                                        ____questIconImage.sprite = ____foundInRaidSprite;
+                                        ____questIconImage.color = new Color(0.23922f, 1, 0.44314f);
+                                    }
 
                                     foundNeeded = true;
                                 }
@@ -122,7 +238,7 @@ namespace HideoutRequirementIndicator
                     areaNamesString += (i == 0 ? "" : (areaNames.Count == 2 ? "" : ",") + (i == areaNames.Count - 1 ? " and " : " ")) + areaNames[i];
                 }
 
-                if (___string_3 != null && (item.MarkedAsSpawnedInSession || item.QuestItem))
+                if (___string_3 != null && (item.MarkedAsSpawnedInSession || questItem))
                 {
                     ___string_3 += string.Format(" and needed for {0}".Localized(), areaNamesString);
                 }

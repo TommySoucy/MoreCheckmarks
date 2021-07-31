@@ -33,9 +33,9 @@ using MelonLoader;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.1.0.0")]
+[assembly: AssemblyFileVersion("1.1.0.0")]
 
 // MelonLoader things
-[assembly: MelonInfo(typeof(HideoutRequirementIndicator.HideoutRequirementIndicatorMod), "Hideout requirement indicator", "1.0", "VIP")]
+[assembly: MelonInfo(typeof(HideoutRequirementIndicator.HideoutRequirementIndicatorMod), "Hideout requirement indicator", "1.1", "VIP")]
 [assembly: MelonGame("Battlestate Games", "EscapeFromTarkov")]
