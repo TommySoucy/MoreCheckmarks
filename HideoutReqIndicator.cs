@@ -14,6 +14,7 @@ using System;
 
 using Requirement = GClass1278; // EFT.Hideout.RelatedRequirements as Data field (list)
 using HideoutInstance = GClass1251; // search for AreaDatas (Member)
+using EFT.Hideout;
 
 namespace HideoutRequirementIndicator
 {
@@ -23,6 +24,8 @@ namespace HideoutRequirementIndicator
         public static bool blueAnyCanBeUpgraded = false;
         public static bool prioritizeQuest = false;
         public static bool showLockedModules = true;
+        public static Color needMoreColor = new Color(0.23922f, 1, 0.44314f);
+        public static Color fulfilledColor = new Color(0.23137f, 0.93725f, 1);
 
         public override void OnApplicationStart()
         {
@@ -47,7 +50,7 @@ namespace HideoutRequirementIndicator
             client.BaseAddress = new System.Uri("https://127.0.0.1:443/");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            HttpResponseMessage response = client.GetAsync("server/config/checkmarksfail").Result;
+            HttpResponseMessage response = client.GetAsync("server/config/checkmarks").Result;
 
             if (response.IsSuccessStatusCode)
             {
@@ -143,6 +146,9 @@ namespace HideoutRequirementIndicator
             bool foundNeeded = false;
             bool foundFullfilled = false;
             List<string> areaNames = new List<string>();
+            List<bool> areaFulfilled = new List<bool>();
+            int requiredCount = 0;
+            int possessedCount = 0;
             bool questItem = item.QuestItem || (___string_3 != null && ___string_3.Contains("quest"));
 
             HideoutInstance hideoutInstance = Comfort.Common.Singleton<HideoutInstance>.Instance;
@@ -185,6 +191,10 @@ namespace HideoutRequirementIndicator
                         string requirementTemplate = itemRequirement.TemplateId;
                         if (template == requirementTemplate)
                         {
+                            // Sum up the total amount of this item required in entire hideout and update possessed amount
+                            requiredCount += itemRequirement.IntCount;
+                            possessedCount = itemRequirement.ItemsCount;
+                            
                             // A requirement but already have the amount we need
                             if (requirement.Fulfilled)
                             {
@@ -193,16 +203,6 @@ namespace HideoutRequirementIndicator
                                 // So only set color to fulfilled if not needed
                                 if (!foundNeeded && !foundFullfilled)
                                 {
-                                    // If we want to prioritize quest checkmark, only change the sprite if not a quest item
-                                    if(!questItem || !HideoutRequirementIndicatorMod.prioritizeQuest) 
-                                    { 
-                                        // Following calls base class method ShowGameObject()
-                                        // To call base methods without reverse patch, must modify IL code for this line from callvirt to call
-                                        (__instance as EFT.UI.UIElement).ShowGameObject(false);
-                                        ____questIconImage.sprite = ____foundInRaidSprite;
-                                        ____questIconImage.color = new Color(0.23137f, 0.93725f, 1);
-                                    }
-
                                     foundFullfilled = true;
                                 }
 
@@ -212,13 +212,6 @@ namespace HideoutRequirementIndicator
                             {
                                 if (!foundNeeded)
                                 {
-                                    if(!questItem || !HideoutRequirementIndicatorMod.prioritizeQuest) 
-                                    { 
-                                        (__instance as EFT.UI.UIElement).ShowGameObject(false);
-                                        ____questIconImage.sprite = ____foundInRaidSprite;
-                                        ____questIconImage.color = new Color(0.23922f, 1, 0.44314f);
-                                    }
-
                                     foundNeeded = true;
                                 }
 
@@ -229,26 +222,32 @@ namespace HideoutRequirementIndicator
                 }
             }
 
-            if (foundNeeded || foundFullfilled)
+            if (foundNeeded)
             {
-                // Build string of list of areas this is needed for
-                string areaNamesString = "";
-                for (int i = 0; i < areaNames.Count; ++i)
-                {
-                    areaNamesString += (i == 0 ? "" : (areaNames.Count == 2 ? "" : ",") + (i == areaNames.Count - 1 ? " and " : " ")) + areaNames[i];
-                }
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem);
 
-                if (___string_3 != null && (item.MarkedAsSpawnedInSession || questItem))
-                {
-                    ___string_3 += string.Format(" and needed for {0}".Localized(), areaNamesString);
-                }
-                else
-                {
-                    ___string_3 = string.Format("Needed for {0}".Localized(), areaNamesString);
-                }
+                SetCheckmark(questItem, __instance, ____questIconImage, ____foundInRaidSprite, HideoutRequirementIndicatorMod.needMoreColor);
+            }
+            else if (foundFullfilled)
+            {
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem);
 
-                // If this is not a quest item or found in raid, the original returns and the tooltip never gets set, so we need to set it ourselves
-                ___simpleTooltip_0 = tooltip;
+                if (HideoutRequirementIndicatorMod.blueAnyCanBeUpgraded)
+                {
+                    SetCheckmark(questItem, __instance, ____questIconImage, ____foundInRaidSprite, HideoutRequirementIndicatorMod.fulfilledColor);
+                }
+                else // We only want blue checkmark when ALL requiring this item can be upgraded (if all other requirements are fulfilled too but thats implied)
+                {
+                    // Check if we trully do not need more of this item for now
+                    if(possessedCount >= requiredCount)
+                    {
+                        SetCheckmark(questItem, __instance, ____questIconImage, ____foundInRaidSprite, HideoutRequirementIndicatorMod.fulfilledColor);
+                    }
+                    else // Still need more
+                    {
+                        SetCheckmark(questItem, __instance, ____questIconImage, ____foundInRaidSprite, HideoutRequirementIndicatorMod.needMoreColor);
+                    }
+                }
             }
             else
             {
@@ -257,6 +256,41 @@ namespace HideoutRequirementIndicator
                 // the sprite would still show up green/blue
                 ____questIconImage.color = Color.white;
             }
+        }
+
+        static void SetCheckmark(bool questItem, EFT.UI.DragAndDrop.QuestItemViewPanel __instance, Image ____questIconImage, Sprite sprite, Color color)
+        {
+            // If we want to prioritize quest checkmark, only change the sprite if not a quest item
+            if (!questItem || !HideoutRequirementIndicatorMod.prioritizeQuest)
+            {
+                // Following calls base class method ShowGameObject()
+                // To call base methods without reverse patch, must modify IL code for this line from callvirt to call
+                (__instance as EFT.UI.UIElement).ShowGameObject(false);
+                ____questIconImage.sprite = sprite;
+                ____questIconImage.color = color;
+            }
+        }
+
+        static void SetTooltip(List<string> areaNames, ref string ___string_3, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip, EFT.InventoryLogic.Item item, bool questItem)
+        {
+            // Build string of list of areas this is needed for
+            string areaNamesString = "";
+            for (int i = 0; i < areaNames.Count; ++i)
+            {
+                areaNamesString += (i == 0 ? "" : (areaNames.Count == 2 ? "" : ",") + (i == areaNames.Count - 1 ? " and " : " ")) + areaNames[i];
+            }
+
+            if (___string_3 != null && (item.MarkedAsSpawnedInSession || questItem))
+            {
+                ___string_3 += string.Format(" and needed for {0}".Localized(), areaNamesString);
+            }
+            else
+            {
+                ___string_3 = string.Format("Needed for {0}".Localized(), areaNamesString);
+            }
+
+            // If this is not a quest item or found in raid, the original returns and the tooltip never gets set, so we need to set it ourselves
+            ___simpleTooltip_0 = tooltip;
         }
     }
 }
