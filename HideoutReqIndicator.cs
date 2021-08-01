@@ -206,7 +206,7 @@ namespace HideoutRequirementIndicator
                                     foundFullfilled = true;
                                 }
 
-                                areaNames.Add("<color=#3bdfff>" + ad.Template.Name + "</color>");
+                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(HideoutRequirementIndicatorMod.fulfilledColor) + ">" + ad.Template.Name + "</color>");
                             }
                             else
                             {
@@ -215,7 +215,7 @@ namespace HideoutRequirementIndicator
                                     foundNeeded = true;
                                 }
 
-                                areaNames.Add("<color=#3dff71>" + ad.Template.Name + "</color>");
+                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(HideoutRequirementIndicatorMod.fulfilledColor) + ">" + ad.Template.Name + "</color>");
                             }
                         }
                     }
