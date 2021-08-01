@@ -61,6 +61,8 @@ namespace HideoutRequirementIndicator
                     blueAnyCanBeUpgraded = bool.Parse(o["blueAnyCanBeUpgraded"].ToString());
                     prioritizeQuest = bool.Parse(o["prioritizeQuest"].ToString());
                     showLockedModules = bool.Parse(o["showLockedModules"].ToString());
+                    needMoreColor = ParseColor(o["needMoreColor"].ToString());
+                    fulfilledColor = ParseColor(o["fulfilledColor"].ToString());
                 }
                 catch
                 {
@@ -119,6 +121,22 @@ namespace HideoutRequirementIndicator
                             showLockedModules = false;
                         }
                     }
+                    else if (tokens[0].Equals("needMoreColor"))
+                    {
+                        int parenthesisIndex = trimmedLine.IndexOf("(");
+                        if (parenthesisIndex > -1)
+                        {
+                            needMoreColor = ParseColor(trimmedLine.Substring(parenthesisIndex));
+                        }
+                    }
+                    else if (tokens[0].Equals("fulfilledColor"))
+                    {
+                        int parenthesisIndex = trimmedLine.IndexOf("(");
+                        if (parenthesisIndex > -1)
+                        {
+                            fulfilledColor = ParseColor(trimmedLine.Substring(parenthesisIndex));
+                        }
+                    }
                 }
             }
             catch(FileNotFoundException) { /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */ }
@@ -130,6 +148,14 @@ namespace HideoutRequirementIndicator
             var harmony = new HarmonyLib.Harmony("VIP.TommySoucy.HideoutRequirementIndicator");
 
             harmony.PatchAll();
+        }
+
+        public static Color ParseColor(string colorString)
+        {
+            string trimmed = colorString.Trim(new char[] { '(', ')' });
+            string[] values = trimmed.Split(',');
+
+            return new Color(float.Parse(values[0]),float.Parse(values[1]),float.Parse(values[2]));
         }
     }
 
