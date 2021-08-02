@@ -423,15 +423,9 @@ namespace HideoutRequirementIndicator
                 FieldInfo iconImageField = typeof(QuestItemViewPanel).GetField("_questIconImage", bindFlags);
                 Image _questIconImage = iconImageField.GetValue(____questItemViewPanel) as Image;
 
-                if (_questIconImage == null)
-                {
-                    MelonLogger.Msg("Failed to patch inspect window checkmark");
-                }
-                else
+                if (_questIconImage != null)
                 {
                     _questIconImage.sprite = HideoutRequirementIndicatorMod.whiteCheckmark;
-
-                    MelonLogger.Msg("Patched inspect window checkmark");
                 }
             }
         }
