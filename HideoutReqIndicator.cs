@@ -284,7 +284,7 @@ namespace HideoutRequirementIndicator
                                     foundNeeded = true;
                                 }
 
-                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(HideoutRequirementIndicatorMod.fulfilledColor) + ">" + ad.Template.Name + "</color>");
+                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(HideoutRequirementIndicatorMod.needMoreColor) + ">" + ad.Template.Name + "</color>");
                             }
                         }
                     }
