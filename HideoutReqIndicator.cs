@@ -4,79 +4,120 @@ using UnityEngine.UI;
 using HarmonyLib;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.Net.Security;
 using Newtonsoft.Json.Linq;
 using System;
+using ComponentAce.Compression.Libs.zlib;
+using Comfort.Common;
+using EFT;
 
 using Requirement = GClass1278; // EFT.Hideout.RelatedRequirements as Data field (list)
 using HideoutInstance = GClass1251; // search for AreaDatas (Member)
-using EFT.Hideout;
+using ClientConfig = GClass333;
 
 namespace HideoutRequirementIndicator
 {
 
     public class HideoutRequirementIndicatorMod : MelonMod
     {
+        private static bool patched = false;
+        private static string backEndSessionID;
+        public static string backendUrl;
         public static bool blueAnyCanBeUpgraded = false;
         public static bool prioritizeQuest = false;
         public static bool showLockedModules = true;
-        public static Color needMoreColor = new Color(0.23922f, 1, 0.44314f);
+        public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.23137f, 0.93725f, 1);
 
-        public override void OnApplicationStart()
+        public override void OnUpdate()
         {
-            Init();
+            if (!patched)
+            {
+                try 
+                {
+                    backEndSessionID = Singleton<ClientApplication>.Instance.GetClientBackEndSession().GetPhpSessionId();
+                    backendUrl = ClientConfig.Config.BackendUrl;
 
-            DoPatching();
+                    patched = true;
+
+                    Init();
+
+                    DoPatching();
+                }
+                catch { }
+            }
         }
 
         private static void Init()
         {
-            ServicePointManager.ServerCertificateValidationCallback +=
-            delegate (
-                object sender,
-                X509Certificate certificate,
-                X509Chain chain,
-                SslPolicyErrors sslPolicyErrors)
+            // ONCE INTEGRATED INTO SINGLEPLAYER PATCHES OF JET, THIS SHOULD USE Request CLASS FROM JET HTTP UTILITIES TO GET CONFIG FROM SERVERSIDE
+            // I took what was essential to communicate with server because i didn't want to copy the whole thing here
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; }; 
+            
+            var fullUri = "/client/config/checkmarks";
+            if (!Uri.IsWellFormedUriString(fullUri, UriKind.Absolute))
             {
-                return true;
-            };
+                fullUri = backendUrl + fullUri;
+            }
+            WebRequest request = WebRequest.Create(new Uri(fullUri));
 
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new System.Uri("https://127.0.0.1:443/");
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            HttpResponseMessage response = client.GetAsync("server/config/checkmarks").Result;
-
-            if (response.IsSuccessStatusCode)
+            if (!string.IsNullOrEmpty(backEndSessionID))
             {
-                try
-                {
-                    JObject o = JObject.Parse(response.Content.ReadAsStringAsync().Result);
+                request.Headers.Add("Cookie", $"PHPSESSID={backEndSessionID}");
+                request.Headers.Add("SessionId", backEndSessionID);
+            }
 
-                    blueAnyCanBeUpgraded = bool.Parse(o["blueAnyCanBeUpgraded"].ToString());
-                    prioritizeQuest = bool.Parse(o["prioritizeQuest"].ToString());
-                    showLockedModules = bool.Parse(o["showLockedModules"].ToString());
-                    needMoreColor = ParseColor(o["needMoreColor"].ToString());
-                    fulfilledColor = ParseColor(o["fulfilledColor"].ToString());
-                }
-                catch
+            request.Headers.Add("Accept-Encoding", "deflate");
+
+            request.Method = "GET";
+
+            string json = "";
+
+            try
+            {
+                WebResponse response = request.GetResponse();
+
+                using (Stream stream = response.GetResponseStream())
                 {
-                    // If route doesn't exist on server, the response status will be success but json will throw exception on parse, so load local config instead
-                    LoadLocalConfig();
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        if (stream == null)
+                        {
+                            json = "";
+                        }
+                        stream.CopyTo(ms);
+                        json = SimpleZlib.Decompress(ms.ToArray(), null);
+                    }
                 }
             }
-            else
+            catch { }
+
+            if (string.IsNullOrWhiteSpace(json))
             {
-                // If for any reason response is not success, load local config instead
+                MelonLogger.Msg("Failed to fetch serverside config, loading local instead");
+
                 LoadLocalConfig();
             }
 
-            client.Dispose();
+            try
+            {
+                var jObject = JObject.Parse(json);
+                blueAnyCanBeUpgraded = bool.Parse(jObject["blueAnyCanBeUpgraded"].ToString());
+                prioritizeQuest = bool.Parse(jObject["prioritizeQuest"].ToString());
+                showLockedModules = bool.Parse(jObject["showLockedModules"].ToString());
+                needMoreColor = ParseColor(jObject["needMoreColor"].ToString());
+                fulfilledColor = ParseColor(jObject["fulfilledColor"].ToString());
+
+                MelonLogger.Msg("Configs loaded from serverside");
+            }
+            catch
+            {
+                MelonLogger.Msg("Failed to fetch serverside config, loading local instead");
+
+                LoadLocalConfig();
+            }
         }
 
         private static void LoadLocalConfig()
@@ -138,6 +179,8 @@ namespace HideoutRequirementIndicator
                         }
                     }
                 }
+
+                MelonLogger.Msg("Configs loaded from local");
             }
             catch(FileNotFoundException) { /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */ }
             catch(Exception ex) { MelonLogger.Msg("Couldn't read HideoutRequirementIndicatorConfig.txt, using default settings instead. Error: "+ex.Message); }

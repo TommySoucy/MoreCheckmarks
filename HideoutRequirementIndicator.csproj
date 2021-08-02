@@ -38,6 +38,10 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\Client\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="bsg.componentace.compression.libs.zlib, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Client\EscapeFromTarkov_Data\Managed\bsg.componentace.compression.libs.zlib.dll</HintPath>
+    </Reference>
     <Reference Include="Comfort, Version=1.0.0.4, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Client\EscapeFromTarkov_Data\Managed\Comfort.dll</HintPath>
