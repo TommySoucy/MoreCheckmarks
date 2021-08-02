@@ -14,20 +14,32 @@ using EFT;
 using Requirement = GClass1278; // EFT.Hideout.RelatedRequirements as Data field (list)
 using HideoutInstance = GClass1251; // search for AreaDatas (Member)
 using ClientConfig = GClass333;
+using EFT.UI.DragAndDrop;
+using System.Reflection;
+using EFT.InventoryLogic;
 
 namespace HideoutRequirementIndicator
 {
 
     public class HideoutRequirementIndicatorMod : MelonMod
     {
+        // For config request
         private static bool patched = false;
         private static string backEndSessionID;
         public static string backendUrl;
+
+        // Config settings
         public static bool blueAnyCanBeUpgraded = false;
         public static bool prioritizeQuest = false;
         public static bool showLockedModules = true;
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.23137f, 0.93725f, 1);
+
+        // Assets
+        public static Sprite whiteCheckmark;
+
+        // To pass to second patch
+        public static bool setColor = false;
 
         public override void OnUpdate()
         {
@@ -50,12 +62,19 @@ namespace HideoutRequirementIndicator
 
         private static void Init()
         {
+            LoadConfig();
+
+            LoadAssets();
+        }
+
+        private static void LoadConfig()
+        {
             // ONCE INTEGRATED INTO SINGLEPLAYER PATCHES OF JET, THIS SHOULD USE Request CLASS FROM JET HTTP UTILITIES TO GET CONFIG FROM SERVERSIDE
-            // I took what was essential to communicate with server because i didn't want to copy the whole thing here
+            // I took what was essential to communicate with server because I didn't want to copy the whole thing here
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; }; 
-            
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+
             var fullUri = "/client/config/checkmarks";
             if (!Uri.IsWellFormedUriString(fullUri, UriKind.Absolute))
             {
@@ -186,6 +205,22 @@ namespace HideoutRequirementIndicator
             catch(Exception ex) { MelonLogger.Msg("Couldn't read HideoutRequirementIndicatorConfig.txt, using default settings instead. Error: "+ex.Message); }
         }
 
+        private static void LoadAssets()
+        {
+            AssetBundle assetBundle = AssetBundle.LoadFromFile("Mods/HideoutRequirementIndicatorAssets");
+
+            if(assetBundle == null)
+            {
+                MelonLogger.Msg("Failed to load assets, inspect window checkmark may be miscolored");
+            }
+            else
+            {
+                whiteCheckmark = assetBundle.LoadAsset<Sprite>("WhiteCheckmark");
+
+                MelonLogger.Msg("Assets loaded");
+            }
+        }
+
         public static void DoPatching()
         {
             var harmony = new HarmonyLib.Harmony("VIP.TommySoucy.HideoutRequirementIndicator");
@@ -203,7 +238,7 @@ namespace HideoutRequirementIndicator
     }
 
     [HarmonyPatch]
-    class ShowPatch
+    class QuestItemViewPanelShowPatch
     {
         // This postfix essentially overrides the sprite and its color after it has been set by Show()
         // Just to make it different in case it is a hideout requirement
@@ -324,6 +359,8 @@ namespace HideoutRequirementIndicator
                 // Because if an item was a requirement, its sprite's color set to green/blue, then it stopped being a requirement, but it was found in raid/is quest item
                 // the sprite would still show up green/blue
                 ____questIconImage.color = Color.white;
+
+                HideoutRequirementIndicatorMod.setColor = false;
             }
         }
 
@@ -337,6 +374,12 @@ namespace HideoutRequirementIndicator
                 (__instance as EFT.UI.UIElement).ShowGameObject(false);
                 ____questIconImage.sprite = sprite;
                 ____questIconImage.color = color;
+
+                HideoutRequirementIndicatorMod.setColor = true;
+            }
+            else
+            {
+                HideoutRequirementIndicatorMod.setColor = false;
             }
         }
 
@@ -360,6 +403,37 @@ namespace HideoutRequirementIndicator
 
             // If this is not a quest item or found in raid, the original returns and the tooltip never gets set, so we need to set it ourselves
             ___simpleTooltip_0 = tooltip;
+        }
+    }
+
+    [HarmonyPatch]
+    class ItemSpecificationPanelShowPatch
+    {
+        // This postfix will run after the inspect window sets its checkmark if there is one
+        // If there is one, the postfix for the QuestItemViewPanel will always have run before
+        // This patch just changes the sprite to a default white one if needed, so we can set its color to whatever we need
+        [HarmonyPatch(typeof(EFT.UI.ItemSpecificationPanel), "method_2")]
+        static void Postfix(ref Item ___item_0, ref QuestItemViewPanel ____questItemViewPanel)
+        {
+            // If the checkmark exists and if the color of the checkmark is custom
+            if (____questItemViewPanel != null && HideoutRequirementIndicatorMod.setColor)
+            {
+                // Get access to QuestItemViewPanel's private _questIconImage
+                BindingFlags bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+                FieldInfo iconImageField = typeof(QuestItemViewPanel).GetField("_questIconImage", bindFlags);
+                Image _questIconImage = iconImageField.GetValue(____questItemViewPanel) as Image;
+
+                if (_questIconImage == null)
+                {
+                    MelonLogger.Msg("Failed to patch inspect window checkmark");
+                }
+                else
+                {
+                    _questIconImage.sprite = HideoutRequirementIndicatorMod.whiteCheckmark;
+
+                    MelonLogger.Msg("Patched inspect window checkmark");
+                }
+            }
         }
     }
 }
