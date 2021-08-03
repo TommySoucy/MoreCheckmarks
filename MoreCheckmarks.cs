@@ -10,18 +10,17 @@ using System;
 using ComponentAce.Compression.Libs.zlib;
 using Comfort.Common;
 using EFT;
-
-using Requirement = GClass1278; // EFT.Hideout.RelatedRequirements as Data field (list)
-using HideoutInstance = GClass1251; // search for AreaDatas (Member)
-using ClientConfig = GClass333;
 using EFT.UI.DragAndDrop;
 using System.Reflection;
 using EFT.InventoryLogic;
 using EFT.UI;
 
+using Requirement = GClass1278; // EFT.Hideout.RelatedRequirements as Data field (list)
+using HideoutInstance = GClass1251; // search for AreaDatas (Member)
+using ClientConfig = GClass333;
+
 namespace MoreCheckmarks
 {
-
     public class MoreCheckmarksMod : MelonMod
     {
         // For config request
@@ -278,6 +277,11 @@ namespace MoreCheckmarks
             HideoutInstance hideoutInstance = Comfort.Common.Singleton<HideoutInstance>.Instance;
             foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
             {
+                if (ad.Template.Name.Equals("Place of fame"))
+                {
+                    continue;
+                }
+
                 EFT.Hideout.Stage actualNextStage = ad.NextStage;
 
                 // If we don't want to get requirement of locked to construct areas, skip if it is locked to construct
