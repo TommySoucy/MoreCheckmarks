@@ -17,11 +17,12 @@ using ClientConfig = GClass333;
 using EFT.UI.DragAndDrop;
 using System.Reflection;
 using EFT.InventoryLogic;
+using EFT.UI;
 
-namespace HideoutRequirementIndicator
+namespace MoreCheckmarks
 {
 
-    public class HideoutRequirementIndicatorMod : MelonMod
+    public class MoreCheckmarksMod : MelonMod
     {
         // For config request
         private static bool patched = false;
@@ -29,11 +30,14 @@ namespace HideoutRequirementIndicator
         public static string backendUrl;
 
         // Config settings
-        public static bool blueAnyCanBeUpgraded = false;
-        public static bool prioritizeQuest = false;
+        public static bool fulfilledAnyCanBeUpgraded = false;
+        public static int questPriority = 0;
+        public static int hideoutPriority = 1;
+        public static int wishlistPriority = 2;
         public static bool showLockedModules = true;
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
-        public static Color fulfilledColor = new Color(0.23137f, 0.93725f, 1);
+        public static Color fulfilledColor = new Color(0.30588f, 1, 0.27843f);
+        public static Color wishlistColor = new Color(0.23137f, 0.93725f, 1);
 
         // Assets
         public static Sprite whiteCheckmark;
@@ -123,11 +127,14 @@ namespace HideoutRequirementIndicator
             try
             {
                 var jObject = JObject.Parse(json);
-                blueAnyCanBeUpgraded = bool.Parse(jObject["blueAnyCanBeUpgraded"].ToString());
-                prioritizeQuest = bool.Parse(jObject["prioritizeQuest"].ToString());
+                fulfilledAnyCanBeUpgraded = bool.Parse(jObject["fulfilledAnyCanBeUpgraded"].ToString());
+                questPriority = int.Parse(jObject["questPriority"].ToString());
+                hideoutPriority = int.Parse(jObject["hideoutPriority"].ToString());
+                wishlistPriority = int.Parse(jObject["wishlistPriority"].ToString());
                 showLockedModules = bool.Parse(jObject["showLockedModules"].ToString());
                 needMoreColor = ParseColor(jObject["needMoreColor"].ToString());
                 fulfilledColor = ParseColor(jObject["fulfilledColor"].ToString());
+                wishlistColor = ParseColor(jObject["wishlistColor"].ToString());
 
                 MelonLogger.Msg("Configs loaded from serverside");
             }
@@ -143,7 +150,7 @@ namespace HideoutRequirementIndicator
         {
             try
             {
-                string[] lines = File.ReadAllLines("Mods/HideoutRequirementIndicatorConfig.txt");
+                string[] lines = File.ReadAllLines("Mods/MoreCheckmarksConfig.txt");
 
                 foreach (string line in lines)
                 {
@@ -153,48 +160,61 @@ namespace HideoutRequirementIndicator
                     }
 
                     string trimmedLine = line.Trim();
-                    string[] tokens = trimmedLine.Split(' ');
+                    string[] tokens = trimmedLine.Split('=');
 
                     if (tokens.Length == 0)
                     {
                         continue;
                     }
 
-                    if (tokens[0].Equals("blueAnyCanBeUpgraded"))
+                    if (tokens[0].IndexOf("fulfilledAnyCanBeUpgraded") == 0)
                     {
-                        if (trimmedLine.IndexOf("true") > -1)
+                        if (tokens[1].IndexOf("true") > -1)
                         {
-                            blueAnyCanBeUpgraded = true;
+                            fulfilledAnyCanBeUpgraded = true;
                         }
                     }
-                    else if (tokens[0].Equals("prioritizeQuest"))
+                    else if (tokens[0].IndexOf("questPriority") == 0)
                     {
-                        if (trimmedLine.IndexOf("true") > -1)
-                        {
-                            prioritizeQuest = true;
-                        }
+                        questPriority = int.Parse(tokens[1].Trim());
                     }
-                    else if (tokens[0].Equals("showLockedModules"))
+                    else if (tokens[0].IndexOf("hideoutPriority") == 0)
                     {
-                        if (trimmedLine.IndexOf("false") > -1)
+                        hideoutPriority = int.Parse(tokens[1].Trim());
+                    }
+                    else if (tokens[0].IndexOf("wishlistPriority") == 0)
+                    {
+                        wishlistPriority = int.Parse(tokens[1].Trim());
+                    }
+                    else if (tokens[0].IndexOf("showLockedModules") == 0)
+                    {
+                        if (tokens[1].IndexOf("false") > -1)
                         {
                             showLockedModules = false;
                         }
                     }
-                    else if (tokens[0].Equals("needMoreColor"))
+                    else if (tokens[0].IndexOf("needMoreColor") == 0)
                     {
-                        int parenthesisIndex = trimmedLine.IndexOf("(");
+                        int parenthesisIndex = tokens[1].IndexOf("(");
                         if (parenthesisIndex > -1)
                         {
-                            needMoreColor = ParseColor(trimmedLine.Substring(parenthesisIndex));
+                            needMoreColor = ParseColor(tokens[1].Substring(parenthesisIndex));
                         }
                     }
-                    else if (tokens[0].Equals("fulfilledColor"))
+                    else if (tokens[0].IndexOf("fulfilledColor") == 0)
                     {
-                        int parenthesisIndex = trimmedLine.IndexOf("(");
+                        int parenthesisIndex = tokens[1].IndexOf("(");
                         if (parenthesisIndex > -1)
                         {
-                            fulfilledColor = ParseColor(trimmedLine.Substring(parenthesisIndex));
+                            fulfilledColor = ParseColor(tokens[1].Substring(parenthesisIndex));
+                        }
+                    }
+                    else if (tokens[0].IndexOf("wishlistColor") == 0)
+                    {
+                        int parenthesisIndex = tokens[1].IndexOf("(");
+                        if (parenthesisIndex > -1)
+                        {
+                            wishlistColor = ParseColor(tokens[1].Substring(parenthesisIndex));
                         }
                     }
                 }
@@ -202,12 +222,12 @@ namespace HideoutRequirementIndicator
                 MelonLogger.Msg("Configs loaded from local");
             }
             catch(FileNotFoundException) { /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */ }
-            catch(Exception ex) { MelonLogger.Msg("Couldn't read HideoutRequirementIndicatorConfig.txt, using default settings instead. Error: "+ex.Message); }
+            catch(Exception ex) { MelonLogger.Msg("Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: "+ex.Message); }
         }
 
         private static void LoadAssets()
         {
-            AssetBundle assetBundle = AssetBundle.LoadFromFile("Mods/HideoutRequirementIndicatorAssets");
+            AssetBundle assetBundle = AssetBundle.LoadFromFile("Mods/MoreCheckmarksAssets");
 
             if(assetBundle == null)
             {
@@ -223,7 +243,7 @@ namespace HideoutRequirementIndicator
 
         public static void DoPatching()
         {
-            var harmony = new HarmonyLib.Harmony("VIP.TommySoucy.HideoutRequirementIndicator");
+            var harmony = new HarmonyLib.Harmony("VIP.TommySoucy.MoreCheckmarks");
 
             harmony.PatchAll();
         }
@@ -261,7 +281,7 @@ namespace HideoutRequirementIndicator
                 EFT.Hideout.Stage actualNextStage = ad.NextStage;
 
                 // If we don't want to get requirement of locked to construct areas, skip if it is locked to construct
-                if (!HideoutRequirementIndicatorMod.showLockedModules && ad.Status == EFT.Hideout.EAreaStatus.LockedToConstruct)
+                if (!MoreCheckmarksMod.showLockedModules && ad.Status == EFT.Hideout.EAreaStatus.LockedToConstruct)
                 {
                     continue;
                 }
@@ -310,7 +330,7 @@ namespace HideoutRequirementIndicator
                                     foundFullfilled = true;
                                 }
 
-                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(HideoutRequirementIndicatorMod.fulfilledColor) + ">" + ad.Template.Name + "</color>");
+                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">" + ad.Template.Name + "</color>");
                             }
                             else
                             {
@@ -319,39 +339,61 @@ namespace HideoutRequirementIndicator
                                     foundNeeded = true;
                                 }
 
-                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(HideoutRequirementIndicatorMod.needMoreColor) + ">" + ad.Template.Name + "</color>");
+                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">" + ad.Template.Name + "</color>");
                             }
                         }
                     }
                 }
             }
 
+            bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
+
             if (foundNeeded)
             {
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem);
+                if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
+                {
+                    SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor, true);
+                }
+                else
+                {
+                    SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor, false);
+                }
 
-                SetCheckmark(questItem, __instance, ____questIconImage, ____foundInRaidSprite, HideoutRequirementIndicatorMod.needMoreColor);
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist);
             }
             else if (foundFullfilled)
             {
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem);
+                if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
+                {
+                    SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor, true);
+                }
+                else
+                {
+                    if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded)
+                    {
+                        SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor, false);
+                    }
+                    else // We only want blue checkmark when ALL requiring this item can be upgraded (if all other requirements are fulfilled too but thats implied)
+                    {
+                        // Check if we trully do not need more of this item for now
+                        if (possessedCount >= requiredCount)
+                        {
+                            SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor, false);
+                        }
+                        else // Still need more
+                        {
+                            SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor, false);
+                        }
+                    }
+                }
 
-                if (HideoutRequirementIndicatorMod.blueAnyCanBeUpgraded)
-                {
-                    SetCheckmark(questItem, __instance, ____questIconImage, ____foundInRaidSprite, HideoutRequirementIndicatorMod.fulfilledColor);
-                }
-                else // We only want blue checkmark when ALL requiring this item can be upgraded (if all other requirements are fulfilled too but thats implied)
-                {
-                    // Check if we trully do not need more of this item for now
-                    if(possessedCount >= requiredCount)
-                    {
-                        SetCheckmark(questItem, __instance, ____questIconImage, ____foundInRaidSprite, HideoutRequirementIndicatorMod.fulfilledColor);
-                    }
-                    else // Still need more
-                    {
-                        SetCheckmark(questItem, __instance, ____questIconImage, ____foundInRaidSprite, HideoutRequirementIndicatorMod.needMoreColor);
-                    }
-                }
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist);
+            }
+            else if (wishlist) // We don't want to color it for hideout, but it is in wishlist
+            {
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, true);
+
+                SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor, true);
             }
             else
             {
@@ -360,14 +402,16 @@ namespace HideoutRequirementIndicator
                 // the sprite would still show up green/blue
                 ____questIconImage.color = Color.white;
 
-                HideoutRequirementIndicatorMod.setColor = false;
+                MoreCheckmarksMod.setColor = false;
             }
         }
 
-        static void SetCheckmark(bool questItem, EFT.UI.DragAndDrop.QuestItemViewPanel __instance, Image ____questIconImage, Sprite sprite, Color color)
+        private static void SetCheckmark(EFT.Profile profile, string templateID, bool questItem, EFT.UI.DragAndDrop.QuestItemViewPanel __instance, Image ____questIconImage,
+                                         Sprite sprite, Color color, bool wishlist)
         {
-            // If we want to prioritize quest checkmark, only change the sprite if not a quest item
-            if (!questItem || !HideoutRequirementIndicatorMod.prioritizeQuest)
+            // At this point we got the color that was prioritized between wishlist and hideout, now have to compare with quest
+            // Set checkmark depending on priority settings
+            if (!questItem || MoreCheckmarksMod.questPriority < (wishlist ? MoreCheckmarksMod.wishlistPriority : MoreCheckmarksMod.hideoutPriority))
             {
                 // Following calls base class method ShowGameObject()
                 // To call base methods without reverse patch, must modify IL code for this line from callvirt to call
@@ -375,15 +419,16 @@ namespace HideoutRequirementIndicator
                 ____questIconImage.sprite = sprite;
                 ____questIconImage.color = color;
 
-                HideoutRequirementIndicatorMod.setColor = true;
+                MoreCheckmarksMod.setColor = true;
             }
             else
             {
-                HideoutRequirementIndicatorMod.setColor = false;
+                MoreCheckmarksMod.setColor = false;
             }
         }
 
-        static void SetTooltip(List<string> areaNames, ref string ___string_3, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip, EFT.InventoryLogic.Item item, bool questItem)
+        private static void SetTooltip(List<string> areaNames, ref string ___string_3, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
+                                       EFT.InventoryLogic.Item item, bool questItem, bool wishlist)
         {
             // Build string of list of areas this is needed for
             string areaNamesString = "";
@@ -392,13 +437,37 @@ namespace HideoutRequirementIndicator
                 areaNamesString += (i == 0 ? "" : (areaNames.Count == 2 ? "" : ",") + (i == areaNames.Count - 1 ? " and " : " ")) + areaNames[i];
             }
 
-            if (___string_3 != null && (item.MarkedAsSpawnedInSession || questItem))
+            if (!areaNamesString.Equals(""))
             {
-                ___string_3 += string.Format(" and needed for {0}".Localized(), areaNamesString);
+                if (___string_3 != null && (item.MarkedAsSpawnedInSession || questItem))
+                {
+                    ___string_3 += string.Format(" and needed for {0}".Localized(), areaNamesString);
+
+                    if (wishlist)
+                    {
+                        ___string_3 += string.Format(", and on {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                    }
+                }
+                else
+                {
+                    ___string_3 = string.Format("Needed for {0}".Localized(), areaNamesString);
+
+                    if (wishlist)
+                    {
+                        ___string_3 += string.Format(", and on {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                    }
+                }
             }
-            else
+            else // Means the method was called for wishlist
             {
-                ___string_3 = string.Format("Needed for {0}".Localized(), areaNamesString);
+                if (___string_3 != null && (item.MarkedAsSpawnedInSession || questItem))
+                {
+                    ___string_3 += string.Format(" and on {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                }
+                else
+                {
+                    ___string_3 = string.Format("On {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                }
             }
 
             // If this is not a quest item or found in raid, the original returns and the tooltip never gets set, so we need to set it ourselves
@@ -416,7 +485,7 @@ namespace HideoutRequirementIndicator
         static void Postfix(ref Item ___item_0, ref QuestItemViewPanel ____questItemViewPanel)
         {
             // If the checkmark exists and if the color of the checkmark is custom
-            if (____questItemViewPanel != null && HideoutRequirementIndicatorMod.setColor)
+            if (____questItemViewPanel != null && MoreCheckmarksMod.setColor)
             {
                 // Get access to QuestItemViewPanel's private _questIconImage
                 BindingFlags bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
@@ -425,7 +494,7 @@ namespace HideoutRequirementIndicator
 
                 if (_questIconImage != null)
                 {
-                    _questIconImage.sprite = HideoutRequirementIndicatorMod.whiteCheckmark;
+                    _questIconImage.sprite = MoreCheckmarksMod.whiteCheckmark;
                 }
             }
         }

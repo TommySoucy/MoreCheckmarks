@@ -6,11 +6,11 @@ using MelonLoader;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("HideoutRequirementIndicator")]
+[assembly: AssemblyTitle("MoreCheckmarks")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("HideoutRequirementIndicator")]
+[assembly: AssemblyProduct("MoreCheckmarks")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -33,9 +33,9 @@ using MelonLoader;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.1.3.0")]
-[assembly: AssemblyFileVersion("1.1.3.0")]
+[assembly: AssemblyVersion("1.2.0.0")]
+[assembly: AssemblyFileVersion("1.2.0.0")]
 
 // MelonLoader things
-[assembly: MelonInfo(typeof(HideoutRequirementIndicator.HideoutRequirementIndicatorMod), "Hideout requirement indicator", "1.1.3", "VIP")]
+[assembly: MelonInfo(typeof(MoreCheckmarks.MoreCheckmarksMod), "More checkmarks", "1.2", "VIP")]
 [assembly: MelonGame("Battlestate Games", "EscapeFromTarkov")]
