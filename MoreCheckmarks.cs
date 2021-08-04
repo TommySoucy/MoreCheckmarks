@@ -269,7 +269,6 @@ namespace MoreCheckmarks
             bool foundNeeded = false;
             bool foundFullfilled = false;
             List<string> areaNames = new List<string>();
-            List<bool> areaFulfilled = new List<bool>();
             int requiredCount = 0;
             int possessedCount = 0;
             bool questItem = item.QuestItem || (___string_3 != null && ___string_3.Contains("quest"));
@@ -363,7 +362,7 @@ namespace MoreCheckmarks
                     SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor, false);
                 }
 
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist);
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, possessedCount, requiredCount);
             }
             else if (foundFullfilled)
             {
@@ -391,11 +390,11 @@ namespace MoreCheckmarks
                     }
                 }
 
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist);
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, possessedCount, requiredCount);
             }
             else if (wishlist) // We don't want to color it for hideout, but it is in wishlist
             {
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, true);
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, true, possessedCount, requiredCount);
 
                 SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor, true);
             }
@@ -432,7 +431,7 @@ namespace MoreCheckmarks
         }
 
         private static void SetTooltip(List<string> areaNames, ref string ___string_3, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
-                                       EFT.InventoryLogic.Item item, bool questItem, bool wishlist)
+                                       EFT.InventoryLogic.Item item, bool questItem, bool wishlist, int possessedCount, int requiredCount)
         {
             // Build string of list of areas this is needed for
             string areaNamesString = "";
@@ -445,7 +444,7 @@ namespace MoreCheckmarks
             {
                 if (___string_3 != null && (item.MarkedAsSpawnedInSession || questItem))
                 {
-                    ___string_3 += string.Format(" and needed for {0}".Localized(), areaNamesString);
+                    ___string_3 += string.Format(" and needed for {0} ({1}/{2})".Localized(), areaNamesString, possessedCount, requiredCount);
 
                     if (wishlist)
                     {
@@ -454,7 +453,7 @@ namespace MoreCheckmarks
                 }
                 else
                 {
-                    ___string_3 = string.Format("Needed for {0}".Localized(), areaNamesString);
+                    ___string_3 = string.Format("Needed for {0} ({1}/{2})".Localized(), areaNamesString, possessedCount, requiredCount);
 
                     if (wishlist)
                     {
