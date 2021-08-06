@@ -14,13 +14,25 @@ using EFT.UI.DragAndDrop;
 using System.Reflection;
 using EFT.InventoryLogic;
 using EFT.UI;
+using EFT.Interactive;
+using EFT.Quests;
+using System.Linq;
 
 using Requirement = GClass1278; // EFT.Hideout.RelatedRequirements as Data field (list)
 using HideoutInstance = GClass1251; // search for AreaDatas (Member)
 using ClientConfig = GClass333;
+using TMPro;
 
 namespace MoreCheckmarks
 {
+    public struct NeededStruct
+    {
+        public bool foundNeeded;
+        public bool foundFulfilled;
+        public int possessedCount;
+        public int requiredCount;
+    }
+
     public class MoreCheckmarksMod : MelonMod
     {
         // For config request
@@ -40,6 +52,7 @@ namespace MoreCheckmarks
 
         // Assets
         public static Sprite whiteCheckmark;
+        private static TMP_FontAsset benderBold;
 
         // To pass to second patch
         public static bool setColor = false;
@@ -236,7 +249,22 @@ namespace MoreCheckmarks
             {
                 whiteCheckmark = assetBundle.LoadAsset<Sprite>("WhiteCheckmark");
 
+                benderBold = assetBundle.LoadAsset<TMP_FontAsset>("BenderBold");
+                TMP_Text.onFontAssetRequest += TMP_Text_onFontAssetRequest;
+
                 MelonLogger.Msg("Assets loaded");
+            }
+        }
+
+        public static TMP_FontAsset TMP_Text_onFontAssetRequest(int hash, string name)
+        {
+            if (name.Equals("BENDERBOLD"))
+            {
+                return benderBold;
+            }
+            else
+            {
+                return null;
             }
         }
 
@@ -254,24 +282,12 @@ namespace MoreCheckmarks
 
             return new Color(float.Parse(values[0]),float.Parse(values[1]),float.Parse(values[2]));
         }
-    }
 
-    [HarmonyPatch]
-    class QuestItemViewPanelShowPatch
-    {
-        // This postfix essentially overrides the sprite and its color after it has been set by Show()
-        // Just to make it different in case it is a hideout requirement
-        [HarmonyPatch(typeof(EFT.UI.DragAndDrop.QuestItemViewPanel), nameof(EFT.UI.DragAndDrop.QuestItemViewPanel.Show))]
-        static void Postfix(EFT.Profile profile, EFT.InventoryLogic.Item item, EFT.UI.SimpleTooltip tooltip, EFT.UI.DragAndDrop.QuestItemViewPanel __instance,
-                            ref Image ____questIconImage, ref Sprite ____foundInRaidSprite, ref string ___string_3, ref EFT.UI.SimpleTooltip ___simpleTooltip_0)
+        public static NeededStruct GetNeeded(string itemTemplateID, ref List<string> areaNames)
         {
-            string template = item.TemplateId;
-            bool foundNeeded = false;
-            bool foundFullfilled = false;
-            List<string> areaNames = new List<string>();
-            int requiredCount = 0;
-            int possessedCount = 0;
-            bool questItem = item.QuestItem || (___string_3 != null && ___string_3.Contains("quest"));
+            NeededStruct neededStruct = new NeededStruct();
+            neededStruct.possessedCount = 0;
+            neededStruct.requiredCount = 0;
 
             HideoutInstance hideoutInstance = Comfort.Common.Singleton<HideoutInstance>.Instance;
             foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
@@ -296,7 +312,7 @@ namespace MoreCheckmarks
                 }
 
                 // If in process of constructing or upgrading, go to actual next stage if it exists
-                if(ad.Status == EFT.Hideout.EAreaStatus.Constructing ||
+                if (ad.Status == EFT.Hideout.EAreaStatus.Constructing ||
                    ad.Status == EFT.Hideout.EAreaStatus.Upgrading)
                 {
                     actualNextStage = ad.StageAt(ad.NextStage.Level + 1);
@@ -316,42 +332,86 @@ namespace MoreCheckmarks
                     if (itemRequirement != null)
                     {
                         string requirementTemplate = itemRequirement.TemplateId;
-                        if (template == requirementTemplate)
+                        if (itemTemplateID == requirementTemplate)
                         {
                             // Sum up the total amount of this item required in entire hideout and update possessed amount
-                            requiredCount += itemRequirement.IntCount;
-                            possessedCount = itemRequirement.ItemsCount;
-                            
+                            neededStruct.requiredCount += itemRequirement.IntCount;
+                            neededStruct.possessedCount = itemRequirement.ItemsCount;
+
                             // A requirement but already have the amount we need
                             if (requirement.Fulfilled)
                             {
                                 // Even if we have enough of this item to fulfill a requirement in one area
                                 // we might still need it, and if thats the case we want to show that color, not fulfilled color, so you know you still need more of it
                                 // So only set color to fulfilled if not needed
-                                if (!foundNeeded && !foundFullfilled)
+                                if (!neededStruct.foundNeeded && !neededStruct.foundFulfilled)
                                 {
-                                    foundFullfilled = true;
+                                    neededStruct.foundFulfilled = true;
                                 }
 
-                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">" + ad.Template.Name + "</color>");
+                                if (areaNames != null)
+                                {
+                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">" + ad.Template.Name + "</color>");
+                                }
                             }
                             else
                             {
-                                if (!foundNeeded)
+                                if (!neededStruct.foundNeeded)
                                 {
-                                    foundNeeded = true;
+                                    neededStruct.foundNeeded = true;
                                 }
 
-                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">" + ad.Template.Name + "</color>");
+                                if (areaNames != null)
+                                {
+                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">" + ad.Template.Name + "</color>");
+                                }
                             }
                         }
                     }
                 }
             }
 
+            return neededStruct;
+        }
+
+        public static bool IsQuestItem(IEnumerable<GClass1399> quests, string templateID)
+        {
+            foreach(GClass1399 quest in quests)
+            {
+                if (quest.QuestStatus == EQuestStatus.Started)
+                {
+                    IEnumerable<ConditionItem> conditions = quest.GetConditions<ConditionItem>();
+                    foreach (ConditionItem condition in conditions)
+                    {
+                        if (condition.target.Contains(templateID))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+
+    [HarmonyPatch]
+    class QuestItemViewPanelShowPatch
+    {
+        // This postfix essentially overrides the sprite and its color after it has been set by Show()
+        // Just to make it different in case it is a hideout requirement
+        [HarmonyPatch(typeof(EFT.UI.DragAndDrop.QuestItemViewPanel), nameof(EFT.UI.DragAndDrop.QuestItemViewPanel.Show))]
+        static void Postfix(EFT.Profile profile, EFT.InventoryLogic.Item item, EFT.UI.SimpleTooltip tooltip, EFT.UI.DragAndDrop.QuestItemViewPanel __instance,
+                            ref Image ____questIconImage, ref Sprite ____foundInRaidSprite, ref string ___string_3, ref EFT.UI.SimpleTooltip ___simpleTooltip_0)
+        {
+            List<string> areaNames = new List<string>();
+            bool questItem = item.QuestItem || (___string_3 != null && ___string_3.Contains("quest"));
+
+            NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
+
             bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
 
-            if (foundNeeded)
+            if (neededStruct.foundNeeded)
             {
                 if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
                 {
@@ -362,9 +422,9 @@ namespace MoreCheckmarks
                     SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor, false);
                 }
 
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, possessedCount, requiredCount);
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, neededStruct.possessedCount, neededStruct.requiredCount);
             }
-            else if (foundFullfilled)
+            else if (neededStruct.foundFulfilled)
             {
                 if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
                 {
@@ -379,7 +439,7 @@ namespace MoreCheckmarks
                     else // We only want blue checkmark when ALL requiring this item can be upgraded (if all other requirements are fulfilled too but thats implied)
                     {
                         // Check if we trully do not need more of this item for now
-                        if (possessedCount >= requiredCount)
+                        if (neededStruct.possessedCount >= neededStruct.requiredCount)
                         {
                             SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor, false);
                         }
@@ -390,11 +450,11 @@ namespace MoreCheckmarks
                     }
                 }
 
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, possessedCount, requiredCount);
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, neededStruct.possessedCount, neededStruct.requiredCount);
             }
             else if (wishlist) // We don't want to color it for hideout, but it is in wishlist
             {
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, true, possessedCount, requiredCount);
+                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, true, neededStruct.possessedCount, neededStruct.requiredCount);
 
                 SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor, true);
             }
@@ -500,6 +560,130 @@ namespace MoreCheckmarks
                     _questIconImage.sprite = MoreCheckmarksMod.whiteCheckmark;
                 }
             }
+        }
+    }
+
+    [HarmonyPatch]
+    class AvailableActionsPatch
+    {
+        // This postfix will run after we get a list of all actions available to interact with the item we are pointing at
+        [HarmonyPatch(typeof(GClass1236), "smethod_3")]
+        static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref GClass1909 __result)
+        {
+            foreach(GClass1908 action in __result.Actions)
+            {
+                if (action.Name.Equals("Take"))
+                {
+                    List<string> nullAreaNames = null;
+                    NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
+                    bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
+                    bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.Quests.LoadedList, lootItem.TemplateId);
+
+                    MelonLogger.Msg("This is a take item, needed: "+ neededStruct.foundNeeded+", "+neededStruct.foundFulfilled+", wishlist: "+wishlist+", quest: "+ questItem);
+
+                    if (neededStruct.foundNeeded)
+                    {
+                        if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
+                        {
+                            if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                            {
+                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                            }
+                            else
+                            {
+                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
+                            }
+
+                        }
+                        else
+                        {
+                            if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                            {
+                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                            }
+                            else
+                            {
+                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
+                            }
+                        }
+                    }
+                    else if (neededStruct.foundFulfilled)
+                    {
+                        if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
+                        {
+                            if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                            {
+                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                            }
+                            else
+                            {
+                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
+                            }
+                        }
+                        else
+                        {
+                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded)
+                            {
+                                if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                {
+                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                }
+                                else
+                                {
+                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Take</color></font>";
+                                }
+                            }
+                            else // We only want blue checkmark when ALL requiring this item can be upgraded (if all other requirements are fulfilled too but thats implied)
+                            {
+                                // Check if we trully do not need more of this item for now
+                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
+                                {
+                                    if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                    {
+                                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    }
+                                    else
+                                    {
+                                        action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Take</color></font>";
+                                    }
+                                }
+                                else // Still need more
+                                {
+                                    if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                    {
+                                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    }
+                                    else
+                                    {
+                                        action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (wishlist) // We don't want to color it for hideout, but it is in wishlist
+                    {
+                        if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                        {
+                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                        }
+                        else
+                        {
+                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
+                        }
+                    }
+                    else if (questItem) // We don't want to color it for anything but it is a quest item
+                    {
+                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                    }
+                    //else leave it as it is
+                }
+            }
+        }
+
+        private static void SetActionName(bool questItem, bool hideout, bool wishlist, ref string name)
+        {
+
         }
     }
 }
