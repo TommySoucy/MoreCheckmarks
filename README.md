@@ -28,8 +28,8 @@ If you want a serverside alternative (so you don't have to install melonloader),
 There are some settings available in the provided config file described below:
 
 - **_fulfilledAnyCanBeUpgraded_**: This setting will decide when to display a fulfilled checkmark for a hideout required item. 
-      **true** means to display blue when AT LEAST ONE of the hideout modules requiring this item can be upgraded with the amount of the item there is in stash
-      **false** means to display blue when ALL of the hideout modules requiring this item can be upgraded
+      **true** means to display fulfilled when AT LEAST ONE of the hideout modules requiring this item can be upgraded with the amount of the item there is in stash
+      **false** means to display fulfilled when ALL of the hideout modules requiring this item can be upgraded
       
 - **_questPrioriry_**, **_hideoutPriority_**, and **_wishlistPriority_**: These settings will decide which checkmark to give priority to. If the item is needed for a quest, needed for a hideout module, and is on the wishlist, the one with the highest priority will be displayed. These are integers, and the greater the number, the higher the priority.
       
