@@ -579,8 +579,6 @@ namespace MoreCheckmarks
                     bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
                     bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.Quests.LoadedList, lootItem.TemplateId);
 
-                    MelonLogger.Msg("This is a take item, needed: "+ neededStruct.foundNeeded+", "+neededStruct.foundFulfilled+", wishlist: "+wishlist+", quest: "+ questItem);
-
                     if (neededStruct.foundNeeded)
                     {
                         if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
