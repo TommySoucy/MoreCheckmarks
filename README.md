@@ -8,7 +8,7 @@ If the item is also needed for a quest or is found in raid (so should already ha
 - A **_GREEN_** checkmark means the item is needed in hideout and fulfills the required amount of all the modules that need it. Note that this does not mean you have enough to upgrade all of the modules that need it. Say if you need 2 wires to upgrade a module and 3 wires to upgrade another, and you have 3 wires in total inside your stash, the checkmark will be blue but if you upgrade one of the modules, you wont have enough to upgrade the other and the checkmark will go back to red. This though, can now be changed in the config using the fulfilledAnyCanBeUpgraded setting. See config section below.
 - A **_BLUE_** checkmark means the item is on the wish list.
 - The tooltip will show individual color for each module, green, red, or blue, depending on whether you have enough of the item for the specific module or if it's on the wish list.
-- If teh "Take" option is available when trying to pick up loose loot, it will be color coded as well.
+- If the "Take" option is available when trying to pick up loose loot, it will be color coded as well.
 - The colors can be changed in the config. The ones above are default.
 
 ![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example0.png "Hideout example")
