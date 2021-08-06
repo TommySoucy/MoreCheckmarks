@@ -15,7 +15,7 @@ If the item is also needed for a quest or is found in raid (so should already ha
 ![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example0.png "Hideout example")
 ![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example1.png "Quest and wish list example")
 
-This mod works great with [this one](https://github.com/JakeLoustone/HideoutShoppingList) which will let you see the exact count you need for each module.
+If you want a serverside alternative (so you don't have to install melonloader), try [this one](https://github.com/JakeLoustone/HideoutShoppingList).
 
 ## Installation
 
