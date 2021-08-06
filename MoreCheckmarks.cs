@@ -17,11 +17,11 @@ using EFT.UI;
 using EFT.Interactive;
 using EFT.Quests;
 using System.Linq;
+using TMPro;
 
 using Requirement = GClass1278; // EFT.Hideout.RelatedRequirements as Data field (list)
 using HideoutInstance = GClass1251; // search for AreaDatas (Member)
 using ClientConfig = GClass333;
-using TMPro;
 
 namespace MoreCheckmarks
 {
