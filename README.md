@@ -1,6 +1,6 @@
 # More Checkmarks
 
-A mod for JustEmuTarkov that shows a colored checkmark on items needed to upgrade hideout modules and items taht are on the player's wish list.
+A mod for JustEmuTarkov that shows a colored checkmark on items needed to upgrade hideout modules and items that are on the player's wish list.
 Also shows a tooltip with the list of modules the item is needed for when cursor hovers over the checkmark.
 If the item is also needed for a quest or is found in raid (so should already have a checkmark) it will have the different color but will still show found in raid or the quest in the tooltip.
 
