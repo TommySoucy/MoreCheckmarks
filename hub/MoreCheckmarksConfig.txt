@@ -1,0 +1,27 @@
+# This setting will decide when to display a fulfilled (green by default) checkmark for a hideout required item
+# true means to display fulfilled when AT LEAST ONE of the hideout modules requiring this item can be upgraded with the amount of the item there is in stash
+# false means to display fulfilled when ALL of the hideout modules requiring this item can be upgraded
+fulfilledAnyCanBeUpgraded = false
+
+# This setting will decide which color to display when the item is required for multiple things at once
+# The greater the number, the higher the priority
+questPriority = 0
+hideoutPriority = 1
+wishlistPriority = 2
+
+# This setting will decide whether to show a fulfilled/need more checkmark on an item required for a hideout module that is still locked for construction
+# This is an option because some modules like the bitcoin farm require a lot of items but are locked for a long time and maybe you just don't want to
+# have the checkmark on a bunch of random stuff you won't need for a while
+showLockedModules = true
+
+# The following settings are used to changed the colors of the different checkmarks
+# needMoreColor is a light red by default, appears when you still need more of that item
+# fulfilledColor is a light green by default, appears when you fulfilled the requirements of all modules
+# that require it depending on fulfilledAnyCanBeUpgraded setting
+# wishlistColor is a light blue by default, appears when the item is in wishlist
+# Please keep the format (value,value,value) (note the lack of spaces) since that is the one that the values will be parsed in
+# Otherwise the settings won't work
+# The values should always be in RGB in range [0 - 1]
+needMoreColor = (1,0.37255,0.37255)
+fulfilledColor = (0.30588,1,0.27843)
+wishlistColor = (0.23137,0.93725,1)
