@@ -409,7 +409,11 @@ namespace MoreCheckmarks
 
             NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
 
-            bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
+            bool wishlist = false;
+            try
+            {
+                wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
+            }catch{}
 
             if (neededStruct.foundNeeded)
             {
