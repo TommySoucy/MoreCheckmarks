@@ -77,7 +77,7 @@ namespace MoreCheckmarks
 
         private void Init()
         {
-            modPath = Path.GetDirectoryName(System.Reflection.Assembly.GetAssembly(typeof(Mod)).Location);
+            modPath = Path.GetDirectoryName(System.Reflection.Assembly.GetAssembly(typeof(MoreCheckmarksMod)).Location);
             modPath.Replace('\\', '/');
 
             LoadConfig();
