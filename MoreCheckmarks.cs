@@ -273,9 +273,9 @@ namespace MoreCheckmarks
         {
             foreach(QuestDataClass quest in quests)
             {
-                if (quest.Status == EQuestStatus.Started)
+                if (quest.Status == EQuestStatus.Started && quest.Template.Conditions.ContainsKey(EQuestStatus.AvailableForFinish))
                 {
-                    IEnumerable<ConditionItem> conditions = quest.Template.GetConditions<ConditionItem>(EQuestStatus.Success);
+                    IEnumerable<ConditionItem> conditions = quest.Template.GetConditions<ConditionItem>(EQuestStatus.AvailableForFinish);
                     foreach (ConditionItem condition in conditions)
                     {
                         if (condition.target.Contains(templateID))
