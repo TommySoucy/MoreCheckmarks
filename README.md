@@ -1,6 +1,6 @@
 # More Checkmarks
 
-A mod for JustEmuTarkov that shows a colored checkmark on items needed to upgrade hideout modules and items that are on the player's wish list.
+A mod for SPT-AKI that shows a colored checkmark on items needed to upgrade hideout modules and items that are on the player's wish list.
 Also shows a tooltip with the list of modules the item is needed for when cursor hovers over the checkmark.
 If the item is also needed for a quest or is found in raid (so should already have a checkmark) it will have the different color but will still show found in raid or the quest in the tooltip.
 
@@ -15,13 +15,11 @@ If the item is also needed for a quest or is found in raid (so should already ha
 ![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example0.png "Hideout example")
 ![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example1.png "Quest and wish list example")
 
-If you want a serverside alternative (so you don't have to install melonloader), try [this one](https://github.com/JakeLoustone/HideoutShoppingList).
-
 ## Installation
 
 1. Download latest from [releases](https://github.com/TommySoucy/MoreCheckmarks/releases)
-2. Download the latest MelonLoader installer from [here](https://github.com/LavaGang/MelonLoader/releases) and install version **_0.3.0_** into your JET installation
-3. Put all files from the .zip into the Mods folder created by MelonLoader
+2. Download and install the latest (**_not pre-release_**) version of [BepinEx](https://github.com/BepInEx/BepInEx/releases)
+3. Extract zip file into the game folder (Inside you game folder you should end up with /BepinEx/plugins/MoreCheckmarks)
 
 ## Config
 
@@ -37,18 +35,7 @@ There are some settings available in the provided config file described below:
 
 - **_needMoreColor_**, **_fulfilledColor_**, and **_wishlistColor_**: These settings are used to changed the colors of the different checkmarks. needMoreColor is a light red by default, appears when you still need more of that item. fulfilledColor is a light green by default, appears when you fulfilled the requirements of all modules that require it depending on fulfilledAnyCanBeUpgraded setting. Please keep the format (value,value,value) (note the lack of spaces) since that is the one that the values will be parsed in. Otherwise the settings won't work. The values should always be in RGB in range [0 - 1]
 
-## Building
-
-1. Clone repo
-2. Open solution
-3. Ensure all references are there
-4. Build
-5. Find built dll and open it in dnSpy
-6. Right click and "Edit IL Code" on the lines with "__instance.ShowGameObject(false);"
-7. On the left of this line should be "callvirt", click on that and change it to "call"
-8. Save module. DLL is now ready for install as explained in **Installation** section
-
 ## Used libraries
 
 - Harmony
-- MelonLoader
+- Bepinex

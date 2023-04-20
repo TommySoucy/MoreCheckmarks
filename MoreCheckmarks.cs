@@ -1,14 +1,10 @@
-﻿using MelonLoader;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using HarmonyLib;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using Newtonsoft.Json.Linq;
 using System;
-using ComponentAce.Compression.Libs.zlib;
-using Comfort.Common;
 using EFT;
 using EFT.UI.DragAndDrop;
 using System.Reflection;
@@ -18,10 +14,17 @@ using EFT.Interactive;
 using EFT.Quests;
 using System.Linq;
 using TMPro;
+using BepInEx;
 
-using Requirement = GClass1278; // EFT.Hideout.RelatedRequirements as Data field (list)
-using HideoutInstance = GClass1251; // search for AreaDatas (Member)
-using ClientConfig = GClass333;
+
+// We want to get access to the list of availabe loot item actions when we look at loose loot sowe can change color of "Take" action
+// GClass1767 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
+// This calls GClass1767.smethod_3 if the interactive is a LootItem
+// This returns an instance of GClass2644 which has a list field "Actions" containing all available actions of type GClass2643
+// GClass2643.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
+using InteractionController = GClass1767;
+using InteractionInstance = GClass2644;
+using Action = GClass2643;
 
 namespace MoreCheckmarks
 {
@@ -33,12 +36,13 @@ namespace MoreCheckmarks
         public int requiredCount;
     }
 
-    public class MoreCheckmarksMod : MelonMod
+    [BepInPlugin(pluginGuid, pluginName, pluginVersion)]
+    public class MoreCheckmarksMod : BaseUnityPlugin
     {
-        // For config request
-        private static bool patched = false;
-        private static string backEndSessionID;
-        public static string backendUrl;
+        // BepinEx
+        public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
+        public const string pluginName = "MoreCheckmarks";
+        public const string pluginVersion = "1.3.0";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -51,199 +55,88 @@ namespace MoreCheckmarks
         public static Color wishlistColor = new Color(0.23137f, 0.93725f, 1);
 
         // Assets
+        public static JObject config;
         public static Sprite whiteCheckmark;
         private static TMP_FontAsset benderBold;
+        public static string modPath;
+
+        // Live
+        public static MoreCheckmarksMod modInstance;
 
         // To pass to second patch
         public static bool setColor = false;
 
-        public override void OnUpdate()
+        private void Start()
         {
-            if (!patched)
-            {
-                try 
-                {
-                    backEndSessionID = Singleton<ClientApplication>.Instance.GetClientBackEndSession().GetPhpSessionId();
-                    backendUrl = ClientConfig.Config.BackendUrl;
+            Logger.LogInfo("MoreCheckmarks Started");
 
-                    patched = true;
+            modInstance = this;
 
-                    Init();
-
-                    DoPatching();
-                }
-                catch { }
-            }
+            Init();
         }
 
-        private static void Init()
+        private void Init()
         {
+            modPath = Path.GetDirectoryName(System.Reflection.Assembly.GetAssembly(typeof(Mod)).Location);
+            modPath.Replace('\\', '/');
+
             LoadConfig();
 
             LoadAssets();
         }
 
-        private static void LoadConfig()
+        private void LoadConfig()
         {
-            // ONCE INTEGRATED INTO SINGLEPLAYER PATCHES OF JET, THIS SHOULD USE Request CLASS FROM JET HTTP UTILITIES TO GET CONFIG FROM SERVERSIDE
-            // I took what was essential to communicate with server because I didn't want to copy the whole thing here
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-
-            var fullUri = "/client/config/checkmarks";
-            if (!Uri.IsWellFormedUriString(fullUri, UriKind.Absolute))
-            {
-                fullUri = backendUrl + fullUri;
-            }
-            WebRequest request = WebRequest.Create(new Uri(fullUri));
-
-            if (!string.IsNullOrEmpty(backEndSessionID))
-            {
-                request.Headers.Add("Cookie", $"PHPSESSID={backEndSessionID}");
-                request.Headers.Add("SessionId", backEndSessionID);
-            }
-
-            request.Headers.Add("Accept-Encoding", "deflate");
-
-            request.Method = "GET";
-
-            string json = "";
-
             try
             {
-                WebResponse response = request.GetResponse();
+                config = JObject.Parse(File.ReadAllText(modPath + "/Config.json"));
 
-                using (Stream stream = response.GetResponseStream())
+                if (config["fulfilledAnyCanBeUpgraded"] != null)
                 {
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        if (stream == null)
-                        {
-                            json = "";
-                        }
-                        stream.CopyTo(ms);
-                        json = SimpleZlib.Decompress(ms.ToArray(), null);
-                    }
+                    fulfilledAnyCanBeUpgraded = (bool)config["fulfilledAnyCanBeUpgraded"];
                 }
-            }
-            catch { }
-
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                MelonLogger.Msg("Failed to fetch serverside config, loading local instead");
-
-                LoadLocalConfig();
-            }
-
-            try
-            {
-                var jObject = JObject.Parse(json);
-                fulfilledAnyCanBeUpgraded = bool.Parse(jObject["fulfilledAnyCanBeUpgraded"].ToString());
-                questPriority = int.Parse(jObject["questPriority"].ToString());
-                hideoutPriority = int.Parse(jObject["hideoutPriority"].ToString());
-                wishlistPriority = int.Parse(jObject["wishlistPriority"].ToString());
-                showLockedModules = bool.Parse(jObject["showLockedModules"].ToString());
-                needMoreColor = ParseColor(jObject["needMoreColor"].ToString());
-                fulfilledColor = ParseColor(jObject["fulfilledColor"].ToString());
-                wishlistColor = ParseColor(jObject["wishlistColor"].ToString());
-
-                MelonLogger.Msg("Configs loaded from serverside");
-            }
-            catch
-            {
-                MelonLogger.Msg("Failed to fetch serverside config, loading local instead");
-
-                LoadLocalConfig();
-            }
-        }
-
-        private static void LoadLocalConfig()
-        {
-            try
-            {
-                string[] lines = File.ReadAllLines("Mods/MoreCheckmarksConfig.txt");
-
-                foreach (string line in lines)
+                if (config["questPriority"] != null)
                 {
-                    if (line.Length == 0 || line[0] == '#')
-                    {
-                        continue;
-                    }
-
-                    string trimmedLine = line.Trim();
-                    string[] tokens = trimmedLine.Split('=');
-
-                    if (tokens.Length == 0)
-                    {
-                        continue;
-                    }
-
-                    if (tokens[0].IndexOf("fulfilledAnyCanBeUpgraded") == 0)
-                    {
-                        if (tokens[1].IndexOf("true") > -1)
-                        {
-                            fulfilledAnyCanBeUpgraded = true;
-                        }
-                    }
-                    else if (tokens[0].IndexOf("questPriority") == 0)
-                    {
-                        questPriority = int.Parse(tokens[1].Trim());
-                    }
-                    else if (tokens[0].IndexOf("hideoutPriority") == 0)
-                    {
-                        hideoutPriority = int.Parse(tokens[1].Trim());
-                    }
-                    else if (tokens[0].IndexOf("wishlistPriority") == 0)
-                    {
-                        wishlistPriority = int.Parse(tokens[1].Trim());
-                    }
-                    else if (tokens[0].IndexOf("showLockedModules") == 0)
-                    {
-                        if (tokens[1].IndexOf("false") > -1)
-                        {
-                            showLockedModules = false;
-                        }
-                    }
-                    else if (tokens[0].IndexOf("needMoreColor") == 0)
-                    {
-                        int parenthesisIndex = tokens[1].IndexOf("(");
-                        if (parenthesisIndex > -1)
-                        {
-                            needMoreColor = ParseColor(tokens[1].Substring(parenthesisIndex));
-                        }
-                    }
-                    else if (tokens[0].IndexOf("fulfilledColor") == 0)
-                    {
-                        int parenthesisIndex = tokens[1].IndexOf("(");
-                        if (parenthesisIndex > -1)
-                        {
-                            fulfilledColor = ParseColor(tokens[1].Substring(parenthesisIndex));
-                        }
-                    }
-                    else if (tokens[0].IndexOf("wishlistColor") == 0)
-                    {
-                        int parenthesisIndex = tokens[1].IndexOf("(");
-                        if (parenthesisIndex > -1)
-                        {
-                            wishlistColor = ParseColor(tokens[1].Substring(parenthesisIndex));
-                        }
-                    }
+                    questPriority = (int)config["questPriority"];
+                }
+                if (config["hideoutPriority"] != null)
+                {
+                    hideoutPriority = (int)config["hideoutPriority"];
+                }
+                if (config["wishlistPriority"] != null)
+                {
+                    wishlistPriority = (int)config["wishlistPriority"];
+                }
+                if (config["showLockedModules"] != null)
+                {
+                    showLockedModules = (bool)config["showLockedModules"];
+                }
+                if (config["needMoreColor"] != null)
+                {
+                    needMoreColor = new Color((float)config["needMoreColor"][0], (float)config["needMoreColor"][1], (float)config["needMoreColor"][2]);
+                }
+                if (config["fulfilledColor"] != null)
+                {
+                    fulfilledColor = new Color((float)config["fulfilledColor"][0], (float)config["fulfilledColor"][1], (float)config["fulfilledColor"][2]);
+                }
+                if (config["wishlistColor"] != null)
+                {
+                    wishlistColor = new Color((float)config["wishlistColor"][0], (float)config["wishlistColor"][1], (float)config["wishlistColor"][2]);
                 }
 
-                MelonLogger.Msg("Configs loaded from local");
+                Logger.LogInfo("Configs loaded");
             }
-            catch(FileNotFoundException) { /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */ }
-            catch(Exception ex) { MelonLogger.Msg("Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: "+ex.Message); }
+            catch (FileNotFoundException) { /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */ }
+            catch (Exception ex) { Logger.LogError("Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: " + ex.Message); }
         }
 
-        private static void LoadAssets()
+        private void LoadAssets()
         {
-            AssetBundle assetBundle = AssetBundle.LoadFromFile("Mods/MoreCheckmarksAssets");
+            AssetBundle assetBundle = AssetBundle.LoadFromFile(modPath+"/MoreCheckmarksAssets");
 
             if(assetBundle == null)
             {
-                MelonLogger.Msg("Failed to load assets, inspect window checkmark may be miscolored");
+                Logger.LogError("Failed to load assets, inspect window checkmark may be miscolored");
             }
             else
             {
@@ -252,7 +145,7 @@ namespace MoreCheckmarks
                 benderBold = assetBundle.LoadAsset<TMP_FontAsset>("BenderBold");
                 TMP_Text.onFontAssetRequest += TMP_Text_onFontAssetRequest;
 
-                MelonLogger.Msg("Assets loaded");
+                Logger.LogError("Assets loaded");
             }
         }
 
@@ -289,7 +182,7 @@ namespace MoreCheckmarks
             neededStruct.possessedCount = 0;
             neededStruct.requiredCount = 0;
 
-            HideoutInstance hideoutInstance = Comfort.Common.Singleton<HideoutInstance>.Instance;
+            HideoutClass hideoutInstance = Comfort.Common.Singleton<HideoutClass>.Instance;
             foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
             {
                 if (ad.Template.Name.Equals("Place of fame"))
@@ -326,7 +219,7 @@ namespace MoreCheckmarks
 
                 EFT.Hideout.RelatedRequirements requirements = actualNextStage.Requirements;
 
-                foreach (Requirement requirement in requirements)
+                foreach (var requirement in requirements)
                 {
                     EFT.Hideout.ItemRequirement itemRequirement = requirement as EFT.Hideout.ItemRequirement;
                     if (itemRequirement != null)
@@ -336,7 +229,7 @@ namespace MoreCheckmarks
                         {
                             // Sum up the total amount of this item required in entire hideout and update possessed amount
                             neededStruct.requiredCount += itemRequirement.IntCount;
-                            neededStruct.possessedCount = itemRequirement.ItemsCount;
+                            neededStruct.possessedCount = itemRequirement.UserItemsCount;
 
                             // A requirement but already have the amount we need
                             if (requirement.Fulfilled)
@@ -374,13 +267,13 @@ namespace MoreCheckmarks
             return neededStruct;
         }
 
-        public static bool IsQuestItem(IEnumerable<GClass1399> quests, string templateID)
+        public static bool IsQuestItem(IEnumerable<QuestDataClass> quests, string templateID)
         {
-            foreach(GClass1399 quest in quests)
+            foreach(QuestDataClass quest in quests)
             {
-                if (quest.QuestStatus == EQuestStatus.Started)
+                if (quest.Status == EQuestStatus.Started)
                 {
-                    IEnumerable<ConditionItem> conditions = quest.GetConditions<ConditionItem>();
+                    IEnumerable<ConditionItem> conditions = quest.Template.GetConditions<ConditionItem>(EQuestStatus.Success);
                     foreach (ConditionItem condition in conditions)
                     {
                         if (condition.target.Contains(templateID))
@@ -481,8 +374,7 @@ namespace MoreCheckmarks
             if (!questItem || MoreCheckmarksMod.questPriority < (wishlist ? MoreCheckmarksMod.wishlistPriority : MoreCheckmarksMod.hideoutPriority))
             {
                 // Following calls base class method ShowGameObject()
-                // To call base methods without reverse patch, must modify IL code for this line from callvirt to call
-                (__instance as EFT.UI.UIElement).ShowGameObject(false);
+                __instance.HideGameObject();
                 ____questIconImage.sprite = sprite;
                 ____questIconImage.color = color;
 
@@ -571,17 +463,17 @@ namespace MoreCheckmarks
     class AvailableActionsPatch
     {
         // This postfix will run after we get a list of all actions available to interact with the item we are pointing at
-        [HarmonyPatch(typeof(GClass1236), "smethod_3")]
-        static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref GClass1909 __result)
+        [HarmonyPatch(typeof(InteractionController), "smethod_3")]
+        static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref InteractionInstance __result)
         {
-            foreach(GClass1908 action in __result.Actions)
+            foreach(Action action in __result.Actions)
             {
                 if (action.Name.Equals("Take"))
                 {
                     List<string> nullAreaNames = null;
                     NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
                     bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
-                    bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.Quests.LoadedList, lootItem.TemplateId);
+                    bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.QuestsData, lootItem.TemplateId);
 
                     if (neededStruct.foundNeeded)
                     {
@@ -681,11 +573,6 @@ namespace MoreCheckmarks
                     //else leave it as it is
                 }
             }
-        }
-
-        private static void SetActionName(bool questItem, bool hideout, bool wishlist, ref string name)
-        {
-
         }
     }
 }
