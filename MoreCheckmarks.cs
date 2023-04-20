@@ -143,9 +143,9 @@ namespace MoreCheckmarks
                 whiteCheckmark = assetBundle.LoadAsset<Sprite>("WhiteCheckmark");
 
                 benderBold = assetBundle.LoadAsset<TMP_FontAsset>("BenderBold");
-                TMP_Text.onFontAssetRequest += TMP_Text_onFontAssetRequest;
+                TMP_Text.OnFontAssetRequest += TMP_Text_onFontAssetRequest;
 
-                Logger.LogError("Assets loaded");
+                Logger.LogInfo("Assets loaded");
             }
         }
 
