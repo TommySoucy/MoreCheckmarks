@@ -288,6 +288,11 @@ namespace MoreCheckmarks
 
             return false;
         }
+
+        public static void LogInfo(string msg)
+        {
+            modInstance.Logger.LogInfo(msg);
+        }
     }
 
     [HarmonyPatch]
@@ -297,10 +302,10 @@ namespace MoreCheckmarks
         // Just to make it different in case it is a hideout requirement
         [HarmonyPatch(typeof(EFT.UI.DragAndDrop.QuestItemViewPanel), nameof(EFT.UI.DragAndDrop.QuestItemViewPanel.Show))]
         static void Postfix(EFT.Profile profile, EFT.InventoryLogic.Item item, EFT.UI.SimpleTooltip tooltip, EFT.UI.DragAndDrop.QuestItemViewPanel __instance,
-                            ref Image ____questIconImage, ref Sprite ____foundInRaidSprite, ref string ___string_3, ref EFT.UI.SimpleTooltip ___simpleTooltip_0)
+                            ref Image ____questIconImage, ref Sprite ____foundInRaidSprite, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0)
         {
             List<string> areaNames = new List<string>();
-            bool questItem = item.QuestItem || (___string_3 != null && ___string_3.Contains("quest"));
+            bool questItem = item.QuestItem || (___string_5 != null && ___string_5.Contains("quest"));
 
             NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
 
@@ -308,7 +313,7 @@ namespace MoreCheckmarks
             try
             {
                 wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
-            }catch{}
+            }catch{ }
 
             if (neededStruct.foundNeeded)
             {
@@ -321,7 +326,7 @@ namespace MoreCheckmarks
                     SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor, false);
                 }
 
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, neededStruct.possessedCount, neededStruct.requiredCount);
+                SetTooltip(areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, neededStruct.possessedCount, neededStruct.requiredCount);
             }
             else if (neededStruct.foundFulfilled)
             {
@@ -349,11 +354,11 @@ namespace MoreCheckmarks
                     }
                 }
 
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, neededStruct.possessedCount, neededStruct.requiredCount);
+                SetTooltip(areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, neededStruct.possessedCount, neededStruct.requiredCount);
             }
             else if (wishlist) // We don't want to color it for hideout, but it is in wishlist
             {
-                SetTooltip(areaNames, ref ___string_3, ref ___simpleTooltip_0, ref tooltip, item, questItem, true, neededStruct.possessedCount, neededStruct.requiredCount);
+                SetTooltip(areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, questItem, true, neededStruct.possessedCount, neededStruct.requiredCount);
 
                 SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor, true);
             }
@@ -376,7 +381,7 @@ namespace MoreCheckmarks
             if (!questItem || MoreCheckmarksMod.questPriority < (wishlist ? MoreCheckmarksMod.wishlistPriority : MoreCheckmarksMod.hideoutPriority))
             {
                 // Following calls base class method ShowGameObject()
-                __instance.HideGameObject();
+                __instance.ShowGameObject();
                 ____questIconImage.sprite = sprite;
                 ____questIconImage.color = color;
 
