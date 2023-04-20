@@ -83,6 +83,8 @@ namespace MoreCheckmarks
             LoadConfig();
 
             LoadAssets();
+
+            DoPatching();
         }
 
         private void LoadConfig()
