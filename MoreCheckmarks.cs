@@ -293,6 +293,11 @@ namespace MoreCheckmarks
         {
             modInstance.Logger.LogInfo(msg);
         }
+
+        public static void LogError(string msg)
+        {
+            modInstance.Logger.LogError(msg);
+        }
     }
 
     [HarmonyPatch]
@@ -473,57 +478,32 @@ namespace MoreCheckmarks
         [HarmonyPatch(typeof(InteractionController), "smethod_3")]
         static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref InteractionInstance __result)
         {
-            foreach(Action action in __result.Actions)
+            try
             {
-                if (action.Name.Equals("Take"))
+                foreach (Action action in __result.Actions)
                 {
-                    List<string> nullAreaNames = null;
-                    NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
-                    bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
-                    bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.QuestsData, lootItem.TemplateId);
-
-                    if (neededStruct.foundNeeded)
+                    if (action.Name.Equals("Take"))
                     {
-                        if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
-                        {
-                            if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
-                            {
-                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
-                            }
-                            else
-                            {
-                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
-                            }
+                        List<string> nullAreaNames = null;
+                        NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
+                        bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
+                        bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.QuestsData, lootItem.TemplateId);
 
-                        }
-                        else
+                        if (neededStruct.foundNeeded)
                         {
-                            if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                            if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
                             {
-                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                                {
+                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                }
+                                else
+                                {
+                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
+                                }
+
                             }
                             else
-                            {
-                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
-                            }
-                        }
-                    }
-                    else if (neededStruct.foundFulfilled)
-                    {
-                        if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
-                        {
-                            if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
-                            {
-                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
-                            }
-                            else
-                            {
-                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
-                            }
-                        }
-                        else
-                        {
-                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded)
                             {
                                 if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                 {
@@ -531,13 +511,26 @@ namespace MoreCheckmarks
                                 }
                                 else
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Take</color></font>";
+                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
                                 }
                             }
-                            else // We only want blue checkmark when ALL requiring this item can be upgraded (if all other requirements are fulfilled too but thats implied)
+                        }
+                        else if (neededStruct.foundFulfilled)
+                        {
+                            if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
                             {
-                                // Check if we trully do not need more of this item for now
-                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
+                                if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                                {
+                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                }
+                                else
+                                {
+                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
+                                }
+                            }
+                            else
+                            {
+                                if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded)
                                 {
                                     if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                     {
@@ -548,37 +541,56 @@ namespace MoreCheckmarks
                                         action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Take</color></font>";
                                     }
                                 }
-                                else // Still need more
+                                else // We only want blue checkmark when ALL requiring this item can be upgraded (if all other requirements are fulfilled too but thats implied)
                                 {
-                                    if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                    // Check if we trully do not need more of this item for now
+                                    if (neededStruct.possessedCount >= neededStruct.requiredCount)
                                     {
-                                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                        if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                        {
+                                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                        }
+                                        else
+                                        {
+                                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Take</color></font>";
+                                        }
                                     }
-                                    else
+                                    else // Still need more
                                     {
-                                        action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
+                                        if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                        {
+                                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                        }
+                                        else
+                                        {
+                                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    else if (wishlist) // We don't want to color it for hideout, but it is in wishlist
-                    {
-                        if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                        else if (wishlist) // We don't want to color it for hideout, but it is in wishlist
+                        {
+                            if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                            {
+                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                            }
+                            else
+                            {
+                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
+                            }
+                        }
+                        else if (questItem) // We don't want to color it for anything but it is a quest item
                         {
                             action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
                         }
-                        else
-                        {
-                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
-                        }
+                        //else leave it as it is
                     }
-                    else if (questItem) // We don't want to color it for anything but it is a quest item
-                    {
-                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
-                    }
-                    //else leave it as it is
                 }
+            }
+            catch(Exception ex)
+            {
+                MoreCheckmarksMod.LogError("Failed to process available actions for loose item: "+ex.Message+"\n"+ex.StackTrace);
             }
         }
     }
