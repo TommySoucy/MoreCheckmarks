@@ -42,7 +42,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.3.0";
+        public const string pluginVersion = "1.3.1";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -271,19 +271,31 @@ namespace MoreCheckmarks
 
         public static bool IsQuestItem(IEnumerable<QuestDataClass> quests, string templateID)
         {
-            foreach(QuestDataClass quest in quests)
+            try
             {
-                if (quest.Status == EQuestStatus.Started && quest.Template.Conditions.ContainsKey(EQuestStatus.AvailableForFinish))
+                foreach (QuestDataClass quest in quests)
                 {
-                    IEnumerable<ConditionItem> conditions = quest.Template.GetConditions<ConditionItem>(EQuestStatus.AvailableForFinish);
-                    foreach (ConditionItem condition in conditions)
+                    if (quest != null && 
+                        quest.Status == EQuestStatus.Started &&
+                        quest.Template != null && quest.Template.Conditions != null && quest.Template.Conditions.ContainsKey(EQuestStatus.AvailableForFinish))
                     {
-                        if (condition.target.Contains(templateID))
+                        IEnumerable<ConditionItem> conditions = quest.Template.GetConditions<ConditionItem>(EQuestStatus.AvailableForFinish);
+                        if (conditions != null)
                         {
-                            return true;
+                            foreach (ConditionItem condition in conditions)
+                            {
+                                if (condition != null && condition.target != null && condition.target.Contains(templateID))
+                                {
+                                    return true;
+                                }
+                            }
                         }
                     }
                 }
+            }
+            catch(Exception ex)
+            {
+                MoreCheckmarksMod.LogError("Failed to get whether item " + templateID + " is quest item: " + ex.Message + "\n" + ex.StackTrace);
             }
 
             return false;
