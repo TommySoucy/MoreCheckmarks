@@ -42,7 +42,7 @@ class Mod implements IPreAkiLoadMod
 						for (const quest of allQuests)
 						{
 							// Skip if not a quest we can have
-							if (this.questIsForOtherSide(profile.Info.Side, quest._id))
+							if (profile && profile.Info && this.questIsForOtherSide(profile.Info.Side, quest._id))
 							{
 								continue;
 							}
