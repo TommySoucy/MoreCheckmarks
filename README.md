@@ -16,6 +16,7 @@ If the item is also needed for a quest or is found in raid (so should already ha
 ![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example1.png "Example")
 ![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example2.png "Example")
 ![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example3.png "Example")
+![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example4.png "Example")
 
 ## Installation
 
