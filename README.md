@@ -12,8 +12,11 @@ If the item is also needed for a quest or is found in raid (so should already ha
 - If the "Take" option is available when trying to pick up loose loot, it will be color coded as well.
 - The colors can be changed in the config. The ones above are default.
 
-![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example0.png "Hideout example")
-![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example1.png "Quest and wish list example")
+![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example0.png "Example")
+![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example1.png "Example")
+![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example2.png "Example")
+![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example3.png "Example")
+![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example4.png "Example")
 
 ## Installation
 
@@ -31,9 +34,11 @@ There are some settings available in the provided config file described below:
       
 - **_questPrioriry_**, **_hideoutPriority_**, and **_wishlistPriority_**: These settings will decide which checkmark to give priority to. If the item is needed for a quest, needed for a hideout module, and is on the wishlist, the one with the highest priority will be displayed. These are integers, and the greater the number, the higher the priority.
       
-- **_showLockedModules_**: This setting will decide whether to show a hideout checkmark on an item required for a hideout module that is still locked for construction. This is an option because some modules like the bitcoin farm require a lot of items but are locked for a long time and maybe you just don't want to have hideout checkmark on a bunch of random stuff you won't need for a while
+- **_showLockedModules_**: This setting will decide whether to show a hideout checkmark on an item required for a hideout module that is still locked for construction. This is an option because some modules like the bitcoin farm require a lot of items but are locked for a long time and maybe you just don't want to have hideout checkmark on a bunch of random stuff you won't need for a while.
 
 - **_needMoreColor_**, **_fulfilledColor_**, and **_wishlistColor_**: These settings are used to changed the colors of the different checkmarks. needMoreColor is a light red by default, appears when you still need more of that item. fulfilledColor is a light green by default, appears when you fulfilled the requirements of all modules that require it depending on fulfilledAnyCanBeUpgraded setting. Please keep the format (value,value,value) (note the lack of spaces) since that is the one that the values will be parsed in. Otherwise the settings won't work. The values should always be in RGB in range [0 - 1]
+
+- **_includeFutureQuests_**: This setting will decide whether to consider future quests when checking which quests an item is required for. If false, will just be as vanilla.
 
 ## Used libraries
 
