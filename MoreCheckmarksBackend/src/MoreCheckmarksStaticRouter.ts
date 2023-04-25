@@ -39,37 +39,44 @@ class Mod implements IPreAkiLoadMod
 						//const allQuests = databaseServer.getTables().templates.quests;
 						const profile: IPmcData = profileHelper.getPmcProfile(sessionID);
 						
-						for (const quest of allQuests)
+						if(profile)
 						{
-							// Skip if not a quest we can have
-							if (profile && profile.Info && this.questIsForOtherSide(profile.Info.Side, quest._id))
+							for (const quest of allQuests)
 							{
-								continue;
+								// Skip if not a quest we can have
+								if (profile.Info && this.questIsForOtherSide(profile.Info.Side, quest._id))
+								{
+									continue;
+								}
+								
+								// Skip if already complete or can't complete
+								const questStatus = questHelper.getQuestStatus(profile, quest._id);
+								/*
+								Locked = 0,
+								AvailableForStart = 1,
+								Started = 2,
+								AvailableForFinish = 3,
+								Success = 4,
+								Fail = 5,
+								FailRestartable = 6,
+								MarkedAsFailed = 7,
+								Expired = 8,
+								AvailableAfter = 9
+								*/
+								if (questStatus >= 3 && questStatus <= 8)
+								{
+									continue;
+								}
+								
+								quests.push(quest);
 							}
-							
-							// Skip if already complete or can't complete
-							const questStatus = questHelper.getQuestStatus(profile, quest._id);
-							/*
-							Locked = 0,
-							AvailableForStart = 1,
-							Started = 2,
-							AvailableForFinish = 3,
-							Success = 4,
-							Fail = 5,
-							FailRestartable = 6,
-							MarkedAsFailed = 7,
-							Expired = 8,
-							AvailableAfter = 9
-							*/
-							if (questStatus >= 3 && questStatus <= 8)
-							{
-								continue;
-							}
-							
-							quests.push(quest);
+							logger.info("Got quests");
+						}
+						else
+						{
+							logger.info("Unable to fetch quests for MoreCheckmarks");
 						}
 						
-                        logger.info("Got quests");
 						return JSON.stringify(quests);
                     }
                 }
