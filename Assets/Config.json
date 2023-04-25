@@ -6,5 +6,6 @@
 	"showLockedModules" : true,
 	"needMoreColor" : [ 1,0.37255,0.37255 ], 
 	"fulfilledColor" : [ 0.30588,1,0.27843 ], 
-	"wishlistColor" : [ 0.23137,0.93725,1 ]
+	"wishlistColor" : [ 0.23137,0.93725,1 ],
+	"includeFutureQuests" : true
 }

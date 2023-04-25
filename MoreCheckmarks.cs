@@ -576,7 +576,7 @@ namespace MoreCheckmarks
                 benderBold = assetBundle.LoadAsset<TMP_FontAsset>("BenderBold");
                 TMP_Text.OnFontAssetRequest += TMP_Text_onFontAssetRequest;
 
-                MoreCheckmarksMod.LogError("Assets loaded");
+                MoreCheckmarksMod.LogInfo("Assets loaded");
             }
         }
 
