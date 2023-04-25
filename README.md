@@ -23,7 +23,7 @@ If the item is also needed for a quest or is found in raid (so should already ha
 
 1. Download latest from [releases](https://github.com/TommySoucy/MoreCheckmarks/releases)
 2. Download and install the latest (**_not pre-release_**) version of [BepinEx](https://github.com/BepInEx/BepInEx/releases)
-3. Extract zip file into the game folder (Inside you game folder you should end up with /BepinEx/plugins/MoreCheckmarks)
+3. Extract zip file into the game folder (Inside you game folder you should end up with /BepinEx/plugins/MoreCheckmarks and /user/mods/MoreCheckmarksBackend)
 
 ## Config
 
