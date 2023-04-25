@@ -43,7 +43,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.4.1";
+        public const string pluginVersion = "1.4.2";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -1265,6 +1265,18 @@ namespace MoreCheckmarks
         [HarmonyPatch(typeof(QuestClass), "set_QuestStatus")]
         static void Postfix(QuestClass __instance)
         {
+            if(__instance == null)
+            {
+                MoreCheckmarksMod.LogError("Attempted setting queststatus but instance is null");
+                return;
+            }
+            if(__instance.Template == null)
+            {
+                return;
+            }
+
+            MoreCheckmarksMod.LogInfo("Quest "+__instance.Template.Name+ " queststatus set to "+ __instance.QuestStatus);
+
             try
             {
                 if (__instance.QuestStatus != preStatus)
