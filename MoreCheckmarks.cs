@@ -43,7 +43,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.4.2";
+        public const string pluginVersion = "1.4.3";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -75,7 +75,7 @@ namespace MoreCheckmarks
             public int count = 0;
         }
 
-        // To pass to second patch
+        // Patch
         public static bool setColor = false;
 
         private void Start()
@@ -101,12 +101,16 @@ namespace MoreCheckmarks
             DoPatching();
         }
 
-        private void LoadData()
+        public void LoadData()
         {
             LogInfo("Loading data");
             JArray questData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/quests", false));
+            questDataStartByItemTemplateID.Clear();
+            neededStartItemsByQuest.Clear();
+            questDataCompleteByItemTemplateID.Clear();
+            neededCompleteItemsByQuest.Clear();
 
-            for(int i=0; i<questData.Count; ++i)
+            for (int i=0; i<questData.Count; ++i)
             {
                 JArray availableForFinishConditions = questData[i]["conditions"]["AvailableForFinish"] as JArray;
                 for(int j=0; j< availableForFinishConditions.Count; ++j)
@@ -594,9 +598,27 @@ namespace MoreCheckmarks
 
         public static void DoPatching()
         {
+            // Get assemblies
+            Type ProfileSelector = null;
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for(int i=0; i < assemblies.Length; ++i)
+            {
+                if (assemblies[i].GetName().Name.Equals("Assembly-CSharp"))
+                {
+                    ProfileSelector = assemblies[i].GetType("Class225").GetNestedType("Class1218", BindingFlags.NonPublic);
+                }
+            }
+
             var harmony = new HarmonyLib.Harmony("VIP.TommySoucy.MoreCheckmarks");
 
+            // Auto patch
             harmony.PatchAll();
+
+            // Manual patch
+            MethodInfo profileSelectorOriginal = ProfileSelector.GetMethod("method_0", BindingFlags.NonPublic | BindingFlags.Instance);
+            MethodInfo profileSelectorPostfix = typeof(ProfileSelectionPatch).GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static);
+
+            harmony.Patch(profileSelectorOriginal, null, new HarmonyMethod(profileSelectorPostfix));
         }
 
         public static Color ParseColor(string colorString)
@@ -1333,6 +1355,15 @@ namespace MoreCheckmarks
             {
                 MoreCheckmarksMod.LogError("Failed to process change in status for quest " + __instance.Template.Name + " to " + __instance.QuestStatus + ": " + ex.Message + "\n" + ex.StackTrace);
             }
+        }
+    }
+
+    class ProfileSelectionPatch
+    {
+        // This prefix will run right after a profile has been selected
+        static void Postfix()
+        {
+            MoreCheckmarksMod.modInstance.LoadData();
         }
     }
 }
