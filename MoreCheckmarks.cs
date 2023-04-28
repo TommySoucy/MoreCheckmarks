@@ -16,6 +16,7 @@ using System.Linq;
 using TMPro;
 using BepInEx;
 using Aki.Common.Http;
+using Comfort.Common;
 
 
 // We want to get access to the list of availabe loot item actions when we look at loose loot sowe can change color of "Take" action
@@ -43,7 +44,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.4.3";
+        public const string pluginVersion = "1.5.0";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -74,9 +75,6 @@ namespace MoreCheckmarks
             public Dictionary<string, string> questData = new Dictionary<string, string>();
             public int count = 0;
         }
-
-        // Patch
-        public static bool setColor = false;
 
         private void Start()
         {
@@ -796,96 +794,252 @@ namespace MoreCheckmarks
     [HarmonyPatch]
     class QuestItemViewPanelShowPatch
     {
-        // This postfix essentially overrides the sprite and its color after it has been set by Show()
-        // Just to make it different in case it is a hideout requirement
+        // Replaces the original QuestItemViewPanel.Show() to use custom checkmark colors and tooltips
         [HarmonyPatch(typeof(EFT.UI.DragAndDrop.QuestItemViewPanel), nameof(EFT.UI.DragAndDrop.QuestItemViewPanel.Show))]
-        static void Postfix(EFT.Profile profile, EFT.InventoryLogic.Item item, EFT.UI.SimpleTooltip tooltip, EFT.UI.DragAndDrop.QuestItemViewPanel __instance,
+        static bool Prefix(EFT.Profile profile, EFT.InventoryLogic.Item item, EFT.UI.SimpleTooltip tooltip, EFT.UI.DragAndDrop.QuestItemViewPanel __instance,
                             ref Image ____questIconImage, ref Sprite ____foundInRaidSprite, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0,
                             TextMeshProUGUI ____questItemLabel)
         {
-            List<string> areaNames = new List<string>();
-            bool questItem = item.QuestItem || (___string_5 != null && ___string_5.Contains("quest"));
-
-            if (____questItemLabel != null)
-            {
-                // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
-                if (questItem)
-                {
-                    ____questItemLabel.text = "QUEST ITEM";
-                }
-                else // Not quest item but the label string will be there by default in inspect panel so will show if enabled, so need to make sure we remove it
-                {
-                    ____questItemLabel.text = "";
-                }
-                ____questItemLabel.gameObject.SetActive(questItem);
-            }
-
-            NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
-
-            bool wishlist = false;
             try
             {
-                wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
-            }catch{ }
+                // Hide by default
+                __instance.HideGameObject();
 
-            try
-            {
-                if (neededStruct.foundNeeded)
+                // Get requirements
+                List<string> areaNames = new List<string>();
+                NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
+                MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
+                MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
+                bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
+                bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
+
+                // Setup label for inspect view
+                if (____questItemLabel != null)
                 {
-                    if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
+                    // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
+                    if (questItem)
                     {
-                        SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor, true);
+                        ____questItemLabel.text = "QUEST ITEM";
                     }
-                    else
-                    {
-                        SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor, false);
-                    }
-
-                    SetTooltip(areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, neededStruct.possessedCount, neededStruct.requiredCount);
+                    ____questItemLabel.gameObject.SetActive(questItem);
                 }
-                else if (neededStruct.foundFulfilled)
+
+                // Set checkmark based on priority
+                if (MoreCheckmarksMod.wishlistPriority >= MoreCheckmarksMod.hideoutPriority &&
+                    MoreCheckmarksMod.wishlistPriority >= MoreCheckmarksMod.questPriority)
                 {
-                    if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
+                    // Wishlist is highest priority
+                    if (wishlist) // Item is on wishlist
                     {
-                        SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor, true);
+                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
                     }
-                    else
+                    else if (MoreCheckmarksMod.hideoutPriority >= MoreCheckmarksMod.questPriority) // Item not on wishlist, hideout priority is higher than quest
                     {
-                        if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded)
+                        if (neededStruct.foundNeeded) // Need more
                         {
-                            SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor, false);
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
                         }
-                        else // We only want blue checkmark when ALL requiring this item can be upgraded (if all other requirements are fulfilled too but thats implied)
+                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
+                        {
+                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
+                            {
+                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                            }
+                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
+                            {
+                                // Check if we trully do not need more of this item for now
+                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                                }
+                                else // Still need more
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                                }
+                            }
+                        }
+                        else if (questItem) // Item not required for hideout but is for quest
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
+                        }
+                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                        }
+                    }
+                    else // Item not on wishlist, quest priority is higher than hideout
+                    {
+                        if (questItem) // Is quest item
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
+                        }
+                        else if(neededStruct.foundNeeded) // Need more
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                        }
+                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
+                        {
+                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
+                            {
+                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                            }
+                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
+                            {
+                                // Check if we trully do not need more of this item for now
+                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                                }
+                                else // Still need more
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                                }
+                            }
+                        }
+                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                        }
+                    }
+                }
+                else if (MoreCheckmarksMod.hideoutPriority >= MoreCheckmarksMod.wishlistPriority &&
+                         MoreCheckmarksMod.hideoutPriority >= MoreCheckmarksMod.questPriority)
+                {
+                    // Hideout has highest priority
+                    if (neededStruct.foundNeeded) // Need more
+                    {
+                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                    }
+                    else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
+                    {
+                        if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                        }
+                        else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
                         {
                             // Check if we trully do not need more of this item for now
                             if (neededStruct.possessedCount >= neededStruct.requiredCount)
                             {
-                                SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor, false);
+                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
                             }
                             else // Still need more
                             {
-                                SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor, false);
+                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
                             }
                         }
                     }
-
-                    SetTooltip(areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, questItem, wishlist, neededStruct.possessedCount, neededStruct.requiredCount);
+                    else if(MoreCheckmarksMod.wishlistPriority >= MoreCheckmarksMod.questPriority) // Not needed for hideout and wishlist priority is higher than quest
+                    {
+                        if (wishlist) // On wishlist
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
+                        }
+                        else if (questItem) // Item not on wishlist but is quest item
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
+                        }
+                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                        }
+                    }
+                    else  // Quest has higher priority than wishlist
+                    {
+                        if (questItem)
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
+                        }
+                        else if (wishlist) // Not quest item, but on wishlist
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
+                        }
+                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                        }
+                    }
                 }
-                else if (wishlist) // We don't want to color it for hideout, but it is in wishlist
+                else // Quest has highest priority
                 {
-                    SetTooltip(areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, questItem, true, neededStruct.possessedCount, neededStruct.requiredCount);
-
-                    SetCheckmark(profile, item.TemplateId, questItem, __instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor, true);
+                    if (questItem) // Is quest item
+                    {
+                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
+                    }
+                    else if (MoreCheckmarksMod.hideoutPriority >= MoreCheckmarksMod.wishlistPriority) // Not quest item, hideout priority is higher than wishlist
+                    {
+                        if (neededStruct.foundNeeded) // Need more
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                        }
+                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
+                        {
+                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
+                            {
+                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                            }
+                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
+                            {
+                                // Check if we trully do not need more of this item for now
+                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                                }
+                                else // Still need more
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                                }
+                            }
+                        }
+                        else if (wishlist) // Item not required for hideout but is for quest
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
+                        }
+                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                        }
+                    }
+                    else  // Wishlist has higher priority than hideout
+                    {
+                        if (wishlist)
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
+                        }
+                        else if (neededStruct.foundNeeded) // Need more
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                        }
+                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
+                        {
+                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
+                            {
+                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                            }
+                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
+                            {
+                                // Check if we trully do not need more of this item for now
+                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                                }
+                                else // Still need more
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                                }
+                            }
+                        }
+                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                        }
+                    }
                 }
-                else
-                {
-                    // Just to make sure the change is not permanent, because the color is never set back to the default white by EFT
-                    // Because if an item was a requirement, its sprite's color set to green/blue, then it stopped being a requirement, but it was found in raid/is quest item
-                    // the sprite would still show up green/blue
-                    ____questIconImage.color = Color.white;
 
-                    MoreCheckmarksMod.setColor = false;
-                }
+                // Set tooltip based on requirements
+                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests, completeQuests, neededStruct.possessedCount, neededStruct.requiredCount, wishlist);
+
+                return false;
             }
             catch
             {
@@ -898,28 +1052,18 @@ namespace MoreCheckmarks
                     MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch postfix failed, item null");
                 }
             }
+
+            return true;
         }
 
-        private static void SetCheckmark(EFT.Profile profile, string templateID, bool questItem, EFT.UI.DragAndDrop.QuestItemViewPanel __instance, Image ____questIconImage,
-                                         Sprite sprite, Color color, bool wishlist)
+        private static void SetCheckmark(EFT.UI.DragAndDrop.QuestItemViewPanel __instance, Image ____questIconImage, Sprite sprite, Color color)
         {
             try
             {
-                // At this point we got the color that was prioritized between wishlist and hideout, now have to compare with quest
-                // Set checkmark depending on priority settings
-                if (!questItem || MoreCheckmarksMod.questPriority < (wishlist ? MoreCheckmarksMod.wishlistPriority : MoreCheckmarksMod.hideoutPriority))
-                {
-                    // Following calls base class method ShowGameObject()
-                    __instance.ShowGameObject();
-                    ____questIconImage.sprite = sprite;
-                    ____questIconImage.color = color;
-
-                    MoreCheckmarksMod.setColor = true;
-                }
-                else
-                {
-                    MoreCheckmarksMod.setColor = false;
-                }
+                // Following calls base class method ShowGameObject()
+                __instance.ShowGameObject();
+                ____questIconImage.sprite = sprite;
+                ____questIconImage.color = color;
             }
             catch
             {
@@ -927,53 +1071,223 @@ namespace MoreCheckmarks
             }
         }
 
-        private static void SetTooltip(List<string> areaNames, ref string ___string_3, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
-                                       EFT.InventoryLogic.Item item, bool questItem, bool wishlist, int possessedCount, int requiredCount)
+        private static void SetTooltip(EFT.Profile profile, List<string> areaNames, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
+                                       EFT.InventoryLogic.Item item, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests,
+                                       int possessedCount, int requiredCount, bool wishlist)
         {
             try
             {
-                // Build string of list of areas this is needed for
+                // Reset string
+                ___string_5 = "";
+
+                // Add quests
+                bool gotQuest = false;
+                if (item.MarkedAsSpawnedInSession)
+                {
+                    if (MoreCheckmarksMod.includeFutureQuests)
+                    {
+                        int possessedQuestCount = 0;
+                        if (profile != null)
+                        {
+                            IEnumerable<Item> inventoryItems = Singleton<HideoutClass>.Instance.AllStashItems.Where(x => x.TemplateId == item.TemplateId);
+                            if (inventoryItems != null)
+                            {
+                                foreach (Item currentItem in inventoryItems)
+                                {
+                                    if (currentItem.MarkedAsSpawnedInSession)
+                                    {
+                                        possessedQuestCount += currentItem.StackObjectsCount;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            MoreCheckmarksMod.LogError("Profile null for item " + item.Template.Name);
+                        }
+
+                        string questStartString = "<color=#dd831a>";
+                        bool gotStartQuests = false;
+                        bool gotMoreThanOneStartQuest = false;
+                        int totalItemCount = 0;
+                        if (startQuests != null)
+                        {
+                            if (startQuests.questData.Count > 0)
+                            {
+                                gotStartQuests = true;
+                                totalItemCount = startQuests.count;
+                            }
+                            if (startQuests.questData.Count > 1)
+                            {
+                                gotMoreThanOneStartQuest = true;
+                            }
+                            int count = startQuests.questData.Count;
+                            int index = 0;
+                            foreach (KeyValuePair<string, string> questEntry in startQuests.questData)
+                            {
+                                questStartString += questEntry.Value;
+                                if (index != count - 1)
+                                {
+                                    questStartString += ", ";
+                                    if (index == count - 2)
+                                    {
+                                        questStartString += "</color>and <color=#dd831a>";
+                                    }
+                                }
+                                else
+                                {
+                                    questStartString += "</color>";
+                                }
+
+                                ++index;
+                            }
+                        }
+                        if (gotStartQuests)
+                        {
+                            gotQuest = true;
+                            ___string_5 = "Item will be/is needed to start quest" + (gotMoreThanOneStartQuest ? "s" : "") + " " + questStartString + " (" + possessedQuestCount + "/" + totalItemCount + ")";
+                        }
+                        string questCompleteString = "<color=#dd831a>";
+                        bool gotCompleteQuests = false;
+                        bool gotMoreThanOneCompleteQuest = false;
+                        if (completeQuests != null)
+                        {
+                            if (completeQuests.questData.Count > 0)
+                            {
+                                gotCompleteQuests = true;
+                                totalItemCount = completeQuests.count;
+                            }
+                            if (completeQuests.questData.Count > 1)
+                            {
+                                gotMoreThanOneCompleteQuest = true;
+                            }
+                            int count = completeQuests.questData.Count;
+                            int index = 0;
+                            foreach (KeyValuePair<string, string> questEntry in completeQuests.questData)
+                            {
+                                questCompleteString += questEntry.Value;
+                                if (index != count - 1)
+                                {
+                                    questCompleteString += ", ";
+                                    if (index == count - 2)
+                                    {
+                                        questCompleteString += "</color>and <color=#dd831a>";
+                                    }
+                                }
+                                else
+                                {
+                                    questCompleteString += "</color>";
+                                }
+
+                                ++index;
+                            }
+                        }
+                        if (gotCompleteQuests)
+                        {
+                            if (gotStartQuests)
+                            {
+                                ___string_5 += ", and will be/is needed to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + " " + questCompleteString + " (" + possessedQuestCount + "/" + totalItemCount + ")";
+                            }
+                            else
+                            {
+                                gotQuest = true;
+                                ___string_5 = "Item will be/is needed to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + " " + questCompleteString + " (" + possessedQuestCount + "/" + totalItemCount + ")";
+                            }
+                        }
+                    }
+                    else // Don't include future quests, do as vanilla
+                    {
+                        RawQuestClass rawQuestClass = null;
+                        ConditionItem conditionItem = null;
+                        foreach (QuestDataClass questDataClass in profile.QuestsData)
+                        {
+                            if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
+                            {
+                                foreach (KeyValuePair<EQuestStatus, GClass2916> kvp in questDataClass.Template.Conditions)
+                                {
+                                    EQuestStatus equestStatus;
+                                    GClass2916 gclass;
+                                    kvp.Deconstruct(out equestStatus, out gclass);
+                                    foreach (Condition condition in gclass)
+                                    {
+                                        ConditionItem conditionItem2;
+                                        if (!questDataClass.CompletedConditions.Contains(condition.id) && (conditionItem2 = (condition as ConditionItem)) != null && conditionItem2.target.Contains(item.TemplateId))
+                                        {
+                                            rawQuestClass = questDataClass.Template;
+                                            conditionItem = conditionItem2;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (rawQuestClass != null)
+                        {
+                            string arg = "<color=#dd831a>" + rawQuestClass.Name + "</color>";
+                            if (item.QuestItem)
+                            {
+                                gotQuest = true;
+                                ___string_5 = string.Format("Item is related to an active {0} quest".Localized(null), arg);
+                            }
+                            Weapon weapon;
+                            ConditionWeaponAssembly condition;
+                            if (!gotQuest && (weapon = (item as Weapon)) != null && (condition = (conditionItem as ConditionWeaponAssembly)) != null && InventoryClass.IsWeaponFitsCondition(weapon, condition, false))
+                            {
+                                gotQuest = true;
+                                ___string_5 = string.Format("Item fits the active {0} quest requirements".Localized(null), arg);
+                            }
+                            if (!gotQuest && item.MarkedAsSpawnedInSession)
+                            {
+                                gotQuest = true;
+                                ___string_5 = string.Format("Item that has been found in raid for the {0} quest".Localized(null), arg);
+                            }
+                        }
+                    }
+                }
+
+                // Add areas
+                bool gotAreas = areaNames.Count > 0;
                 string areaNamesString = "";
                 for (int i = 0; i < areaNames.Count; ++i)
                 {
                     areaNamesString += (i == 0 ? "" : (areaNames.Count == 2 ? "" : ",") + (i == areaNames.Count - 1 ? " and " : " ")) + areaNames[i];
                 }
-
                 if (!areaNamesString.Equals(""))
                 {
-                    if (___string_3 != null && (item.MarkedAsSpawnedInSession || questItem))
+                    if (gotQuest)
                     {
-                        ___string_3 += string.Format(", and needed for {0} ({1}/{2})".Localized(), areaNamesString, possessedCount, requiredCount);
-
-                        if (wishlist)
-                        {
-                            ___string_3 += string.Format(", and on {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
-                        }
+                        ___string_5 += string.Format(", and needed for {0} ({1}/{2})".Localized(), areaNamesString, possessedCount, requiredCount);
                     }
                     else
                     {
-                        ___string_3 = string.Format("Needed for {0} ({1}/{2})".Localized(), areaNamesString, possessedCount, requiredCount);
-
-                        if (wishlist)
-                        {
-                            ___string_3 += string.Format(", and on {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
-                        }
+                        ___string_5 = string.Format("Needed for {0} ({1}/{2})".Localized(), areaNamesString, possessedCount, requiredCount);
                     }
                 }
-                else // Means the method was called for wishlist
+
+                // Add wishlist
+                if (wishlist)
                 {
-                    if (___string_3 != null && (item.MarkedAsSpawnedInSession || questItem))
+                    if (gotQuest || gotAreas)
                     {
-                        ___string_3 += string.Format(", and on {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                        ___string_5 += string.Format(", and on {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
                     }
                     else
                     {
-                        ___string_3 = string.Format("On {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                        ___string_5 = string.Format("On {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
                     }
                 }
 
-                // If this is not a quest item or found in raid, the original returns and the tooltip never gets set, so we need to set it ourselves
-                ___simpleTooltip_0 = tooltip;
+                // Show found in raid if found in raid and not required for anything else
+                if (!gotQuest && !gotAreas && !wishlist && item.MarkedAsSpawnedInSession)
+                {
+                    ___string_5 = "Item found in raid".Localized(null);
+                }
+
+                if (gotQuest || gotAreas || wishlist || item.MarkedAsSpawnedInSession)
+                {
+                    // If this is not a quest item or found in raid, the original returns and the tooltip never gets set, so we need to set it ourselves
+                    ___simpleTooltip_0 = tooltip;
+                }
             }
             catch
             {
@@ -987,14 +1301,14 @@ namespace MoreCheckmarks
     {
         // This postfix will run after the inspect window sets its checkmark if there is one
         // If there is one, the postfix for the QuestItemViewPanel will always have run before
-        // This patch just changes the sprite to a default white one if needed, so we can set its color to whatever we need
+        // This patch just changes the sprite to a default white one so we can set its color to whatever we need
         [HarmonyPatch(typeof(EFT.UI.ItemSpecificationPanel), "method_2")]
         static void Postfix(ref Item ___item_0, ref QuestItemViewPanel ____questItemViewPanel)
         {
             try
             {
                 // If the checkmark exists and if the color of the checkmark is custom
-                if (____questItemViewPanel != null && MoreCheckmarksMod.setColor)
+                if (____questItemViewPanel != null)
                 {
                     // Get access to QuestItemViewPanel's private _questIconImage
                     BindingFlags bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
@@ -1010,137 +1324,6 @@ namespace MoreCheckmarks
             catch
             {
                 MoreCheckmarksMod.LogError("ItemSpecificationPanelShowPatch failed");
-            }
-        }
-    }
-
-    [HarmonyPatch]
-    class QuestItemViewPanelQuestTooltipPatch
-    {
-        // This postfix will replace quest status tooltip of the item view to include more quests if necessary
-        [HarmonyPatch(typeof(QuestItemViewPanel), "method_0")]
-        static void Postfix(Profile profile, Item item, ref string ___string_5, ref object __result)
-        {
-            try
-            {
-                if (MoreCheckmarksMod.includeFutureQuests)
-                {
-                    int possessedCount = 0;
-                    if (profile != null)
-                    {
-                        IEnumerable<Item> inventoryItems = profile.Inventory.GetAllItemByTemplate(item.TemplateId);
-                        if (inventoryItems != null)
-                        {
-                            foreach (Item currentItem in inventoryItems)
-                            {
-                                if (currentItem.SpawnedInSession)
-                                {
-                                    possessedCount += currentItem.StackObjectsCount;
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        MoreCheckmarksMod.LogError("Profile null for item " + item.Template.Name);
-                    }
-
-                    string questStartString = "<color=#dd831a>";
-                    bool gotStartQuests = false;
-                    bool gotMoreThanOneStartQuest = false;
-                    int totalItemCount = 0;
-                    if (MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests))
-                    {
-                        if (startQuests.questData.Count > 0)
-                        {
-                            gotStartQuests = true;
-                            totalItemCount = startQuests.count;
-                        }
-                        if (startQuests.questData.Count > 1)
-                        {
-                            gotMoreThanOneStartQuest = true;
-                        }
-                        int count = startQuests.questData.Count;
-                        int index = 0;
-                        foreach (KeyValuePair<string, string> questEntry in startQuests.questData)
-                        {
-                            questStartString += questEntry.Value;
-                            if (index != count - 1)
-                            {
-                                questStartString += ", ";
-                                if (index == count - 2)
-                                {
-                                    questStartString += "</color>and <color=#dd831a>";
-                                }
-                            }
-                            else
-                            {
-                                questStartString += "</color>";
-                            }
-
-                            ++index;
-                        }
-                    }
-                    if (gotStartQuests)
-                    {
-                        ___string_5 = "Item will be/is needed to start quest" + (gotMoreThanOneStartQuest ? "s" : "") + " " + questStartString + " (" + possessedCount + "/" + totalItemCount + ")";
-                    }
-                    string questCompleteString = "<color=#dd831a>";
-                    bool gotCompleteQuests = false;
-                    bool gotMoreThanOneCompleteQuest = false;
-                    if (MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests))
-                    {
-                        if (completeQuests.questData.Count > 0)
-                        {
-                            gotCompleteQuests = true;
-                            totalItemCount = completeQuests.count;
-                        }
-                        if (completeQuests.questData.Count > 1)
-                        {
-                            gotMoreThanOneCompleteQuest = true;
-                        }
-                        int count = completeQuests.questData.Count;
-                        int index = 0;
-                        foreach (KeyValuePair<string, string> questEntry in completeQuests.questData)
-                        {
-                            questCompleteString += questEntry.Value;
-                            if (index != count - 1)
-                            {
-                                questCompleteString += ", ";
-                                if (index == count - 2)
-                                {
-                                    questCompleteString += "</color>and <color=#dd831a>";
-                                }
-                            }
-                            else
-                            {
-                                questCompleteString += "</color>";
-                            }
-
-                            ++index;
-                        }
-                    }
-                    if (gotCompleteQuests)
-                    {
-                        if (gotStartQuests)
-                        {
-                            ___string_5 += ", and will be/is needed to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + " " + questCompleteString + " (" + possessedCount + "/" + totalItemCount + ")";
-                        }
-                        else
-                        {
-                            ___string_5 = "Item will be/is needed to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + " " + questCompleteString + " (" + possessedCount + "/" + totalItemCount + ")";
-                        }
-                    }
-
-                    if (gotStartQuests || gotCompleteQuests)
-                    {
-                        __result = 2;
-                    }
-                }
-            }
-            catch(Exception ex)
-            {
-                MoreCheckmarksMod.LogError("QuestItemViewPanelQuestTooltipPatch failed: "+ex.Message+"\n"+ex.StackTrace);
             }
         }
     }
