@@ -52,6 +52,7 @@ namespace MoreCheckmarks
         public static int hideoutPriority = 1;
         public static int wishlistPriority = 2;
         public static bool showLockedModules = true;
+        public static bool showFutureModulesLevels = false;
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.30588f, 1, 0.27843f);
         public static Color wishlistColor = new Color(0.23137f, 0.93725f, 1);
@@ -540,6 +541,10 @@ namespace MoreCheckmarks
                 {
                     showLockedModules = (bool)config["showLockedModules"];
                 }
+                if (config["showFutureModulesLevels"] != null)
+                {
+                    showFutureModulesLevels = (bool)config["showFutureModulesLevels"];
+                }
                 if (config["needMoreColor"] != null)
                 {
                     needMoreColor = new Color((float)config["needMoreColor"][0], (float)config["needMoreColor"][1], (float)config["needMoreColor"][2]);
@@ -648,7 +653,11 @@ namespace MoreCheckmarks
                         continue;
                     }
 
-                    EFT.Hideout.Stage actualNextStage = ad.NextStage;
+                    // If the area has no future upgrade, skip
+                    if (ad.Status == EFT.Hideout.EAreaStatus.NoFutureUpgrades)
+                    {
+                        continue;
+                    }
 
                     // If we don't want to get requirement of locked to construct areas, skip if it is locked to construct
                     if (!MoreCheckmarksMod.showLockedModules && ad.Status == EFT.Hideout.EAreaStatus.LockedToConstruct)
@@ -656,79 +665,84 @@ namespace MoreCheckmarks
                         continue;
                     }
 
-                    // If the area has no future upgrade, skip
-                    if (ad.Status == EFT.Hideout.EAreaStatus.NoFutureUpgrades)
+                    List<EFT.Hideout.Stage> futureStages = new List<EFT.Hideout.Stage>();
+                    EFT.Hideout.Stage lastStage = ad.CurrentStage;
+                    bool first = true;
+                    while ((lastStage = ad.StageAt(lastStage.Level + 1)) != null && lastStage.Level != 0)
+                    {
+                        if(first && (ad.Status == EFT.Hideout.EAreaStatus.Constructing || ad.Status == EFT.Hideout.EAreaStatus.Upgrading))
+                        {
+                            first = false;
+                            continue;
+                        }
+                        futureStages.Add(lastStage);
+                        if (!MoreCheckmarksMod.showFutureModulesLevels)
+                        {
+                            break;
+                        }
+                    }
+                    if(futureStages.Count == 0)
                     {
                         continue;
                     }
 
-                    // If in process of constructing or upgrading, go to actual next stage if it exists
-                    if (ad.Status == EFT.Hideout.EAreaStatus.Constructing ||
-                       ad.Status == EFT.Hideout.EAreaStatus.Upgrading)
+                    foreach (EFT.Hideout.Stage stage in futureStages)
                     {
-                        actualNextStage = ad.StageAt(ad.NextStage.Level + 1);
+                        EFT.Hideout.RelatedRequirements requirements = stage.Requirements;
 
-                        // If there are not StageAt given level, it will return a new stage, so level will be 0
-                        if (actualNextStage == null || actualNextStage.Level == 0)
+                        try
                         {
-                            continue;
-                        }
-                    }
-
-                    EFT.Hideout.RelatedRequirements requirements = actualNextStage.Requirements;
-
-                    try
-                    {
-                        foreach (var requirement in requirements)
-                        {
-                            if (requirement != null)
+                            foreach (var requirement in requirements)
                             {
-                                EFT.Hideout.ItemRequirement itemRequirement = requirement as EFT.Hideout.ItemRequirement;
-                                if (itemRequirement != null)
+                                if (requirement != null)
                                 {
-                                    string requirementTemplate = itemRequirement.TemplateId;
-                                    if (itemTemplateID == requirementTemplate)
+                                    EFT.Hideout.ItemRequirement itemRequirement = requirement as EFT.Hideout.ItemRequirement;
+                                    if (itemRequirement != null)
                                     {
-                                        // Sum up the total amount of this item required in entire hideout and update possessed amount
-                                        neededStruct.requiredCount += itemRequirement.IntCount;
-                                        neededStruct.possessedCount = itemRequirement.UserItemsCount;
-
-                                        // A requirement but already have the amount we need
-                                        if (requirement.Fulfilled)
+                                        string requirementTemplate = itemRequirement.TemplateId;
+                                        if (itemTemplateID == requirementTemplate)
                                         {
-                                            // Even if we have enough of this item to fulfill a requirement in one area
-                                            // we might still need it, and if thats the case we want to show that color, not fulfilled color, so you know you still need more of it
-                                            // So only set color to fulfilled if not needed
-                                            if (!neededStruct.foundNeeded && !neededStruct.foundFulfilled)
-                                            {
-                                                neededStruct.foundFulfilled = true;
-                                            }
+                                            // Sum up the total amount of this item required in entire hideout and update possessed amount
+                                            neededStruct.requiredCount += itemRequirement.IntCount;
+                                            neededStruct.possessedCount = itemRequirement.UserItemsCount;
 
-                                            if (areaNames != null)
+                                            // A requirement but already have the amount we need
+                                            if (requirement.Fulfilled)
                                             {
-                                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">" + ad.Template.Name + "</color>");
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (!neededStruct.foundNeeded)
-                                            {
-                                                neededStruct.foundNeeded = true;
-                                            }
+                                                // Even if we have enough of this item to fulfill a requirement in one area
+                                                // we might still need it, and if thats the case we want to show that color, not fulfilled color, so you know you still need more of it
+                                                // So only set color to fulfilled if not needed
+                                                if (!neededStruct.foundNeeded && !neededStruct.foundFulfilled)
+                                                {
+                                                    neededStruct.foundFulfilled = true;
+                                                }
 
-                                            if (areaNames != null)
+                                                if (areaNames != null)
+                                                {
+                                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">" + ad.Template.Name + " lvl"+stage.Level+"</color>");
+                                                }
+                                            }
+                                            else
                                             {
-                                                areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">" + ad.Template.Name + "</color>");
+                                                if (!neededStruct.foundNeeded)
+                                                {
+                                                    neededStruct.foundNeeded = true;
+                                                }
+
+                                                if (areaNames != null)
+                                                {
+                                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">" + ad.Template.Name + " lvl" + stage.Level + "</color>");
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                    catch (Exception)
-                    {
-                        MoreCheckmarksMod.LogError("Failed to get whether item " + itemTemplateID + " was needed for hideout area: "+ ad.Template.Name);
+                        catch (Exception)
+                        {
+                            MoreCheckmarksMod.LogError("Failed to get whether item " + itemTemplateID + " was needed for hideout area: " + ad.Template.Name);
+                        }
                     }
                 }
             }
