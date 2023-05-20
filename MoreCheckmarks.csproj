@@ -35,7 +35,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Client\EscapeFromTarkov_Data\Managed\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="Aki.Common">
+    <Reference Include="Aki.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SPT BetterTark\Game\EscapeFromTarkov_Data\Managed\Aki.Common.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">

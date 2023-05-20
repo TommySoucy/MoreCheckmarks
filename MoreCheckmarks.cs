@@ -19,14 +19,14 @@ using Aki.Common.Http;
 using Comfort.Common;
 
 
-// We want to get access to the list of availabe loot item actions when we look at loose loot sowe can change color of "Take" action
-// GClass1767 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
-// This calls GClass1767.smethod_3 if the interactive is a LootItem
-// This returns an instance of GClass2644 which has a list field "Actions" containing all available actions of type GClass2643
+// We want to get access to the list of availabe loot item actions when we look at loose loot so we can change color of "Take" action
+// GClass1765 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
+// This calls GClass1765.smethod_3 if the interactive is a LootItem
+// This returns an instance of GClass2642 which has a list field "Actions" containing all available actions of type GClass2643
 // GClass2643.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
-using InteractionController = GClass1767;
-using InteractionInstance = GClass2644;
-using Action = GClass2643;
+using InteractionController = GClass1765;
+using InteractionInstance = GClass2642;
+using Action = GClass2641;
 
 namespace MoreCheckmarks
 {
@@ -44,7 +44,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.0";
+        public const string pluginVersion = "1.5.1";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -1203,10 +1203,10 @@ namespace MoreCheckmarks
                         {
                             if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
                             {
-                                foreach (KeyValuePair<EQuestStatus, GClass2916> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass2914> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass2916 gclass;
+                                    GClass2914 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
