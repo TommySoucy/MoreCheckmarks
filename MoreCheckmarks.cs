@@ -76,6 +76,8 @@ namespace MoreCheckmarks
             public Dictionary<string, string> questData = new Dictionary<string, string>();
             public int count = 0;
         }
+        // Barter IDs by items in price
+        public static Dictionary<string, List<KeyValuePair<string, int>>> bartersByItem = new Dictionary<string, List<KeyValuePair<string, int>>>();
 
         private void Start()
         {
@@ -103,6 +105,7 @@ namespace MoreCheckmarks
         public void LoadData()
         {
             LogInfo("Loading data");
+            LogInfo("\tQuests");
             JArray questData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/quests", false));
             questDataStartByItemTemplateID.Clear();
             neededStartItemsByQuest.Clear();
@@ -501,6 +504,36 @@ namespace MoreCheckmarks
                     }
                 }
             }
+
+            LogInfo("\tAssorts");
+            string euro = "569668774bdc2da2298b4568";
+            string rouble = "5449016a4bdc2d6f028b456f";
+            string dollar = "5696686a4bdc2da3298b456a";
+            JArray assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts", false));
+
+            for(int i=0; i < assortData.Count; ++i)
+            {
+                JArray items = assortData[i]["items"] as JArray;
+                for (int j = 0; j < items.Count; ++j)
+                {
+                    JArray barters = assortData[i]["barter_scheme"][items[j]] as JArray;
+                    for(int k = 0; k < barters.Count; ++k)
+                    {
+                        JArray barter = barters[k] as JArray;
+                        for(int l = 0; l< barter.Count; ++l)
+                        {
+                            string priceTPL = barter[l]["_tpl"].ToString();
+                            if (!priceTPL.Equals(euro) && !priceTPL.Equals(rouble) && !priceTPL.Equals(dollar))
+                            {
+                                if(bartersByItem.TryGetValue(priceTPL, out List<KeyValuePair<string, int>> barterList))
+                                {
+                                    KeyValuePair<string, int> newItemBarter = new KeyValuePair<string, int>();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private bool StringJArrayContainsString(JArray arr, string s)
@@ -622,14 +655,6 @@ namespace MoreCheckmarks
             MethodInfo profileSelectorPostfix = typeof(ProfileSelectionPatch).GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static);
 
             harmony.Patch(profileSelectorOriginal, null, new HarmonyMethod(profileSelectorPostfix));
-        }
-
-        public static Color ParseColor(string colorString)
-        {
-            string trimmed = colorString.Trim(new char[] { '(', ')' });
-            string[] values = trimmed.Split(',');
-
-            return new Color(float.Parse(values[0]),float.Parse(values[1]),float.Parse(values[2]));
         }
 
         public static NeededStruct GetNeeded(string itemTemplateID, ref List<string> areaNames)
