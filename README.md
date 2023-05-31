@@ -34,11 +34,15 @@ There are some settings available in the provided config file described below:
       **true** means to display fulfilled when AT LEAST ONE of the hideout modules requiring this item can be upgraded with the amount of the item there is in stash
       **false** means to display fulfilled when ALL of the hideout modules requiring this item can be upgraded
       
-- **_questPrioriry_**, **_hideoutPriority_**, and **_wishlistPriority_**: These settings will decide which checkmark to give priority to. If the item is needed for a quest, needed for a hideout module, and is on the wishlist, the one with the highest priority will be displayed. These are integers, and the greater the number, the higher the priority.
+- **_questPrioriry_**, **_hideoutPriority_**, **_wishlistPriority_**, and **_barterPriority_**: These settings will decide which checkmark to give priority to. If the item is needed for a quest, needed for a hideout module, and is on the wishlist, the one with the highest priority will be displayed. These are integers, and the greater the number, the higher the priority.
       
 - **_showLockedModules_**: This setting will decide whether to show a hideout checkmark on an item required for a hideout module that is still locked for construction. This is an option because some modules like the bitcoin farm require a lot of items but are locked for a long time and maybe you just don't want to have hideout checkmark on a bunch of random stuff you won't need for a while.
 
-- **_needMoreColor_**, **_fulfilledColor_**, and **_wishlistColor_**: These settings are used to changed the colors of the different checkmarks. needMoreColor is a light red by default, appears when you still need more of that item. fulfilledColor is a light green by default, appears when you fulfilled the requirements of all modules that require it depending on fulfilledAnyCanBeUpgraded setting. Please keep the format (value,value,value) (note the lack of spaces) since that is the one that the values will be parsed in. Otherwise the settings won't work. The values should always be in RGB in range [0 - 1]
+- **_showFutureModulesLevels_**: This setting will decide whether to show requirements for future hideout module levels instead of only the next one.
+
+- **_showBarter_**: This setting will decide whether to show checkmark and tooltip for barters/trades this item is needed for.
+
+- **_needMoreColor_**, **_fulfilledColor_**, **_wishlistColor_**, and **_barterColor_**: These settings are used to changed the colors of the different checkmarks. needMoreColor is a light red by default, appears when you still need more of that item. fulfilledColor is a light green by default, appears when you fulfilled the requirements of all modules that require it depending on fulfilledAnyCanBeUpgraded setting. Please keep the format (value,value,value) (note the lack of spaces) since that is the one that the values will be parsed in. Otherwise the settings won't work. The values should always be in RGB in range [0 - 1]
 
 - **_includeFutureQuests_**: This setting will decide whether to consider future quests when checking which quests an item is required for. If false, will just be as vanilla.
 
