@@ -51,6 +51,7 @@ namespace MoreCheckmarks
         public static int questPriority = 0;
         public static int hideoutPriority = 1;
         public static int wishlistPriority = 2;
+        public static int barterPriority = 3;
         public static bool showLockedModules = true;
         public static bool showFutureModulesLevels = false;
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
@@ -82,6 +83,9 @@ namespace MoreCheckmarks
         // Barter item name and amount of price by items in price
         public static Dictionary<string, List<KeyValuePair<string, int>>>[] bartersByItemByTrader = new Dictionary<string, List<KeyValuePair<string, int>>>[9];
         public static string[] traders = new string[] {"Prapor","Therapist","Fence","Skier","Peacekeeper","Mechanic","Ragman","Jaeger","Lighthouse keeper"};
+        public static int[] priorities = new int[] {0,1,2,3};
+        public static bool[] neededFor = new bool[4];
+        public static Color[] colors = new Color[] { Color.yellow, needMoreColor, wishlistColor, barterColor };
 
         private void Start()
         {
@@ -578,14 +582,22 @@ namespace MoreCheckmarks
                 if (config["questPriority"] != null)
                 {
                     questPriority = (int)config["questPriority"];
+                    priorities[0] = questPriority;
                 }
                 if (config["hideoutPriority"] != null)
                 {
                     hideoutPriority = (int)config["hideoutPriority"];
+                    priorities[1] = hideoutPriority;
                 }
                 if (config["wishlistPriority"] != null)
                 {
                     wishlistPriority = (int)config["wishlistPriority"];
+                    priorities[2] = wishlistPriority;
+                }
+                if (config["barterPriority"] != null)
+                {
+                    barterPriority = (int)config["barterPriority"];
+                    priorities[3] = barterPriority;
                 }
                 if (config["showLockedModules"] != null)
                 {
@@ -606,10 +618,12 @@ namespace MoreCheckmarks
                 if (config["wishlistColor"] != null)
                 {
                     wishlistColor = new Color((float)config["wishlistColor"][0], (float)config["wishlistColor"][1], (float)config["wishlistColor"][2]);
+                    colors[2] = wishlistColor;
                 }
                 if (config["barterColor"] != null)
                 {
                     barterColor = new Color((float)config["barterColor"][0], (float)config["barterColor"][1], (float)config["barterColor"][2]);
+                    colors[3] = barterColor;
                 }
                 if (config["includeFutureQuests"] != null)
                 {
@@ -909,6 +923,18 @@ namespace MoreCheckmarks
                 bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
                 bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
                 List<KeyValuePair<string, int>>[] bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
+                bool gotBarters = false;
+                if (bartersByTrader != null)
+                {
+                    for (int i = 0; i < 9; ++i)
+                    {
+                        if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
+                        {
+                            gotBarters = true;
+                            break;
+                        }
+                    }
+                }
 
                 // Setup label for inspect view
                 if (____questItemLabel != null)
@@ -921,220 +947,65 @@ namespace MoreCheckmarks
                     ____questItemLabel.gameObject.SetActive(questItem);
                 }
 
-                // Set checkmark based on priority
-                if (MoreCheckmarksMod.wishlistPriority >= MoreCheckmarksMod.hideoutPriority &&
-                    MoreCheckmarksMod.wishlistPriority >= MoreCheckmarksMod.questPriority)
+                MoreCheckmarksMod.neededFor[0] = questItem;
+                MoreCheckmarksMod.neededFor[1] = neededStruct.foundNeeded || neededStruct.foundFulfilled;
+                MoreCheckmarksMod.neededFor[2] = wishlist;
+                MoreCheckmarksMod.neededFor[3] = gotBarters;
+
+                // Find needed with highest priority
+                int currentNeeded = -1;
+                int currentHighest = -1;
+                for(int i=0; i < 4; ++i)
                 {
-                    // Wishlist is highest priority
-                    if (wishlist) // Item is on wishlist
+                    if (MoreCheckmarksMod.neededFor[i] && MoreCheckmarksMod.priorities[i] > currentHighest)
                     {
-                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
-                    }
-                    else if (MoreCheckmarksMod.hideoutPriority >= MoreCheckmarksMod.questPriority) // Item not on wishlist, hideout priority is higher than quest
-                    {
-                        if (neededStruct.foundNeeded) // Need more
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                        }
-                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
-                        {
-                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
-                            {
-                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                            }
-                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
-                            {
-                                // Check if we trully do not need more of this item for now
-                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                                }
-                                else // Still need more
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                                }
-                            }
-                        }
-                        else if (questItem) // Item not required for hideout but is for quest
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
-                        }
-                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
-                        }
-                    }
-                    else // Item not on wishlist, quest priority is higher than hideout
-                    {
-                        if (questItem) // Is quest item
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
-                        }
-                        else if(neededStruct.foundNeeded) // Need more
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                        }
-                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
-                        {
-                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
-                            {
-                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                            }
-                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
-                            {
-                                // Check if we trully do not need more of this item for now
-                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                                }
-                                else // Still need more
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                                }
-                            }
-                        }
-                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
-                        }
-                    }
-                }
-                else if (MoreCheckmarksMod.hideoutPriority >= MoreCheckmarksMod.wishlistPriority &&
-                         MoreCheckmarksMod.hideoutPriority >= MoreCheckmarksMod.questPriority)
-                {
-                    // Hideout has highest priority
-                    if (neededStruct.foundNeeded) // Need more
-                    {
-                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                    }
-                    else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
-                    {
-                        if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                        }
-                        else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
-                        {
-                            // Check if we trully do not need more of this item for now
-                            if (neededStruct.possessedCount >= neededStruct.requiredCount)
-                            {
-                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                            }
-                            else // Still need more
-                            {
-                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                            }
-                        }
-                    }
-                    else if(MoreCheckmarksMod.wishlistPriority >= MoreCheckmarksMod.questPriority) // Not needed for hideout and wishlist priority is higher than quest
-                    {
-                        if (wishlist) // On wishlist
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
-                        }
-                        else if (questItem) // Item not on wishlist but is quest item
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
-                        }
-                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
-                        }
-                    }
-                    else  // Quest has higher priority than wishlist
-                    {
-                        if (questItem)
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
-                        }
-                        else if (wishlist) // Not quest item, but on wishlist
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
-                        }
-                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
-                        }
-                    }
-                }
-                else // Quest has highest priority
-                {
-                    if (questItem) // Is quest item
-                    {
-                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.yellow);
-                    }
-                    else if (MoreCheckmarksMod.hideoutPriority >= MoreCheckmarksMod.wishlistPriority) // Not quest item, hideout priority is higher than wishlist
-                    {
-                        if (neededStruct.foundNeeded) // Need more
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                        }
-                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
-                        {
-                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
-                            {
-                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                            }
-                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
-                            {
-                                // Check if we trully do not need more of this item for now
-                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                                }
-                                else // Still need more
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                                }
-                            }
-                        }
-                        else if (wishlist) // Item not required for hideout but is for quest
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
-                        }
-                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
-                        }
-                    }
-                    else  // Wishlist has higher priority than hideout
-                    {
-                        if (wishlist)
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.wishlistColor);
-                        }
-                        else if (neededStruct.foundNeeded) // Need more
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                        }
-                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
-                        {
-                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
-                            {
-                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                            }
-                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
-                            {
-                                // Check if we trully do not need more of this item for now
-                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
-                                }
-                                else // Still need more
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
-                                }
-                            }
-                        }
-                        else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
-                        }
+                        currentNeeded = i;
+                        currentHighest = MoreCheckmarksMod.priorities[i];
                     }
                 }
 
+                // Set checkmark if necessary
+                if (currentNeeded > -1)
+                {
+                    // Handle special case of areas
+                    if (currentNeeded == 1)
+                    {
+                        if (neededStruct.foundNeeded) // Need more
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                        }
+                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
+                        {
+                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
+                            {
+                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                            }
+                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
+                            {
+                                // Check if we trully do not need more of this item for now
+                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                                }
+                                else // Still need more
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                                }
+                            }
+                        }
+                    }
+                    else // Not area, just set color
+                    {
+                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.colors[currentNeeded]);
+                    }
+                }
+                else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
+                {
+                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                }
+
                 // Set tooltip based on requirements
-                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests, completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist, bartersByTrader);
+                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests, completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist, bartersByTrader, gotBarters);
 
                 return false;
             }
@@ -1170,7 +1041,7 @@ namespace MoreCheckmarks
 
         private static void SetTooltip(EFT.Profile profile, List<string> areaNames, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
                                        EFT.InventoryLogic.Item item, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests,
-                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<KeyValuePair<string, int>>[] bartersByTrader)
+                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<KeyValuePair<string, int>>[] bartersByTrader, bool gotBarters)
         {
             try
             {
@@ -1180,7 +1051,7 @@ namespace MoreCheckmarks
                 // Show found in raid if found in raid
                 if (item.MarkedAsSpawnedInSession)
                 {
-                    ___string_5 = "Item found in raid".Localized(null);
+                    ___string_5 += "\n" + "Item found in raid".Localized(null);
                 }
 
                 // Add quests
@@ -1330,34 +1201,37 @@ namespace MoreCheckmarks
                 }
                 if (!areaNamesString.Equals(""))
                 {
-                    ___string_5 += string.Format("\nNeeded ({1}/{2}) for areas:{0}".Localized(), areaNamesString, possessedCount, requiredCount);
+                    ___string_5 += string.Format("\nNeeded ({1}/{2}) for area"+(areaNames.Count == 1 ? "" : "s") +":{0}", areaNamesString, possessedCount, requiredCount);
                 }
 
                 // Add wishlist
                 if (wishlist)
                 {
-                    ___string_5 += string.Format("\nOn {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                    ___string_5 += string.Format("\nOn {0}", "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
                 }
 
                 // Add barters
-                bool gotBarters = false;
-                if (bartersByTrader != null)
+                if (gotBarters)
                 {
-                    for (int i = 0; i < 9; ++i)
+                    bool firstBarter = false;
+                    if (bartersByTrader != null)
                     {
-                        if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
+                        for (int i = 0; i < 9; ++i)
                         {
-                            if (!gotBarters)
+                            if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
                             {
-                                ___string_5 += "\nNeeded for barters:";
-                                gotBarters = true;
+                                if (!firstBarter)
+                                {
+                                    ___string_5 += "\n" + "Barter".Localized(null) + ":";
+                                    firstBarter = true;
+                                }
+                                string bartersString = "\n With " + MoreCheckmarksMod.traders[i] + ":";
+                                for (int j = 0; j < bartersByTrader[i].Count; ++j)
+                                {
+                                    bartersString += "\n  <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + bartersByTrader[i][j].Key.LocalizedName() + "</color> (" + bartersByTrader[i][j].Value + ")";
+                                }
+                                ___string_5 += bartersString;
                             }
-                            string bartersString = "\n With " + MoreCheckmarksMod.traders[i]+":";
-                            for (int j = 0; j < bartersByTrader[i].Count; ++j)
-                            {
-                                bartersString += "\n  <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + bartersByTrader[i][j].Key.LocalizedName() + "</color> (" + bartersByTrader[i][j].Value + ")";
-                            }
-                            ___string_5 += bartersString;
                         }
                     }
                 }
