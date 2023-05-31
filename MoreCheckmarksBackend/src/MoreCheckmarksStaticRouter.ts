@@ -12,6 +12,10 @@ import { ConfigTypes } from "@spt-aki/models/enums/ConfigTypes";
 import { ConfigServer } from "@spt-aki/servers/ConfigServer";
 import { Traders } from "@spt-aki/models/enums/Traders";
 import { TraderHelper } from "@spt-aki/helpers/TraderHelper";
+import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
+import { FenceService } from "@spt-aki/services/FenceService";
+import { ITemplateItem } from "@spt-aki/models/eft/common/tables/ITemplateItem";
+import { ILocaleBase } from "@spt-aki/models/spt/server/ILocaleBase";
 
 class Mod implements IPreAkiLoadMod
 {
@@ -27,6 +31,8 @@ class Mod implements IPreAkiLoadMod
         this.questConfig = configServer.getConfig(ConfigTypes.QUEST);
         //const questConditionHelper = container.resolve<QuestConditionHelper>("QuestConditionHelper");
         const traderHelper = container.resolve<TraderHelper>("TraderHelper");
+        const databaseServer = container.resolve<DatabaseServer>("DatabaseServer");
+        const fenceService = container.resolve<FenceService>("FenceService");
 
         // Hook up a new static route
         staticRouterModService.registerStaticRouter(
@@ -89,19 +95,64 @@ class Mod implements IPreAkiLoadMod
                     {
                         logger.info("MoreCheckmarks making trader assort data request");
 						const assorts: ITraderAssort[] = [];
-						if(Traders && traderHelper)
+						
+						if(databaseServer && databaseServer.getTables())
 						{
-							for (const traderID in Traders) 
+							if(Traders && traderHelper)
 							{
-								assorts.push(traderHelper.getTraderAssortsById(traderID));
+								for (const value of Object.values(Traders)) 
+								{
+									if(value == "579dc571d53a0658a154fbec" && fenceService.getRawFenceAssorts())
+									{
+										assorts.push(fenceService.getRawFenceAssorts());
+									}
+									else if(databaseServer.getTables().traders[value] && databaseServer.getTables().traders[value].assort)
+									{
+										assorts.push(databaseServer.getTables().traders[value].assort);
+									}
+								}
 							}
+							else
+							{
+								logger.info("Unable to fetch assorts for MoreCheckmarks");
+							}
+						}
+						
+						return JSON.stringify(assorts);
+                    }
+                },
+                {
+                    url: "/MoreCheckmarksRoutes/items",
+                    action: (url, info, sessionID, output) => 
+                    {
+                        logger.info("MoreCheckmarks making item data request");
+						
+						const items: Record<string, ITemplateItem> = {};
+						if(databaseServer && databaseServer.getTables() && databaseServer.getTables().templates && databaseServer.getTables().templates.items)
+						{
+							return JSON.stringify(databaseServer.getTables().templates.items);
 						}
 						else
 						{
-							logger.info("Unable to fetch assorts for MoreCheckmarks");
+							return JSON.stringify(items);
 						}
+                    }
+                },
+                {
+                    url: "/MoreCheckmarksRoutes/locales",
+                    action: (url, info, sessionID, output) => 
+                    {
+                        logger.info("MoreCheckmarks making locale request");
 						
-						return JSON.stringify(quests);
+						const locales: ILocaleBase = {};
+						if(databaseServer && databaseServer.getTables() && databaseServer.getTables().locales)
+						{
+							return JSON.stringify(databaseServer.getTables().locales);
+						}
+						else
+						{
+							return JSON.stringify(locales);
+						}
                     }
                 }
             ],
