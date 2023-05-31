@@ -10,6 +10,8 @@ import { QuestHelper } from "@spt-aki/helpers/QuestHelper";
 import { IQuestConfig } from "@spt-aki/models/spt/config/IQuestConfig";
 import { ConfigTypes } from "@spt-aki/models/enums/ConfigTypes";
 import { ConfigServer } from "@spt-aki/servers/ConfigServer";
+import { Traders } from "@spt-aki/models/enums/Traders";
+import { TraderHelper } from "@spt-aki/helpers/TraderHelper";
 
 class Mod implements IPreAkiLoadMod
 {
@@ -24,6 +26,7 @@ class Mod implements IPreAkiLoadMod
 		const configServer = container.resolve<ConfigServer>("ConfigServer");
         this.questConfig = configServer.getConfig(ConfigTypes.QUEST);
         //const questConditionHelper = container.resolve<QuestConditionHelper>("QuestConditionHelper");
+        const traderHelper = container.resolve<TraderHelper>("TraderHelper");
 
         // Hook up a new static route
         staticRouterModService.registerStaticRouter(
@@ -39,7 +42,7 @@ class Mod implements IPreAkiLoadMod
 						//const allQuests = databaseServer.getTables().templates.quests;
 						const profile: IPmcData = profileHelper.getPmcProfile(sessionID);
 						
-						if(profile)
+						if(profile && profile.Quests)
 						{
 							for (const quest of allQuests)
 							{
@@ -75,6 +78,27 @@ class Mod implements IPreAkiLoadMod
 						else
 						{
 							logger.info("Unable to fetch quests for MoreCheckmarks");
+						}
+						
+						return JSON.stringify(quests);
+                    }
+                },
+                {
+                    url: "/MoreCheckmarksRoutes/assorts",
+                    action: (url, info, sessionID, output) => 
+                    {
+                        logger.info("MoreCheckmarks making trader assort data request");
+						const assorts: ITraderAssort[] = [];
+						if(Traders && traderHelper)
+						{
+							for (const traderID in Traders) 
+							{
+								assorts.push(traderHelper.getTraderAssortsById(traderID));
+							}
+						}
+						else
+						{
+							logger.info("Unable to fetch assorts for MoreCheckmarks");
 						}
 						
 						return JSON.stringify(quests);

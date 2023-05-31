@@ -20,13 +20,13 @@ using Comfort.Common;
 
 
 // We want to get access to the list of availabe loot item actions when we look at loose loot so we can change color of "Take" action
-// GClass1765 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
-// This calls GClass1765.smethod_3 if the interactive is a LootItem
-// This returns an instance of GClass2642 which has a list field "Actions" containing all available actions of type GClass2643
-// GClass2643.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
-using InteractionController = GClass1765;
-using InteractionInstance = GClass2642;
-using Action = GClass2641;
+// GClass1766 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
+// This calls GClass1766.smethod_3 if the interactive is a LootItem
+// This returns an instance of GClass2645 which has a list field "Actions" containing all available actions of type GClass2644
+// GClass2644.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
+using InteractionController = GClass1766;
+using InteractionInstance = GClass2645;
+using Action = GClass2644;
 
 namespace MoreCheckmarks
 {
@@ -56,6 +56,7 @@ namespace MoreCheckmarks
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.30588f, 1, 0.27843f);
         public static Color wishlistColor = new Color(0.23137f, 0.93725f, 1);
+        public static Color barterColor = new Color(1, 0, 1);
         public static bool includeFutureQuests = true;
 
         // Assets
@@ -76,8 +77,11 @@ namespace MoreCheckmarks
             public Dictionary<string, string> questData = new Dictionary<string, string>();
             public int count = 0;
         }
-        // Barter IDs by items in price
-        public static Dictionary<string, List<KeyValuePair<string, int>>> bartersByItem = new Dictionary<string, List<KeyValuePair<string, int>>>();
+        public static JObject itemData;
+        public static JObject locales;
+        // Barter item name and amount of price by items in price
+        public static Dictionary<string, List<KeyValuePair<string, int>>>[] bartersByItemByTrader = new Dictionary<string, List<KeyValuePair<string, int>>>[9];
+        public static string[] traders = new string[] {"Prapor","Therapist","Fence","Skier","Peacekeeper","Mechanic","Ragman","Jaeger","Lighthouse keeper"};
 
         private void Start()
         {
@@ -509,25 +513,38 @@ namespace MoreCheckmarks
             string euro = "569668774bdc2da2298b4568";
             string rouble = "5449016a4bdc2d6f028b456f";
             string dollar = "5696686a4bdc2da3298b456a";
+            if (itemData == null)
+            {
+                itemData = JObject.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/items", false));
+            }
             JArray assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts", false));
 
             for(int i=0; i < assortData.Count; ++i)
             {
+                string currentTrader = traders[i];
+                bartersByItemByTrader[i] = new Dictionary<string, List<KeyValuePair<string, int>>>();
                 JArray items = assortData[i]["items"] as JArray;
                 for (int j = 0; j < items.Count; ++j)
                 {
-                    JArray barters = assortData[i]["barter_scheme"][items[j]] as JArray;
-                    for(int k = 0; k < barters.Count; ++k)
+                    if (items[j]["parentId"].ToString().Equals("hideout"))
                     {
-                        JArray barter = barters[k] as JArray;
-                        for(int l = 0; l< barter.Count; ++l)
+                        JArray barters = assortData[i]["barter_scheme"][items[j]["_id"].ToString()] as JArray;
+                        for (int k = 0; k < barters.Count; ++k)
                         {
-                            string priceTPL = barter[l]["_tpl"].ToString();
-                            if (!priceTPL.Equals(euro) && !priceTPL.Equals(rouble) && !priceTPL.Equals(dollar))
+                            JArray barter = barters[k] as JArray;
+                            for (int l = 0; l < barter.Count; ++l)
                             {
-                                if(bartersByItem.TryGetValue(priceTPL, out List<KeyValuePair<string, int>> barterList))
+                                string priceTPL = barter[l]["_tpl"].ToString();
+                                if (!priceTPL.Equals(euro) && !priceTPL.Equals(rouble) && !priceTPL.Equals(dollar))
                                 {
-                                    KeyValuePair<string, int> newItemBarter = new KeyValuePair<string, int>();
+                                    if (bartersByItemByTrader[i].TryGetValue(priceTPL, out List<KeyValuePair<string, int>> barterList))
+                                    {
+                                        barterList.Add(new KeyValuePair<string, int>(items[j]["_tpl"].ToString(), (int)(barter[l]["count"])));
+                                    }
+                                    else
+                                    {
+                                        bartersByItemByTrader[i].Add(priceTPL, new List<KeyValuePair<string, int>>() { new KeyValuePair<string, int>(items[j]["_tpl"].ToString(), (int)(barter[l]["count"])) });
+                                    }
                                 }
                             }
                         }
@@ -589,6 +606,10 @@ namespace MoreCheckmarks
                 if (config["wishlistColor"] != null)
                 {
                     wishlistColor = new Color((float)config["wishlistColor"][0], (float)config["wishlistColor"][1], (float)config["wishlistColor"][2]);
+                }
+                if (config["barterColor"] != null)
+                {
+                    barterColor = new Color((float)config["barterColor"][0], (float)config["barterColor"][1], (float)config["barterColor"][2]);
                 }
                 if (config["includeFutureQuests"] != null)
                 {
@@ -819,6 +840,20 @@ namespace MoreCheckmarks
             return false;
         }
 
+        public static List<KeyValuePair<string, int>>[] GetBarters(string ID)
+        {
+            List<KeyValuePair<string, int>>[] bartersByTrader = new List<KeyValuePair<string, int>>[9];
+            for(int i = 0; i < 9; ++i)
+            {
+                if (bartersByItemByTrader[i] != null)
+                {
+                    bartersByItemByTrader[i].TryGetValue(ID, out bartersByTrader[i]);
+                }
+            }
+
+            return bartersByTrader;
+        }
+
         public static void LogInfo(string msg)
         {
             modInstance.Logger.LogInfo(msg);
@@ -844,6 +879,28 @@ namespace MoreCheckmarks
                 // Hide by default
                 __instance.HideGameObject();
 
+                int possessedCount = 0;
+                int possessedQuestCount = 0;
+                if (profile != null)
+                {
+                    IEnumerable<Item> inventoryItems = Singleton<HideoutClass>.Instance.AllStashItems.Where(x => x.TemplateId == item.TemplateId);
+                    if (inventoryItems != null)
+                    {
+                        foreach (Item currentItem in inventoryItems)
+                        {
+                            if (currentItem.MarkedAsSpawnedInSession)
+                            {
+                                possessedQuestCount += currentItem.StackObjectsCount;
+                            }
+                            possessedCount += currentItem.StackObjectsCount;
+                        }
+                    }
+                }
+                else
+                {
+                    MoreCheckmarksMod.LogError("Profile null for item " + item.Template.Name);
+                }
+
                 // Get requirements
                 List<string> areaNames = new List<string>();
                 NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
@@ -851,6 +908,7 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
                 bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
                 bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
+                List<KeyValuePair<string, int>>[] bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
 
                 // Setup label for inspect view
                 if (____questItemLabel != null)
@@ -1076,7 +1134,7 @@ namespace MoreCheckmarks
                 }
 
                 // Set tooltip based on requirements
-                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests, completeQuests, neededStruct.possessedCount, neededStruct.requiredCount, wishlist);
+                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests, completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist, bartersByTrader);
 
                 return false;
             }
@@ -1112,12 +1170,12 @@ namespace MoreCheckmarks
 
         private static void SetTooltip(EFT.Profile profile, List<string> areaNames, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
                                        EFT.InventoryLogic.Item item, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests,
-                                       int possessedCount, int requiredCount, bool wishlist)
+                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<KeyValuePair<string, int>>[] bartersByTrader)
         {
             try
             {
                 // Reset string
-                ___string_5 = "";
+                ___string_5 = "Stash: <color=#dd831a>" + possessedQuestCount + "</color>/" + possessedCount;
 
                 // Add quests
                 bool gotQuest = false;
@@ -1125,26 +1183,6 @@ namespace MoreCheckmarks
                 {
                     if (MoreCheckmarksMod.includeFutureQuests)
                     {
-                        int possessedQuestCount = 0;
-                        if (profile != null)
-                        {
-                            IEnumerable<Item> inventoryItems = Singleton<HideoutClass>.Instance.AllStashItems.Where(x => x.TemplateId == item.TemplateId);
-                            if (inventoryItems != null)
-                            {
-                                foreach (Item currentItem in inventoryItems)
-                                {
-                                    if (currentItem.MarkedAsSpawnedInSession)
-                                    {
-                                        possessedQuestCount += currentItem.StackObjectsCount;
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            MoreCheckmarksMod.LogError("Profile null for item " + item.Template.Name);
-                        }
-
                         string questStartString = "<color=#dd831a>";
                         bool gotStartQuests = false;
                         bool gotMoreThanOneStartQuest = false;
@@ -1167,7 +1205,7 @@ namespace MoreCheckmarks
                                 questStartString += questEntry.Value;
                                 if (index != count - 1)
                                 {
-                                    questStartString += ", ";
+                                    questStartString += ",\n  ";
                                     if (index == count - 2)
                                     {
                                         questStartString += "</color>and <color=#dd831a>";
@@ -1184,7 +1222,7 @@ namespace MoreCheckmarks
                         if (gotStartQuests)
                         {
                             gotQuest = true;
-                            ___string_5 = "Item will be/is needed to start quest" + (gotMoreThanOneStartQuest ? "s" : "") + " " + questStartString + " (" + possessedQuestCount + "/" + totalItemCount + ")";
+                            ___string_5 = "\nNeeded (" + possessedQuestCount + "/" + totalItemCount + ") to start quest" + (gotMoreThanOneStartQuest ? "s" : "") + ":\n  " + questStartString;
                         }
                         string questCompleteString = "<color=#dd831a>";
                         bool gotCompleteQuests = false;
@@ -1207,7 +1245,7 @@ namespace MoreCheckmarks
                                 questCompleteString += questEntry.Value;
                                 if (index != count - 1)
                                 {
-                                    questCompleteString += ", ";
+                                    questCompleteString += ",\n  ";
                                     if (index == count - 2)
                                     {
                                         questCompleteString += "</color>and <color=#dd831a>";
@@ -1223,15 +1261,8 @@ namespace MoreCheckmarks
                         }
                         if (gotCompleteQuests)
                         {
-                            if (gotStartQuests)
-                            {
-                                ___string_5 += ", and will be/is needed to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + " " + questCompleteString + " (" + possessedQuestCount + "/" + totalItemCount + ")";
-                            }
-                            else
-                            {
-                                gotQuest = true;
-                                ___string_5 = "Item will be/is needed to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + " " + questCompleteString + " (" + possessedQuestCount + "/" + totalItemCount + ")";
-                            }
+                            gotQuest = true;
+                            ___string_5 += "\nNeeded (" + possessedQuestCount + "/" + totalItemCount + ") to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + ":\n  " + questCompleteString;
                         }
                     }
                     else // Don't include future quests, do as vanilla
@@ -1242,10 +1273,10 @@ namespace MoreCheckmarks
                         {
                             if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
                             {
-                                foreach (KeyValuePair<EQuestStatus, GClass2914> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass2917> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass2914 gclass;
+                                    GClass2917 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
@@ -1266,19 +1297,19 @@ namespace MoreCheckmarks
                             if (item.QuestItem)
                             {
                                 gotQuest = true;
-                                ___string_5 = string.Format("Item is related to an active {0} quest".Localized(null), arg);
+                                ___string_5 += string.Format("\nItem is related to an active {0} quest".Localized(null), arg);
                             }
                             Weapon weapon;
                             ConditionWeaponAssembly condition;
                             if (!gotQuest && (weapon = (item as Weapon)) != null && (condition = (conditionItem as ConditionWeaponAssembly)) != null && InventoryClass.IsWeaponFitsCondition(weapon, condition, false))
                             {
                                 gotQuest = true;
-                                ___string_5 = string.Format("Item fits the active {0} quest requirements".Localized(null), arg);
+                                ___string_5 += string.Format("\nItem fits the active {0} quest requirements".Localized(null), arg);
                             }
                             if (!gotQuest && item.MarkedAsSpawnedInSession)
                             {
                                 gotQuest = true;
-                                ___string_5 = string.Format("Item that has been found in raid for the {0} quest".Localized(null), arg);
+                                ___string_5 += string.Format("\nItem that has been found in raid for the {0} quest".Localized(null), arg);
                             }
                         }
                     }
@@ -1289,40 +1320,49 @@ namespace MoreCheckmarks
                 string areaNamesString = "";
                 for (int i = 0; i < areaNames.Count; ++i)
                 {
-                    areaNamesString += (i == 0 ? "" : (areaNames.Count == 2 ? "" : ",") + (i == areaNames.Count - 1 ? " and " : " ")) + areaNames[i];
+                    areaNamesString += "\n  " + areaNames[i];
                 }
                 if (!areaNamesString.Equals(""))
                 {
-                    if (gotQuest)
-                    {
-                        ___string_5 += string.Format(", and needed for {0} ({1}/{2})".Localized(), areaNamesString, possessedCount, requiredCount);
-                    }
-                    else
-                    {
-                        ___string_5 = string.Format("Needed for {0} ({1}/{2})".Localized(), areaNamesString, possessedCount, requiredCount);
-                    }
+                    ___string_5 += string.Format("\nNeeded ({1}/{2}) for areas:{0}".Localized(), areaNamesString, possessedCount, requiredCount);
                 }
 
                 // Add wishlist
                 if (wishlist)
                 {
-                    if (gotQuest || gotAreas)
+                    ___string_5 += string.Format("\nOn {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                }
+
+                // Add barters
+                bool gotBarters = false;
+                if (bartersByTrader != null)
+                {
+                    for (int i = 0; i < 9; ++i)
                     {
-                        ___string_5 += string.Format(", and on {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
-                    }
-                    else
-                    {
-                        ___string_5 = string.Format("On {0}".Localized(), "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                        if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
+                        {
+                            if (!gotBarters)
+                            {
+                                ___string_5 += "\nNeeded for barters:";
+                                gotBarters = true;
+                            }
+                            string bartersString = "\n With " + MoreCheckmarksMod.traders[i]+":";
+                            for (int j = 0; j < bartersByTrader[i].Count; ++j)
+                            {
+                                bartersString += "\n  <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + bartersByTrader[i][j].Key.LocalizedName() + "</color> (" + bartersByTrader[i][j].Value + ")";
+                            }
+                            ___string_5 += bartersString;
+                        }
                     }
                 }
 
                 // Show found in raid if found in raid and not required for anything else
-                if (!gotQuest && !gotAreas && !wishlist && item.MarkedAsSpawnedInSession)
+                if (!gotQuest && !gotAreas && !wishlist && !gotBarters && item.MarkedAsSpawnedInSession)
                 {
                     ___string_5 = "Item found in raid".Localized(null);
                 }
 
-                if (gotQuest || gotAreas || wishlist || item.MarkedAsSpawnedInSession)
+                if (gotQuest || gotAreas || wishlist || gotBarters || item.MarkedAsSpawnedInSession)
                 {
                     // If this is not a quest item or found in raid, the original returns and the tooltip never gets set, so we need to set it ourselves
                     ___simpleTooltip_0 = tooltip;
