@@ -54,6 +54,7 @@ namespace MoreCheckmarks
         public static int barterPriority = 3;
         public static bool showLockedModules = true;
         public static bool showFutureModulesLevels = false;
+        public static bool showBarter = true;
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.30588f, 1, 0.27843f);
         public static Color wishlistColor = new Color(0.23137f, 0.93725f, 1);
@@ -607,6 +608,10 @@ namespace MoreCheckmarks
                 {
                     showFutureModulesLevels = (bool)config["showFutureModulesLevels"];
                 }
+                if (config["showBarter"] != null)
+                {
+                    showBarter = (bool)config["showBarter"];
+                }
                 if (config["needMoreColor"] != null)
                 {
                     needMoreColor = new Color((float)config["needMoreColor"][0], (float)config["needMoreColor"][1], (float)config["needMoreColor"][2]);
@@ -857,11 +862,15 @@ namespace MoreCheckmarks
         public static List<KeyValuePair<string, int>>[] GetBarters(string ID)
         {
             List<KeyValuePair<string, int>>[] bartersByTrader = new List<KeyValuePair<string, int>>[9];
-            for(int i = 0; i < 9; ++i)
+
+            if (showBarter)
             {
-                if (bartersByItemByTrader[i] != null)
+                for (int i = 0; i < 9; ++i)
                 {
-                    bartersByItemByTrader[i].TryGetValue(ID, out bartersByTrader[i]);
+                    if (bartersByItemByTrader[i] != null)
+                    {
+                        bartersByItemByTrader[i].TryGetValue(ID, out bartersByTrader[i]);
+                    }
                 }
             }
 
