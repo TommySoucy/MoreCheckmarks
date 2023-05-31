@@ -1175,7 +1175,13 @@ namespace MoreCheckmarks
             try
             {
                 // Reset string
-                ___string_5 = "Stash: <color=#dd831a>" + possessedQuestCount + "</color>/" + possessedCount;
+                ___string_5 = "STASH".Localized(null) + ": <color=#dd831a>" + possessedQuestCount + "</color>/" + possessedCount;
+
+                // Show found in raid if found in raid
+                if (item.MarkedAsSpawnedInSession)
+                {
+                    ___string_5 = "Item found in raid".Localized(null);
+                }
 
                 // Add quests
                 bool gotQuest = false;
@@ -1354,12 +1360,6 @@ namespace MoreCheckmarks
                             ___string_5 += bartersString;
                         }
                     }
-                }
-
-                // Show found in raid if found in raid and not required for anything else
-                if (!gotQuest && !gotAreas && !wishlist && !gotBarters && item.MarkedAsSpawnedInSession)
-                {
-                    ___string_5 = "Item found in raid".Localized(null);
                 }
 
                 if (gotQuest || gotAreas || wishlist || gotBarters || item.MarkedAsSpawnedInSession)
