@@ -1079,14 +1079,10 @@ namespace MoreCheckmarks
                             int index = 0;
                             foreach (KeyValuePair<string, string> questEntry in startQuests.questData)
                             {
-                                questStartString += questEntry.Value;
+                                questStartString += (questEntry.Key+" name").Localized(null);
                                 if (index != count - 1)
                                 {
                                     questStartString += ",\n  ";
-                                    if (index == count - 2)
-                                    {
-                                        questStartString += "</color>and <color=#dd831a>";
-                                    }
                                 }
                                 else
                                 {
@@ -1119,14 +1115,10 @@ namespace MoreCheckmarks
                             int index = 0;
                             foreach (KeyValuePair<string, string> questEntry in completeQuests.questData)
                             {
-                                questCompleteString += questEntry.Value;
+                                questCompleteString += (questEntry.Key + " name").Localized(null);
                                 if (index != count - 1)
                                 {
                                     questCompleteString += ",\n  ";
-                                    if (index == count - 2)
-                                    {
-                                        questCompleteString += "</color>and <color=#dd831a>";
-                                    }
                                 }
                                 else
                                 {
