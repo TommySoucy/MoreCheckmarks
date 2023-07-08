@@ -19,14 +19,15 @@ using Aki.Common.Http;
 using Comfort.Common;
 
 
+// UPDATE: Find these GClasses
 // We want to get access to the list of availabe loot item actions when we look at loose loot so we can change color of "Take" action
-// GClass1766 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
-// This calls GClass1766.smethod_3 if the interactive is a LootItem
-// This returns an instance of GClass2645 which has a list field "Actions" containing all available actions of type GClass2644
+// GClass1826 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
+// This calls GClass1826.smethod_3 if the interactive is a LootItem
+// This returns an instance of GClass2888 which has a list field "Actions" containing all available actions of type GClass2644
 // GClass2644.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
-using InteractionController = GClass1766;
-using InteractionInstance = GClass2645;
-using Action = GClass2644;
+using InteractionController = GClass1826;
+using InteractionInstance = GClass2888;
+using Action = GClass2887;
 
 namespace MoreCheckmarks
 {
@@ -48,17 +49,18 @@ namespace MoreCheckmarks
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
-        public static int questPriority = 0;
-        public static int hideoutPriority = 1;
-        public static int wishlistPriority = 2;
-        public static int barterPriority = 3;
-        public static bool showLockedModules = true;
+        public static int questPriority = 2;
+        public static int hideoutPriority = 3;
+        public static int wishlistPriority = 4;
+        public static int barterPriority = 0;
+        public static int craftPriority = 1;
         public static bool showFutureModulesLevels = false;
         public static bool showBarter = true;
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.30588f, 1, 0.27843f);
         public static Color wishlistColor = new Color(0.23137f, 0.93725f, 1);
         public static Color barterColor = new Color(1, 0, 1);
+        public static Color craftColor = new Color(0, 0, 1);
         public static bool includeFutureQuests = true;
 
         // Assets
@@ -84,9 +86,9 @@ namespace MoreCheckmarks
         // Barter item name and amount of price by items in price
         public static Dictionary<string, List<KeyValuePair<string, int>>>[] bartersByItemByTrader = new Dictionary<string, List<KeyValuePair<string, int>>>[9];
         public static string[] traders = new string[] {"Prapor","Therapist","Fence","Skier","Peacekeeper","Mechanic","Ragman","Jaeger","Lighthouse keeper"};
-        public static int[] priorities = new int[] {0,1,2,3};
-        public static bool[] neededFor = new bool[4];
-        public static Color[] colors = new Color[] { Color.yellow, needMoreColor, wishlistColor, barterColor };
+        public static int[] priorities = new int[] {0,1,2,3,4};
+        public static bool[] neededFor = new bool[5];
+        public static Color[] colors = new Color[] { Color.yellow, needMoreColor, wishlistColor, barterColor, craftColor };
 
         private void Start()
         {
@@ -600,9 +602,10 @@ namespace MoreCheckmarks
                     barterPriority = (int)config["barterPriority"];
                     priorities[3] = barterPriority;
                 }
-                if (config["showLockedModules"] != null)
+                if (config["craftPriority"] != null)
                 {
-                    showLockedModules = (bool)config["showLockedModules"];
+                    craftPriority = (int)config["craftPriority"];
+                    priorities[4] = craftPriority;
                 }
                 if (config["showFutureModulesLevels"] != null)
                 {
@@ -629,6 +632,11 @@ namespace MoreCheckmarks
                 {
                     barterColor = new Color((float)config["barterColor"][0], (float)config["barterColor"][1], (float)config["barterColor"][2]);
                     colors[3] = barterColor;
+                }
+                if (config["craftColor"] != null)
+                {
+                    craftColor = new Color((float)config["craftColor"][0], (float)config["craftColor"][1], (float)config["craftColor"][2]);
+                    colors[4] = craftColor;
                 }
                 if (config["includeFutureQuests"] != null)
                 {
@@ -681,7 +689,10 @@ namespace MoreCheckmarks
             {
                 if (assemblies[i].GetName().Name.Equals("Assembly-CSharp"))
                 {
-                    ProfileSelector = assemblies[i].GetType("Class225").GetNestedType("Class1218", BindingFlags.NonPublic);
+                    // UPDATE: This is to know when a new profile is selected so we can load up to date data
+                    // We want to do this when client makes request "/client/game/profile/select"
+                    // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
+                    ProfileSelector = assemblies[i].GetType("Class222").GetNestedType("Class1184", BindingFlags.NonPublic);
                 }
             }
 
@@ -720,12 +731,6 @@ namespace MoreCheckmarks
 
                     // If the area has no future upgrade, skip
                     if (ad.Status == EFT.Hideout.EAreaStatus.NoFutureUpgrades)
-                    {
-                        continue;
-                    }
-
-                    // If we don't want to get requirement of locked to construct areas, skip if it is locked to construct
-                    if (!MoreCheckmarksMod.showLockedModules && ad.Status == EFT.Hideout.EAreaStatus.LockedToConstruct)
                     {
                         continue;
                     }
@@ -1151,10 +1156,12 @@ namespace MoreCheckmarks
                         {
                             if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
                             {
-                                foreach (KeyValuePair<EQuestStatus, GClass2917> kvp in questDataClass.Template.Conditions)
+                                // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQeustClass
+                                // with QuestConditionsList, for the value
+                                foreach (KeyValuePair<EQuestStatus, GClass3161> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass2917 gclass;
+                                    GClass3161 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
