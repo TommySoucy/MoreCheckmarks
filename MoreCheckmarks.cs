@@ -46,7 +46,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.1";
+        public const string pluginVersion = "1.5.2";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
