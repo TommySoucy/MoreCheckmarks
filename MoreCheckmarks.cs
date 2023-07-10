@@ -86,6 +86,7 @@ namespace MoreCheckmarks
         }
         public static JObject itemData;
         public static JObject locales;
+        public static Dictionary<string, string> productionEndProductByID = new Dictionary<string, string>();
         // Barter item name and amount of price by items in price
         public static Dictionary<string, List<KeyValuePair<string, int>>>[] bartersByItemByTrader = new Dictionary<string, List<KeyValuePair<string, int>>>[9];
         public static string[] traders = new string[] {"Prapor","Therapist","Fence","Skier","Peacekeeper","Mechanic","Ragman","Jaeger","Lighthouse keeper"};
@@ -561,6 +562,15 @@ namespace MoreCheckmarks
                     }
                 }
             }
+
+            LogInfo("\tProductions");
+            JArray productionData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/productions", false));
+            productionEndProductByID.Clear();
+
+            for (int i = 0; i < productionData.Count; ++i)
+            {
+                productionEndProductByID.Add(productionData[i]["_id"].ToString(), productionData[i]["endProduct"].ToString());
+            }
         }
 
         private bool StringJArrayContainsString(JArray arr, string s)
@@ -887,14 +897,6 @@ namespace MoreCheckmarks
                         continue;
                     }
 
-                    //for(int level = 0; level < ad.CurrentLevel; ++level)
-                    //{
-                    //    if(ad.StageAt(level) != null)
-                    //    {
-
-                    //    }
-                    //}
-
                     // UPDATE: Class here is class used in AreaData.Stage.Production.Data array
                     if (currentStage.Production != null && currentStage.Production.Data != null)
                     {
@@ -915,12 +917,15 @@ namespace MoreCheckmarks
 
                                         if (needTooltip)
                                         {
-                                            if (!areaNameAdded)
+                                            if (productionEndProductByID.TryGetValue(productionData._id, out string product))
                                             {
-                                                tooltip += "\n  " + ad.Template.Name.Localized();
-                                                areaNameAdded = true;
+                                                if (!areaNameAdded)
+                                                {
+                                                    tooltip += "\n  " + ad.Template.Name.Localized();
+                                                    areaNameAdded = true;
+                                                }
+                                                tooltip += "\n    <color=#" + ColorUtility.ToHtmlStringRGB(craftColor) + ">" + (product + " Name").Localized() + " lvl" + productionData.Level + "</color> (" + itemRequirement.IntCount + ")";
                                             }
-                                            tooltip += "\n    <color=#" + ColorUtility.ToHtmlStringRGB(craftColor) + ">" + (productionData._id.Localized() + " Name").Localized() + " lvl" + productionData.Level + " (" + itemRequirement.UserItemsCount + "/" + itemRequirement.IntCount + ")</color>";
                                         }
                                         else
                                         {
@@ -1371,7 +1376,7 @@ namespace MoreCheckmarks
                     }
                 }
 
-                if (gotQuest || gotAreas || wishlist || gotBarters || item.MarkedAsSpawnedInSession)
+                if (gotQuest || gotAreas || wishlist || gotBarters || craftRequired || item.MarkedAsSpawnedInSession)
                 {
                     // If this is not a quest item or found in raid, the original returns and the tooltip never gets set, so we need to set it ourselves
                     ___simpleTooltip_0 = tooltip;
