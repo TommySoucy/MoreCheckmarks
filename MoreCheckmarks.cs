@@ -28,6 +28,7 @@ using Comfort.Common;
 using InteractionController = GClass1826;
 using InteractionInstance = GClass2888;
 using Action = GClass2887;
+using EFT.Hideout;
 
 namespace MoreCheckmarks
 {
@@ -56,6 +57,8 @@ namespace MoreCheckmarks
         public static int craftPriority = 1;
         public static bool showFutureModulesLevels = false;
         public static bool showBarter = true;
+        public static bool showCraft = true;
+        public static bool showFutureCraft = true;
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.30588f, 1, 0.27843f);
         public static Color wishlistColor = new Color(0.23137f, 0.93725f, 1);
@@ -642,6 +645,14 @@ namespace MoreCheckmarks
                 {
                     includeFutureQuests = (bool)config["includeFutureQuests"];
                 }
+                if (config["showCraft"] != null)
+                {
+                    showCraft = (bool)config["showCraft"];
+                }
+                if (config["showFutureCraft"] != null)
+                {
+                    showFutureCraft = (bool)config["showFutureCraft"];
+                }
 
                 Logger.LogInfo("Configs loaded");
             }
@@ -719,43 +730,50 @@ namespace MoreCheckmarks
                 HideoutClass hideoutInstance = Comfort.Common.Singleton<HideoutClass>.Instance;
                 foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
                 {
+                    // Skip if don't have area data
                     if(ad == null || ad.Template == null || ad.Template.Name == null || ad.NextStage == null)
                     {
                         continue;
                     }
 
+                    // Skip if place of fame (unimplemented)
                     if (ad.Template.Name.Equals("Place of fame"))
                     {
                         continue;
                     }
 
-                    // If the area has no future upgrade, skip
+                    // Skip if the area has no future upgrade
                     if (ad.Status == EFT.Hideout.EAreaStatus.NoFutureUpgrades)
                     {
                         continue;
                     }
 
+                    // Collect all future stages
                     List<EFT.Hideout.Stage> futureStages = new List<EFT.Hideout.Stage>();
                     EFT.Hideout.Stage lastStage = ad.CurrentStage;
-                    bool first = true;
                     while ((lastStage = ad.StageAt(lastStage.Level + 1)) != null && lastStage.Level != 0)
                     {
-                        if(first && (ad.Status == EFT.Hideout.EAreaStatus.Constructing || ad.Status == EFT.Hideout.EAreaStatus.Upgrading))
+                        // Don't want to check requirements for an area we are currently constructing/upgrading
+                        if(ad.Status == EFT.Hideout.EAreaStatus.Constructing || ad.Status == EFT.Hideout.EAreaStatus.Upgrading)
                         {
-                            first = false;
                             continue;
                         }
                         futureStages.Add(lastStage);
+
+                        // If only want next level requirements, skip the rest
                         if (!MoreCheckmarksMod.showFutureModulesLevels)
                         {
                             break;
                         }
                     }
+
+                    // Skip are if no stages were found to check requirements for
                     if(futureStages.Count == 0)
                     {
                         continue;
                     }
 
+                    // Check requirements
                     foreach (EFT.Hideout.Stage stage in futureStages)
                     {
                         EFT.Hideout.RelatedRequirements requirements = stage.Requirements;
@@ -822,6 +840,105 @@ namespace MoreCheckmarks
             }
 
             return neededStruct;
+        }
+
+        public static bool GetNeededCraft(string itemTemplateID, ref string tooltip, bool needTooltip = true)
+        {
+            bool required = false;
+            try
+            {
+                HideoutClass hideoutInstance = Comfort.Common.Singleton<HideoutClass>.Instance;
+                foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
+                {
+                    // Skip if don't have area data
+                    if (ad == null || ad.Template == null || ad.Template.Name == null)
+                    {
+                        continue;
+                    }
+
+                    // Skip if place of fame (unimplemented)
+                    if (ad.Template.Name.Equals("Place of fame"))
+                    {
+                        continue;
+                    }
+
+                    // Get stage to check productions of
+                    // Productions are cumulative, a stage will have productions of all previous stages
+                    Stage currentStage = ad.CurrentStage;
+                    if(currentStage == null)
+                    {
+                        int level = 0;
+                        while(currentStage == null)
+                        {
+                            currentStage = ad.StageAt(level++);
+                        }
+                    }
+                    if (currentStage != null)
+                    {
+                        Stage newStage = ad.StageAt(currentStage.Level + 1);
+                        while (newStage != null && newStage.Level != 0)
+                        {
+                            currentStage = newStage;
+                            newStage = ad.StageAt(currentStage.Level + 1);
+                        }
+                    }
+                    if(currentStage == null)
+                    {
+                        continue;
+                    }
+
+                    //for(int level = 0; level < ad.CurrentLevel; ++level)
+                    //{
+                    //    if(ad.StageAt(level) != null)
+                    //    {
+
+                    //    }
+                    //}
+
+                    // UPDATE: Class here is class used in AreaData.Stage.Production.Data array
+                    if (currentStage.Production != null && currentStage.Production.Data != null)
+                    {
+                        bool areaNameAdded = false;
+                        foreach (GClass1887 productionData in currentStage.Production.Data)
+                        {
+                            Requirement[] requirements = productionData.requirements;
+
+                            foreach (Requirement baseReq in requirements)
+                            { 
+                                if (baseReq.Type == ERequirementType.Item)
+                                {
+                                    ItemRequirement itemRequirement = baseReq as ItemRequirement;
+
+                                    if (itemTemplateID == itemRequirement.TemplateId)
+                                    {
+                                        required = true;
+
+                                        if (needTooltip)
+                                        {
+                                            if (!areaNameAdded)
+                                            {
+                                                tooltip += "\n  " + ad.Template.Name.Localized();
+                                                areaNameAdded = true;
+                                            }
+                                            tooltip += "\n    <color=#" + ColorUtility.ToHtmlStringRGB(craftColor) + ">" + (productionData._id.Localized() + " Name").Localized() + " lvl" + productionData.Level + " (" + itemRequirement.UserItemsCount + "/" + itemRequirement.IntCount + ")</color>";
+                                        }
+                                        else
+                                        {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MoreCheckmarksMod.LogError("Failed to get whether item "+itemTemplateID+" was needed for crafting: "+ex.Message);
+            }
+
+            return required;
         }
 
         public static bool IsQuestItem(IEnumerable<QuestDataClass> quests, string templateID)
@@ -932,6 +1049,8 @@ namespace MoreCheckmarks
                 // Get requirements
                 List<string> areaNames = new List<string>();
                 NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
+                string craftTooltip = "";
+                bool craftRequired = MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
                 MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
                 bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
@@ -965,11 +1084,12 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.neededFor[1] = neededStruct.foundNeeded || neededStruct.foundFulfilled;
                 MoreCheckmarksMod.neededFor[2] = wishlist;
                 MoreCheckmarksMod.neededFor[3] = gotBarters;
+                MoreCheckmarksMod.neededFor[4] = craftRequired;
 
                 // Find needed with highest priority
                 int currentNeeded = -1;
                 int currentHighest = -1;
-                for(int i=0; i < 4; ++i)
+                for(int i=0; i < 5; ++i)
                 {
                     if (MoreCheckmarksMod.neededFor[i] && MoreCheckmarksMod.priorities[i] > currentHighest)
                     {
@@ -1019,7 +1139,7 @@ namespace MoreCheckmarks
                 }
 
                 // Set tooltip based on requirements
-                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests, completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist, bartersByTrader, gotBarters);
+                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests, completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist, bartersByTrader, gotBarters, craftRequired, craftTooltip);
 
                 return false;
             }
@@ -1055,7 +1175,8 @@ namespace MoreCheckmarks
 
         private static void SetTooltip(EFT.Profile profile, List<string> areaNames, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
                                        EFT.InventoryLogic.Item item, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests,
-                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<KeyValuePair<string, int>>[] bartersByTrader, bool gotBarters)
+                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<KeyValuePair<string, int>>[] bartersByTrader, bool gotBarters,
+                                       bool craftRequired, string craftTooltip)
         {
             try
             {
@@ -1156,7 +1277,7 @@ namespace MoreCheckmarks
                         {
                             if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
                             {
-                                // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQeustClass
+                                // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
                                 // with QuestConditionsList, for the value
                                 foreach (KeyValuePair<EQuestStatus, GClass3161> kvp in questDataClass.Template.Conditions)
                                 {
@@ -1216,6 +1337,12 @@ namespace MoreCheckmarks
                 if (wishlist)
                 {
                     ___string_5 += string.Format("\nOn {0}", "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                }
+
+                // Add craft
+                if (craftRequired)
+                {
+                    ___string_5 += string.Format("\nNeeded for crafting:{0}", craftTooltip);
                 }
 
                 // Add barters
@@ -1304,6 +1431,8 @@ namespace MoreCheckmarks
                     {
                         List<string> nullAreaNames = null;
                         NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
+                        string craftTooltip = "";
+                        bool craftRequired = MoreCheckmarksMod.GetNeededCraft(lootItem.TemplateId, ref craftTooltip, false);
                         bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
                         bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.QuestsData, lootItem.TemplateId);
 
