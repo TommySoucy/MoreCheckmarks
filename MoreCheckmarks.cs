@@ -21,13 +21,13 @@ using Comfort.Common;
 
 // UPDATE: Find these GClasses
 // We want to get access to the list of availabe loot item actions when we look at loose loot so we can change color of "Take" action
-// GClass1826 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
-// This calls GClass1826.smethod_3 if the interactive is a LootItem
-// This returns an instance of GClass2888 which has a list field "Actions" containing all available actions of type GClass2644
-// GClass2644.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
-using InteractionController = GClass1826;
-using InteractionInstance = GClass2888;
-using Action = GClass2887;
+// GClass1829 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
+// This calls GClass1829.smethod_3 if the interactive is a LootItem
+// This returns an instance of GClass2891 which has a list field "Actions" containing all available actions of type GClass2890
+// GClass2890.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
+using InteractionController = GClass1829;
+using InteractionInstance = GClass2891;
+using Action = GClass2890;
 using EFT.Hideout;
 
 namespace MoreCheckmarks
@@ -46,7 +46,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.2";
+        public const string pluginVersion = "1.5.3";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -61,9 +61,9 @@ namespace MoreCheckmarks
         public static bool showFutureCraft = true;
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.30588f, 1, 0.27843f);
-        public static Color wishlistColor = new Color(0.23137f, 0.93725f, 1);
+        public static Color wishlistColor = new Color(0, 0, 1);
         public static Color barterColor = new Color(1, 0, 1);
-        public static Color craftColor = new Color(0, 0, 1);
+        public static Color craftColor = new Color(0, 1, 1);
         public static bool includeFutureQuests = true;
 
         // Assets
@@ -713,7 +713,7 @@ namespace MoreCheckmarks
                     // UPDATE: This is to know when a new profile is selected so we can load up to date data
                     // We want to do this when client makes request "/client/game/profile/select"
                     // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    ProfileSelector = assemblies[i].GetType("Class222").GetNestedType("Class1184", BindingFlags.NonPublic);
+                    ProfileSelector = assemblies[i].GetType("Class223").GetNestedType("Class1187", BindingFlags.NonPublic);
                 }
             }
 
@@ -901,7 +901,7 @@ namespace MoreCheckmarks
                     if (currentStage.Production != null && currentStage.Production.Data != null)
                     {
                         bool areaNameAdded = false;
-                        foreach (GClass1887 productionData in currentStage.Production.Data)
+                        foreach (GClass1890 productionData in currentStage.Production.Data)
                         {
                             Requirement[] requirements = productionData.requirements;
 
@@ -1284,10 +1284,10 @@ namespace MoreCheckmarks
                             {
                                 // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
                                 // with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass3161> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3164> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass3161 gclass;
+                                    GClass3164 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
