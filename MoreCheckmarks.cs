@@ -888,6 +888,10 @@ namespace MoreCheckmarks
                         Stage newStage = ad.StageAt(currentStage.Level + 1);
                         while (newStage != null && newStage.Level != 0)
                         {
+                            if (newStage.Level > ad.CurrentLevel && !showFutureCraft) 
+                            {
+                                break;
+                            }
                             currentStage = newStage;
                             newStage = ad.StageAt(currentStage.Level + 1);
                         }
@@ -1055,7 +1059,7 @@ namespace MoreCheckmarks
                 List<string> areaNames = new List<string>();
                 NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
                 string craftTooltip = "";
-                bool craftRequired = MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
+                bool craftRequired = MoreCheckmarksMod.showCraft && MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
                 MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
                 bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
