@@ -46,7 +46,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.5";
+        public const string pluginVersion = "1.5.6";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -999,13 +999,19 @@ namespace MoreCheckmarks
             {
                 for (int i = 0; i < bartersByItemByTrader.Count; ++i)
                 {
-                    List<KeyValuePair<string, int>> current = new List<KeyValuePair<string, int>>();
-                    bartersByTrader.Add(current);
+                    List<KeyValuePair<string, int>> current = null;
 
                     if (bartersByItemByTrader[i] != null)
                     {
                         bartersByItemByTrader[i].TryGetValue(ID, out current);
                     }
+
+                    if(current == null)
+                    {
+                        current = new List<KeyValuePair<string, int>>();
+                    }
+
+                    bartersByTrader.Add(current);
                 }
             }
 
