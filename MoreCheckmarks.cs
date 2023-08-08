@@ -46,7 +46,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.4";
+        public const string pluginVersion = "1.5.5";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -88,7 +88,7 @@ namespace MoreCheckmarks
         public static JObject locales;
         public static Dictionary<string, string> productionEndProductByID = new Dictionary<string, string>();
         // Barter item name and amount of price by items in price
-        public static Dictionary<string, List<KeyValuePair<string, int>>>[] bartersByItemByTrader = new Dictionary<string, List<KeyValuePair<string, int>>>[9];
+        public static List<Dictionary<string, List<KeyValuePair<string, int>>>> bartersByItemByTrader = new List<Dictionary<string, List<KeyValuePair<string, int>>>>();
         public static string[] traders = new string[] {"Prapor","Therapist","Fence","Skier","Peacekeeper","Mechanic","Ragman","Jaeger","Lighthouse keeper"};
         public static int[] priorities = new int[] {0,1,2,3,4};
         public static bool[] neededFor = new bool[5];
@@ -139,9 +139,9 @@ namespace MoreCheckmarks
                         {
                             if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["_id"].ToString()))
+                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
                                 {
-                                    quests.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 }
                                 int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 quests.count += parsedValue;
@@ -149,7 +149,7 @@ namespace MoreCheckmarks
                             else
                             {
                                 QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 newPair.count = parsedValue;
                                 questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
@@ -204,9 +204,9 @@ namespace MoreCheckmarks
 
                             if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["_id"].ToString()))
+                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
                                 {
-                                    quests.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 }
                                 int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 quests.count += parsedValue;
@@ -214,7 +214,7 @@ namespace MoreCheckmarks
                             else
                             {
                                 QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 newPair.count = parsedValue;
                                 questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
@@ -246,9 +246,9 @@ namespace MoreCheckmarks
                         {
                             if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["_id"].ToString()))
+                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
                                 {
-                                    quests.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 }
                                 int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 quests.count += parsedValue;
@@ -256,7 +256,7 @@ namespace MoreCheckmarks
                             else
                             {
                                 QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 newPair.count = parsedValue;
                                 questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
@@ -288,9 +288,9 @@ namespace MoreCheckmarks
                         {
                             if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["_id"].ToString()))
+                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
                                 {
-                                    quests.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 }
                                 int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 quests.count += parsedValue;
@@ -298,7 +298,7 @@ namespace MoreCheckmarks
                             else
                             {
                                 QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 int.TryParse(availableForFinishConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 newPair.count = parsedValue;
                                 questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
@@ -334,9 +334,9 @@ namespace MoreCheckmarks
                         {
                             if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["_id"].ToString()))
+                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
                                 {
-                                    quests.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 }
                                 int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 quests.count += parsedValue;
@@ -344,7 +344,7 @@ namespace MoreCheckmarks
                             else
                             {
                                 QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 newPair.count = parsedValue;
                                 questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
@@ -399,9 +399,9 @@ namespace MoreCheckmarks
 
                             if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["_id"].ToString()))
+                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
                                 {
-                                    quests.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 }
                                 int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 quests.count += parsedValue;
@@ -409,7 +409,7 @@ namespace MoreCheckmarks
                             else
                             {
                                 QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 newPair.count = parsedValue;
                                 questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
@@ -441,9 +441,9 @@ namespace MoreCheckmarks
                         {
                             if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["_id"].ToString()))
+                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
                                 {
-                                    quests.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 }
                                 int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 quests.count += parsedValue;
@@ -451,7 +451,7 @@ namespace MoreCheckmarks
                             else
                             {
                                 QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 newPair.count = parsedValue;
                                 questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
@@ -483,9 +483,9 @@ namespace MoreCheckmarks
                         {
                             if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["_id"].ToString()))
+                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
                                 {
-                                    quests.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 }
                                 int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 quests.count += parsedValue;
@@ -493,7 +493,7 @@ namespace MoreCheckmarks
                             else
                             {
                                 QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["_id"].ToString(), questData[i]["QuestName"].ToString());
+                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
                                 int.TryParse(availableForStartConditions[j]["_props"]["value"].ToString(), out int parsedValue);
                                 newPair.count = parsedValue;
                                 questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
@@ -520,7 +520,7 @@ namespace MoreCheckmarks
                 }
             }
 
-            LogInfo("\tAssorts");
+            LogInfo("\tItems");
             string euro = "569668774bdc2da2298b4568";
             string rouble = "5449016a4bdc2d6f028b456f";
             string dollar = "5696686a4bdc2da3298b456a";
@@ -528,12 +528,13 @@ namespace MoreCheckmarks
             {
                 itemData = JObject.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/items", false));
             }
+
+            LogInfo("\tAssorts");
             JArray assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts", false));
 
             for(int i=0; i < assortData.Count; ++i)
             {
-                string currentTrader = traders[i];
-                bartersByItemByTrader[i] = new Dictionary<string, List<KeyValuePair<string, int>>>();
+                bartersByItemByTrader.Add(new Dictionary<string, List<KeyValuePair<string, int>>>());
                 JArray items = assortData[i]["items"] as JArray;
                 for (int j = 0; j < items.Count; ++j)
                 {
@@ -990,17 +991,20 @@ namespace MoreCheckmarks
             return false;
         }
 
-        public static List<KeyValuePair<string, int>>[] GetBarters(string ID)
+        public static List<List<KeyValuePair<string, int>>> GetBarters(string ID)
         {
-            List<KeyValuePair<string, int>>[] bartersByTrader = new List<KeyValuePair<string, int>>[9];
+            List<List<KeyValuePair<string, int>>> bartersByTrader = new List<List<KeyValuePair<string, int>>>();
 
             if (showBarter)
             {
-                for (int i = 0; i < 9; ++i)
+                for (int i = 0; i < bartersByItemByTrader.Count; ++i)
                 {
+                    List<KeyValuePair<string, int>> current = new List<KeyValuePair<string, int>>();
+                    bartersByTrader.Add(current);
+
                     if (bartersByItemByTrader[i] != null)
                     {
-                        bartersByItemByTrader[i].TryGetValue(ID, out bartersByTrader[i]);
+                        bartersByItemByTrader[i].TryGetValue(ID, out current);
                     }
                 }
             }
@@ -1064,11 +1068,11 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
                 bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
                 bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
-                List<KeyValuePair<string, int>>[] bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
+                List<List<KeyValuePair<string, int>>> bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
                 bool gotBarters = false;
                 if (bartersByTrader != null)
                 {
-                    for (int i = 0; i < 9; ++i)
+                    for (int i = 0; i < bartersByTrader.Count; ++i)
                     {
                         if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
                         {
@@ -1152,15 +1156,15 @@ namespace MoreCheckmarks
 
                 return false;
             }
-            catch
+            catch (Exception ex)
             {
                 if(item != null)
                 {
-                    MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch postfix failed on item: " + item.TemplateId + " named " + item.LocalizedName());
+                    MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch failed on item: " + item.TemplateId + " named " + item.LocalizedName()+":\n"+ex.Message+":\n"+ex.StackTrace);
                 }
                 else
                 {
-                    MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch postfix failed, item null");
+                    MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch failed, item null:\n" + ex.Message + ":\n" + ex.StackTrace);
                 }
             }
 
@@ -1184,7 +1188,7 @@ namespace MoreCheckmarks
 
         private static void SetTooltip(EFT.Profile profile, List<string> areaNames, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
                                        EFT.InventoryLogic.Item item, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests,
-                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<KeyValuePair<string, int>>[] bartersByTrader, bool gotBarters,
+                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<List<KeyValuePair<string, int>>> bartersByTrader, bool gotBarters,
                                        bool craftRequired, string craftTooltip)
         {
             try
@@ -1223,7 +1227,23 @@ namespace MoreCheckmarks
                             int index = 0;
                             foreach (KeyValuePair<string, string> questEntry in startQuests.questData)
                             {
-                                questStartString += (questEntry.Key+" name").Localized(null);
+                                string localizedName = questEntry.Key.Localized(null);
+                                if (questEntry.Key.Equals(localizedName))
+                                {
+                                    // Could not localize name, just use default name
+                                    if (questEntry.Value.IsNullOrEmpty())
+                                    {
+                                        questStartString += "Unknown Quest";
+                                    }
+                                    else
+                                    {
+                                        questStartString += questEntry.Value;
+                                    }
+                                }
+                                else
+                                {
+                                    questStartString += localizedName;
+                                }
                                 if (index != count - 1)
                                 {
                                     questStartString += ",\n  ";
@@ -1259,7 +1279,23 @@ namespace MoreCheckmarks
                             int index = 0;
                             foreach (KeyValuePair<string, string> questEntry in completeQuests.questData)
                             {
-                                questCompleteString += (questEntry.Key + " name").Localized(null);
+                                string localizedName = questEntry.Key.Localized(null);
+                                if (questEntry.Key.Equals(localizedName))
+                                {
+                                    // Could not localize name, just use default name
+                                    if (questEntry.Value.IsNullOrEmpty())
+                                    {
+                                        questCompleteString += "Unknown Quest";
+                                    }
+                                    else
+                                    {
+                                        questCompleteString += questEntry.Value;
+                                    }
+                                }
+                                else
+                                {
+                                    questCompleteString += localizedName;
+                                }
                                 if (index != count - 1)
                                 {
                                     questCompleteString += ",\n  ";
@@ -1360,7 +1396,7 @@ namespace MoreCheckmarks
                     bool firstBarter = false;
                     if (bartersByTrader != null)
                     {
-                        for (int i = 0; i < 9; ++i)
+                        for (int i = 0; i < bartersByTrader.Count; ++i)
                         {
                             if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
                             {
@@ -1369,7 +1405,7 @@ namespace MoreCheckmarks
                                     ___string_5 += "\n" + "Barter".Localized(null) + ":";
                                     firstBarter = true;
                                 }
-                                string bartersString = "\n With " + MoreCheckmarksMod.traders[i] + ":";
+                                string bartersString = "\n With " + (MoreCheckmarksMod.traders.Length > i ? MoreCheckmarksMod.traders[i] : "Custom Trader "+i) + ":";
                                 for (int j = 0; j < bartersByTrader[i].Count; ++j)
                                 {
                                     bartersString += "\n  <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + bartersByTrader[i][j].Key.LocalizedName() + "</color> (" + bartersByTrader[i][j].Value + ")";
