@@ -46,7 +46,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.6";
+        public const string pluginVersion = "1.5.7";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -531,8 +531,8 @@ namespace MoreCheckmarks
 
             LogInfo("\tAssorts");
             JArray assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts", false));
-
-            for(int i=0; i < assortData.Count; ++i)
+            bartersByItemByTrader.Clear();
+            for (int i=0; i < assortData.Count; ++i)
             {
                 bartersByItemByTrader.Add(new Dictionary<string, List<KeyValuePair<string, int>>>());
                 JArray items = assortData[i]["items"] as JArray;
