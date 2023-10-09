@@ -21,13 +21,13 @@ using Comfort.Common;
 
 // UPDATE: Find these GClasses
 // We want to get access to the list of availabe loot item actions when we look at loose loot so we can change color of "Take" action
-// GClass1829 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
-// This calls GClass1829.smethod_3 if the interactive is a LootItem
-// This returns an instance of GClass2891 which has a list field "Actions" containing all available actions of type GClass2890
-// GClass2890.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
-using InteractionController = GClass1829;
-using InteractionInstance = GClass2891;
-using Action = GClass2890;
+// GClass1726 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
+// This calls GClass1726.smethod_3 if the interactive is a LootItem
+// This returns an instance of GClass2804 which has a list field "Actions" containing all available actions of type GClass2803
+// GClass2803.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
+using InteractionController = GClass1726;
+using InteractionInstance = GClass2804;
+using Action = GClass2803;
 using EFT.Hideout;
 
 namespace MoreCheckmarks
@@ -46,7 +46,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.7";
+        public const string pluginVersion = "1.5.8";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -714,7 +714,7 @@ namespace MoreCheckmarks
                     // UPDATE: This is to know when a new profile is selected so we can load up to date data
                     // We want to do this when client makes request "/client/game/profile/select"
                     // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    ProfileSelector = assemblies[i].GetType("Class223").GetNestedType("Class1187", BindingFlags.NonPublic);
+                    ProfileSelector = assemblies[i].GetType("Class235").GetNestedType("Class1213", BindingFlags.NonPublic);
                 }
             }
 
@@ -906,7 +906,7 @@ namespace MoreCheckmarks
                     if (currentStage.Production != null && currentStage.Production.Data != null)
                     {
                         bool areaNameAdded = false;
-                        foreach (GClass1890 productionData in currentStage.Production.Data)
+                        foreach (GClass1788 productionData in currentStage.Production.Data)
                         {
                             Requirement[] requirements = productionData.requirements;
 
@@ -1330,10 +1330,10 @@ namespace MoreCheckmarks
                             {
                                 // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
                                 // with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass3164> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3090> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass3164 gclass;
+                                    GClass3090 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
@@ -1358,7 +1358,7 @@ namespace MoreCheckmarks
                             }
                             Weapon weapon;
                             ConditionWeaponAssembly condition;
-                            if (!gotQuest && (weapon = (item as Weapon)) != null && (condition = (conditionItem as ConditionWeaponAssembly)) != null && InventoryClass.IsWeaponFitsCondition(weapon, condition, false))
+                            if (!gotQuest && (weapon = (item as Weapon)) != null && (condition = (conditionItem as ConditionWeaponAssembly)) != null && Inventory.IsWeaponFitsCondition(weapon, condition, false))
                             {
                                 gotQuest = true;
                                 ___string_5 += string.Format("\nItem fits the active {0} quest requirements".Localized(null), arg);
