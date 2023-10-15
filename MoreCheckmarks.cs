@@ -23,11 +23,11 @@ using Comfort.Common;
 // We want to get access to the list of availabe loot item actions when we look at loose loot so we can change color of "Take" action
 // GClass1726 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
 // This calls GClass1726.smethod_3 if the interactive is a LootItem
-// This returns an instance of GClass2804 which has a list field "Actions" containing all available actions of type GClass2803
-// GClass2803.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
+// This returns an instance of GClass2805 which has a list field "Actions" containing all available actions of type GClass2804
+// GClass2804.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
 using InteractionController = GClass1726;
-using InteractionInstance = GClass2804;
-using Action = GClass2803;
+using InteractionInstance = GClass2805;
+using Action = GClass2804;
 using EFT.Hideout;
 
 namespace MoreCheckmarks
@@ -46,7 +46,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.8";
+        public const string pluginVersion = "1.5.9";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -906,7 +906,7 @@ namespace MoreCheckmarks
                     if (currentStage.Production != null && currentStage.Production.Data != null)
                     {
                         bool areaNameAdded = false;
-                        foreach (GClass1788 productionData in currentStage.Production.Data)
+                        foreach (GClass1789 productionData in currentStage.Production.Data)
                         {
                             Requirement[] requirements = productionData.requirements;
 
@@ -1330,10 +1330,10 @@ namespace MoreCheckmarks
                             {
                                 // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
                                 // with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass3090> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3091> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass3090 gclass;
+                                    GClass3091 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
