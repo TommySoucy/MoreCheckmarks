@@ -154,6 +154,23 @@ class Mod implements IPreAkiLoadMod
 							return JSON.stringify(locales);
 						}
                     }
+                },
+                {
+                    url: "/MoreCheckmarksRoutes/productions",
+                    action: (url, info, sessionID, output) => 
+                    {
+                        logger.info("MoreCheckmarks making productions request");
+						
+						const production: IHideoutProduction = {};
+						if(databaseServer && databaseServer.getTables() && databaseServer.getTables().hideout && databaseServer.getTables().hideout.production)
+						{
+							return JSON.stringify(databaseServer.getTables().hideout.production);
+						}
+						else
+						{
+							return JSON.stringify(production);
+						}
+                    }
                 }
             ],
             "custom-static-MoreCheckmarksRoutes"
