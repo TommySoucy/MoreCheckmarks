@@ -747,12 +747,6 @@ namespace MoreCheckmarks
                         continue;
                     }
 
-                    // Skip if place of fame (unimplemented)
-                    if (ad.Template.Name.Equals("Place of fame"))
-                    {
-                        continue;
-                    }
-
                     // Skip if the area has no future upgrade
                     if (ad.Status == EFT.Hideout.EAreaStatus.NoFutureUpgrades)
                     {
@@ -856,6 +850,7 @@ namespace MoreCheckmarks
         public static bool GetNeededCraft(string itemTemplateID, ref string tooltip, bool needTooltip = true)
         {
             bool required = false;
+            bool gotTooltip = false;
             try
             {
                 HideoutClass hideoutInstance = Comfort.Common.Singleton<HideoutClass>.Instance;
@@ -863,12 +858,6 @@ namespace MoreCheckmarks
                 {
                     // Skip if don't have area data
                     if (ad == null || ad.Template == null || ad.Template.Name == null)
-                    {
-                        continue;
-                    }
-
-                    // Skip if place of fame (unimplemented)
-                    if (ad.Template.Name.Equals("Place of fame"))
                     {
                         continue;
                     }
@@ -924,6 +913,7 @@ namespace MoreCheckmarks
                                         {
                                             if (productionEndProductByID.TryGetValue(productionData._id, out string product))
                                             {
+                                                gotTooltip = true;
                                                 if (!areaNameAdded)
                                                 {
                                                     tooltip += "\n  " + ad.Template.Name.Localized();
@@ -948,7 +938,7 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.LogError("Failed to get whether item "+itemTemplateID+" was needed for crafting: "+ex.Message);
             }
 
-            return required;
+            return required && gotTooltip;
         }
 
         public static bool IsQuestItem(IEnumerable<QuestDataClass> quests, string templateID)
