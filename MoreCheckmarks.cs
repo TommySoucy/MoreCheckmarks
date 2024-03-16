@@ -21,13 +21,13 @@ using Comfort.Common;
 
 // UPDATE: Find these GClasses
 // We want to get access to the list of availabe loot item actions when we look at loose loot so we can change color of "Take" action
-// GClass1726 has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface85 interactive) to get list of actions available for the interactive
-// This calls GClass1726.smethod_3 if the interactive is a LootItem
-// This returns an instance of GClass2805 which has a list field "Actions" containing all available actions of type GClass2804
-// GClass2804.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
+// GetActionsClass has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface102 interactive) to get list of actions available for the interactive
+// This calls GetActionsClass.smethod_4 if the interactive is a LootItem
+// This returns an instance of GClass3008 which has a list field "Actions" containing all available actions of type GClass3007
+// GClass3007.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
 using InteractionController = GetActionsClass;
-using InteractionInstance = GClass3012;
-using Action = GClass3011;
+using InteractionInstance = GClass3008;
+using Action = GClass3007;
 using EFT.Hideout;
 
 namespace MoreCheckmarks
@@ -46,7 +46,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.9";
+        public const string pluginVersion = "1.5.10";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -564,14 +564,14 @@ namespace MoreCheckmarks
                 }
             }
 
-            /*LogInfo("\tProductions");
+            LogInfo("\tProductions");
             JArray productionData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/productions", false));
             productionEndProductByID.Clear();
 
             for (int i = 0; i < productionData.Count; ++i)
             {
                 productionEndProductByID.Add(productionData[i]["_id"].ToString(), productionData[i]["endProduct"].ToString());
-            }*/
+            }
         }
 
         private bool StringJArrayContainsString(JArray arr, string s)
@@ -970,7 +970,7 @@ namespace MoreCheckmarks
                         {
                             if (quest.Template.Conditions != null)
                             {
-                                foreach (KeyValuePair<EQuestStatus, GClass3373> keyValuePair in quest.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3368> keyValuePair in quest.Template.Conditions)
                                 {
                                     if (keyValuePair.Key == EQuestStatus.AvailableForFinish)
                                     {
@@ -1336,12 +1336,12 @@ namespace MoreCheckmarks
                         {
                             if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
                             {
-                                // UPDATE: Look for the type used in QuestDataClass's Template var of type RawGClass1249
+                                // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
                                 // with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass3373> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3368> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass3373 gclass;
+                                    GClass3368 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
