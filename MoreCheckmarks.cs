@@ -18,16 +18,6 @@ using BepInEx;
 using Aki.Common.Http;
 using Comfort.Common;
 
-
-// UPDATE: Find these GClasses
-// We want to get access to the list of availabe loot item actions when we look at loose loot so we can change color of "Take" action
-// GetActionsClass has static method GetAvailableActions(GamePlayerOwner owner, [CanBeNull] GInterface102 interactive) to get list of actions available for the interactive
-// This calls GetActionsClass.smethod_4 if the interactive is a LootItem
-// This returns an instance of GClass3008 which has a list field "Actions" containing all available actions of type GClass3007
-// GClass3007.Name will be directly used as the string that will be displayed in the list, so we set it to a TMPro string with correct color and bold
-using InteractionController = GetActionsClass;
-using InteractionInstance = GClass3008;
-using Action = GClass3007;
 using EFT.Hideout;
 
 namespace MoreCheckmarks
@@ -121,7 +111,7 @@ namespace MoreCheckmarks
         {
             LogInfo("Loading data");
             LogInfo("\tQuests");
-            JArray questData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/quests", false));
+            JArray questData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/quests"));
             questDataStartByItemTemplateID.Clear();
             neededStartItemsByQuest.Clear();
             questDataCompleteByItemTemplateID.Clear();
@@ -526,11 +516,11 @@ namespace MoreCheckmarks
             string dollar = "5696686a4bdc2da3298b456a";
             if (itemData == null)
             {
-                itemData = JObject.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/items", false));
+                itemData = JObject.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/items"));
             }
 
             LogInfo("\tAssorts");
-            JArray assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts", false));
+            JArray assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts"));
             bartersByItemByTrader.Clear();
             for (int i=0; i < assortData.Count; ++i)
             {
@@ -565,7 +555,7 @@ namespace MoreCheckmarks
             }
 
             LogInfo("\tProductions");
-            JArray productionData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/productions", false));
+            JArray productionData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/productions"));
             productionEndProductByID.Clear();
 
             for (int i = 0; i < productionData.Count; ++i)
@@ -1469,12 +1459,12 @@ namespace MoreCheckmarks
     class AvailableActionsPatch
     {
         // This postfix will run after we get a list of all actions available to interact with the item we are pointing at
-        [HarmonyPatch(typeof(InteractionController), "smethod_4")]
-        static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref InteractionInstance __result)
+        [HarmonyPatch(typeof(GetActionsClass), "smethod_4")]
+        static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref ActionsReturnClass __result)
         {
             try
             {
-                foreach (Action action in __result.Actions)
+                foreach (ActionsTypesClass action in __result.Actions)
                 {
                     if (action.Name.Equals("Take"))
                     {
