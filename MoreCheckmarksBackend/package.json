@@ -1,6 +1,6 @@
 {
     "name": "MoreCheckmarksBackend",
-    "version": "1.5.10",
+    "version": "1.5.12",
     "main": "src/MoreCheckmarksStaticRouter.js",
     "license": "MIT",
     "author": "VIP",

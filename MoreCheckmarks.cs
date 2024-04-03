@@ -36,7 +36,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.11";
+        public const string pluginVersion = "1.5.12";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -119,394 +119,478 @@ namespace MoreCheckmarks
 
             for (int i = 0; i < questData.Count; ++i)
             {
-                JArray availableForFinishConditions = questData[i]["conditions"]["AvailableForFinish"] as JArray;
-                for (int j = 0; j < availableForFinishConditions.Count; ++j)
+                if(questData[i]["conditions"] != null && questData[i]["conditions"]["AvailableForFinish"] != null)
                 {
-                    if (availableForFinishConditions[j]["conditionType"].ToString().Equals("HandoverItem"))
+                    JArray availableForFinishConditions = questData[i]["conditions"]["AvailableForFinish"] as JArray;
+                    for (int j = 0; j < availableForFinishConditions.Count; ++j)
                     {
-                        JArray targets = availableForFinishConditions[j]["target"] as JArray;
-                        for (int k = 0; k < targets.Count; ++k)
+                        if (availableForFinishConditions[j]["conditionType"] != null)
                         {
-                            if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                            if (availableForFinishConditions[j]["conditionType"].ToString().Equals("HandoverItem"))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                if (availableForFinishConditions[j]["target"] != null)
                                 {
-                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                }
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                quests.count += parsedValue;
-                            }
-                            else
-                            {
-                                QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                newPair.count = parsedValue;
-                                questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
-                            }
-
-                            if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
-                            {
-                                if (!items.ContainsKey(targets[k].ToString()))
-                                {
-                                    items.Add(targets[k].ToString(), 0);
-                                }
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                items[targets[k].ToString()] += parsedValue;
-                            }
-                            else
-                            {
-                                Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                newDict.Add(targets[k].ToString(), parsedValue);
-                                neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
-                            }
-                        }
-                    }
-
-                    if (availableForFinishConditions[j]["conditionType"].ToString().Equals("FindItem"))
-                    {
-                        JArray targets = availableForFinishConditions[j]["target"] as JArray;
-                        for (int k = 0; k < targets.Count; ++k)
-                        {
-                            // Check if there is a hand in item condition for the same item and at least the same count
-                            // If so skip this, we will count the hand in instead
-                            bool foundInHandin = false;
-                            for (int l = 0; l < availableForFinishConditions.Count; ++l)
-                            {
-                                if (availableForFinishConditions[l]["conditionType"].ToString().Equals("HandoverItem"))
-                                {
-                                    JArray handInTargets = availableForFinishConditions[l]["target"] as JArray;
-                                    if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
-                                        (!int.TryParse(availableForFinishConditions[l]["value"].ToString(), out int parsedValue) ||
-                                         !int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int currentParsedValue) ||
-                                         parsedValue == currentParsedValue))
+                                    JArray targets = availableForFinishConditions[j]["target"] as JArray;
+                                    for (int k = 0; k < targets.Count; ++k)
                                     {
-                                        foundInHandin = true;
-                                        break;
+                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        {
+                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            {
+                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            }
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            quests.count += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            QuestPair newPair = new QuestPair();
+                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            newPair.count = parsedValue;
+                                            questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                        }
+
+                                        if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        {
+                                            if (!items.ContainsKey(targets[k].ToString()))
+                                            {
+                                                items.Add(targets[k].ToString(), 0);
+                                            }
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            items[targets[k].ToString()] += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            newDict.Add(targets[k].ToString(), parsedValue);
+                                            neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                        }
                                     }
                                 }
-                            }
-                            if (foundInHandin)
-                            {
-                                continue;
+                                else
+                                {
+                                    LogError("Quest " + questData[i]["_id"].ToString() + " finish condition " + j + " of type HandoverItem missing target");
+                                }
                             }
 
-                            if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                            if (availableForFinishConditions[j]["conditionType"].ToString().Equals("FindItem"))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                if (availableForFinishConditions[j]["target"] != null)
                                 {
-                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                    JArray targets = availableForFinishConditions[j]["target"] as JArray;
+                                    for (int k = 0; k < targets.Count; ++k)
+                                    {
+                                        // Check if there is a hand in item condition for the same item and at least the same count
+                                        // If so skip this, we will count the hand in instead
+                                        bool foundInHandin = false;
+                                        for (int l = 0; l < availableForFinishConditions.Count; ++l)
+                                        {
+                                            if (availableForFinishConditions[l]["conditionType"].ToString().Equals("HandoverItem"))
+                                            {
+                                                JArray handInTargets = availableForFinishConditions[l]["target"] as JArray;
+                                                if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
+                                                    (!int.TryParse(availableForFinishConditions[l]["value"].ToString(), out int parsedValue) ||
+                                                     !int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int currentParsedValue) ||
+                                                     parsedValue == currentParsedValue))
+                                                {
+                                                    foundInHandin = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if (foundInHandin)
+                                        {
+                                            continue;
+                                        }
+
+                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        {
+                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            {
+                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            }
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            quests.count += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            QuestPair newPair = new QuestPair();
+                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            newPair.count = parsedValue;
+                                            questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                        }
+
+                                        if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        {
+                                            if (!items.ContainsKey(targets[k].ToString()))
+                                            {
+                                                items.Add(targets[k].ToString(), 0);
+                                            }
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            items[targets[k].ToString()] += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            newDict.Add(targets[k].ToString(), parsedValue);
+                                            neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                        }
+                                    }
                                 }
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                quests.count += parsedValue;
-                            }
-                            else
-                            {
-                                QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                newPair.count = parsedValue;
-                                questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                else
+                                {
+                                    LogError("Quest " + questData[i]["_id"].ToString() + " finish condition " + j + " of type FindItem missing target");
+                                }
                             }
 
-                            if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                            if (availableForFinishConditions[j]["conditionType"].ToString().Equals("LeaveItemAtLocation"))
                             {
-                                if (!items.ContainsKey(targets[k].ToString()))
+                                if (availableForFinishConditions[j]["target"] != null)
                                 {
-                                    items.Add(targets[k].ToString(), 0);
+                                    JArray targets = availableForFinishConditions[j]["target"] as JArray;
+                                    for (int k = 0; k < targets.Count; ++k)
+                                    {
+                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        {
+                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            {
+                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            }
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            quests.count += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            QuestPair newPair = new QuestPair();
+                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            newPair.count = parsedValue;
+                                            questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                        }
+
+                                        if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        {
+                                            if (!items.ContainsKey(targets[k].ToString()))
+                                            {
+                                                items.Add(targets[k].ToString(), 0);
+                                            }
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            items[targets[k].ToString()] += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            newDict.Add(targets[k].ToString(), parsedValue);
+                                            neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                        }
+                                    }
                                 }
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                items[targets[k].ToString()] += parsedValue;
+                                else
+                                {
+                                    LogError("Quest " + questData[i]["_id"].ToString() + " finish condition " + j + " of type LeaveItemAtLocation missing target");
+                                }
                             }
-                            else
+
+                            if (availableForFinishConditions[j]["conditionType"].ToString().Equals("PlaceBeacon"))
                             {
-                                Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                newDict.Add(targets[k].ToString(), parsedValue);
-                                neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                if (availableForFinishConditions[j]["target"] != null)
+                                {
+                                    JArray targets = availableForFinishConditions[j]["target"] as JArray;
+                                    for (int k = 0; k < targets.Count; ++k)
+                                    {
+                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        {
+                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            {
+                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            }
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            quests.count += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            QuestPair newPair = new QuestPair();
+                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            newPair.count = parsedValue;
+                                            questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                        }
+
+                                        if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        {
+                                            if (!items.ContainsKey(targets[k].ToString()))
+                                            {
+                                                items.Add(targets[k].ToString(), 0);
+                                            }
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            items[targets[k].ToString()] += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            newDict.Add(targets[k].ToString(), parsedValue);
+                                            neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    LogError("Quest " + questData[i]["_id"].ToString() + " finish condition " + j + " of type PlaceBeacon missing target");
+                                }
                             }
                         }
-                    }
-
-                    if (availableForFinishConditions[j]["conditionType"].ToString().Equals("LeaveItemAtLocation"))
-                    {
-                        JArray targets = availableForFinishConditions[j]["target"] as JArray;
-                        for (int k = 0; k < targets.Count; ++k)
+                        else
                         {
-                            if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
-                            {
-                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
-                                {
-                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                }
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                quests.count += parsedValue;
-                            }
-                            else
-                            {
-                                QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                newPair.count = parsedValue;
-                                questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
-                            }
-
-                            if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
-                            {
-                                if (!items.ContainsKey(targets[k].ToString()))
-                                {
-                                    items.Add(targets[k].ToString(), 0);
-                                }
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                items[targets[k].ToString()] += parsedValue;
-                            }
-                            else
-                            {
-                                Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                newDict.Add(targets[k].ToString(), parsedValue);
-                                neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
-                            }
-                        }
-                    }
-
-                    if (availableForFinishConditions[j]["conditionType"].ToString().Equals("PlaceBeacon"))
-                    {
-                        JArray targets = availableForFinishConditions[j]["target"] as JArray;
-                        for (int k = 0; k < targets.Count; ++k)
-                        {
-                            if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
-                            {
-                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
-                                {
-                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                }
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                quests.count += parsedValue;
-                            }
-                            else
-                            {
-                                QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                newPair.count = parsedValue;
-                                questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
-                            }
-
-                            if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
-                            {
-                                if (!items.ContainsKey(targets[k].ToString()))
-                                {
-                                    items.Add(targets[k].ToString(), 0);
-                                }
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                items[targets[k].ToString()] += parsedValue;
-                            }
-                            else
-                            {
-                                Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
-                                newDict.Add(targets[k].ToString(), parsedValue);
-                                neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
-                            }
+                            LogError("Quest " + questData[i]["_id"].ToString() + " finish condition "+j+" missing condition type");
                         }
                     }
                 }
-
-                JArray availableForStartConditions = questData[i]["conditions"]["AvailableForStart"] as JArray;
-                for (int j = 0; j < availableForStartConditions.Count; ++j)
+                else
                 {
-                    if (availableForStartConditions[j]["conditionType"].ToString().Equals("HandoverItem"))
-                    {
-                        JArray targets = availableForStartConditions[j]["target"] as JArray;
-                        for (int k = 0; k < targets.Count; ++k)
-                        {
-                            if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
-                            {
-                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
-                                {
-                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                }
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                quests.count += parsedValue;
-                            }
-                            else
-                            {
-                                QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                newPair.count = parsedValue;
-                                questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
-                            }
+                    LogError("Quest " + questData[i]["_id"].ToString() + " missing finish conditions");
+                }
 
-                            if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
-                            {
-                                if (!items.ContainsKey(targets[k].ToString()))
-                                {
-                                    items.Add(targets[k].ToString(), 0);
-                                }
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                items[targets[k].ToString()] += parsedValue;
-                            }
-                            else
-                            {
-                                Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                newDict.Add(targets[k].ToString(), parsedValue);
-                                neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
-                            }
-                        }
-                    }
-
-                    if (availableForStartConditions[j]["conditionType"].ToString().Equals("FindItem"))
+                if (questData[i]["conditions"] != null && questData[i]["conditions"]["AvailableForFinish"] != null)
+                {
+                    JArray availableForStartConditions = questData[i]["conditions"]["AvailableForStart"] as JArray;
+                    for (int j = 0; j < availableForStartConditions.Count; ++j)
                     {
-                        JArray targets = availableForStartConditions[j]["target"] as JArray;
-                        for (int k = 0; k < targets.Count; ++k)
+                        if (availableForStartConditions[j]["conditionType"] != null)
                         {
-                            // Check if there is a hand in item condition for the same item and at least the same count
-                            // If so skip this, we will count the hand in instead
-                            bool foundInHandin = false;
-                            for (int l = 0; l < availableForStartConditions.Count; ++l)
+                            if (availableForStartConditions[j]["conditionType"].ToString().Equals("HandoverItem"))
                             {
-                                if (availableForStartConditions[l]["conditionType"].ToString().Equals("HandoverItem"))
+                                if (availableForStartConditions[j]["target"] != null)
                                 {
-                                    JArray handInTargets = availableForStartConditions[l]["target"] as JArray;
-                                    if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
-                                        (!int.TryParse(availableForStartConditions[l]["value"].ToString(), out int parsedValue) ||
-                                         !int.TryParse(availableForStartConditions[j]["value"].ToString(), out int currentParsedValue) ||
-                                         parsedValue == currentParsedValue))
+                                    JArray targets = availableForStartConditions[j]["target"] as JArray;
+                                    for (int k = 0; k < targets.Count; ++k)
                                     {
-                                        foundInHandin = true;
-                                        break;
+                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        {
+                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            {
+                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            }
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            quests.count += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            QuestPair newPair = new QuestPair();
+                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            newPair.count = parsedValue;
+                                            questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                        }
+
+                                        if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        {
+                                            if (!items.ContainsKey(targets[k].ToString()))
+                                            {
+                                                items.Add(targets[k].ToString(), 0);
+                                            }
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            items[targets[k].ToString()] += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            newDict.Add(targets[k].ToString(), parsedValue);
+                                            neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                        }
                                     }
                                 }
-                            }
-                            if (foundInHandin)
-                            {
-                                continue;
+                                else
+                                {
+                                    LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " of type HandoverItem missing target");
+                                }
                             }
 
-                            if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                            if (availableForStartConditions[j]["conditionType"].ToString().Equals("FindItem"))
                             {
-                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                if (availableForStartConditions[j]["target"] != null)
                                 {
-                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                    JArray targets = availableForStartConditions[j]["target"] as JArray;
+                                    for (int k = 0; k < targets.Count; ++k)
+                                    {
+                                        // Check if there is a hand in item condition for the same item and at least the same count
+                                        // If so skip this, we will count the hand in instead
+                                        bool foundInHandin = false;
+                                        for (int l = 0; l < availableForStartConditions.Count; ++l)
+                                        {
+                                            if (availableForStartConditions[l]["conditionType"].ToString().Equals("HandoverItem"))
+                                            {
+                                                JArray handInTargets = availableForStartConditions[l]["target"] as JArray;
+                                                if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
+                                                    (!int.TryParse(availableForStartConditions[l]["value"].ToString(), out int parsedValue) ||
+                                                     !int.TryParse(availableForStartConditions[j]["value"].ToString(), out int currentParsedValue) ||
+                                                     parsedValue == currentParsedValue))
+                                                {
+                                                    foundInHandin = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if (foundInHandin)
+                                        {
+                                            continue;
+                                        }
+
+                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        {
+                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            {
+                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            }
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            quests.count += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            QuestPair newPair = new QuestPair();
+                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            newPair.count = parsedValue;
+                                            questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                        }
+
+                                        if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        {
+                                            if (!items.ContainsKey(targets[k].ToString()))
+                                            {
+                                                items.Add(targets[k].ToString(), 0);
+                                            }
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            items[targets[k].ToString()] += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            newDict.Add(targets[k].ToString(), parsedValue);
+                                            neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                        }
+                                    }
                                 }
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                quests.count += parsedValue;
-                            }
-                            else
-                            {
-                                QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                newPair.count = parsedValue;
-                                questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                else
+                                {
+                                    LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " of type FindItem missing target");
+                                }
                             }
 
-                            if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                            if (availableForStartConditions[j]["conditionType"].ToString().Equals("LeaveItemAtLocation"))
                             {
-                                if (!items.ContainsKey(targets[k].ToString()))
+                                if (availableForStartConditions[j]["target"] != null)
                                 {
-                                    items.Add(targets[k].ToString(), 0);
+                                    JArray targets = availableForStartConditions[j]["target"] as JArray;
+                                    for (int k = 0; k < targets.Count; ++k)
+                                    {
+                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        {
+                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            {
+                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            }
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            quests.count += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            QuestPair newPair = new QuestPair();
+                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            newPair.count = parsedValue;
+                                            questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                        }
+
+                                        if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        {
+                                            if (!items.ContainsKey(targets[k].ToString()))
+                                            {
+                                                items.Add(targets[k].ToString(), 0);
+                                            }
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            items[targets[k].ToString()] += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            newDict.Add(targets[k].ToString(), parsedValue);
+                                            neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                        }
+                                    }
                                 }
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                items[targets[k].ToString()] += parsedValue;
+                                else
+                                {
+                                    LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " of type LeaveItemAtLocation missing target");
+                                }
                             }
-                            else
+
+                            if (availableForStartConditions[j]["conditionType"].ToString().Equals("PlaceBeacon"))
                             {
-                                Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                newDict.Add(targets[k].ToString(), parsedValue);
-                                neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                if (availableForStartConditions[j]["target"] != null)
+                                {
+                                    JArray targets = availableForStartConditions[j]["target"] as JArray;
+                                    for (int k = 0; k < targets.Count; ++k)
+                                    {
+                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        {
+                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            {
+                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            }
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            quests.count += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            QuestPair newPair = new QuestPair();
+                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            newPair.count = parsedValue;
+                                            questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
+                                        }
+
+                                        if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        {
+                                            if (!items.ContainsKey(targets[k].ToString()))
+                                            {
+                                                items.Add(targets[k].ToString(), 0);
+                                            }
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            items[targets[k].ToString()] += parsedValue;
+                                        }
+                                        else
+                                        {
+                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            newDict.Add(targets[k].ToString(), parsedValue);
+                                            neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " of type PlaceBeacon missing target");
+                                }
                             }
                         }
-                    }
-
-                    if (availableForStartConditions[j]["conditionType"].ToString().Equals("LeaveItemAtLocation"))
-                    {
-                        JArray targets = availableForStartConditions[j]["target"] as JArray;
-                        for (int k = 0; k < targets.Count; ++k)
+                        else
                         {
-                            if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
-                            {
-                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
-                                {
-                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                }
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                quests.count += parsedValue;
-                            }
-                            else
-                            {
-                                QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                newPair.count = parsedValue;
-                                questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
-                            }
-
-                            if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
-                            {
-                                if (!items.ContainsKey(targets[k].ToString()))
-                                {
-                                    items.Add(targets[k].ToString(), 0);
-                                }
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                items[targets[k].ToString()] += parsedValue;
-                            }
-                            else
-                            {
-                                Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                newDict.Add(targets[k].ToString(), parsedValue);
-                                neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
-                            }
+                            LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " missing condition type");
                         }
                     }
-
-                    if (availableForStartConditions[j]["conditionType"].ToString().Equals("PlaceBeacon"))
-                    {
-                        JArray targets = availableForStartConditions[j]["target"] as JArray;
-                        for (int k = 0; k < targets.Count; ++k)
-                        {
-                            if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
-                            {
-                                if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
-                                {
-                                    quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                }
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                quests.count += parsedValue;
-                            }
-                            else
-                            {
-                                QuestPair newPair = new QuestPair();
-                                newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                newPair.count = parsedValue;
-                                questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
-                            }
-
-                            if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
-                            {
-                                if (!items.ContainsKey(targets[k].ToString()))
-                                {
-                                    items.Add(targets[k].ToString(), 0);
-                                }
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                items[targets[k].ToString()] += parsedValue;
-                            }
-                            else
-                            {
-                                Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
-                                newDict.Add(targets[k].ToString(), parsedValue);
-                                neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
-                            }
-                        }
-                    }
+                }
+                else
+                {
+                    LogError("Quest " + questData[i]["_id"].ToString() + " missing start conditions");
                 }
             }
 
