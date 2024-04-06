@@ -36,7 +36,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.12";
+        public const string pluginVersion = "1.5.13";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -612,7 +612,7 @@ namespace MoreCheckmarks
                 JArray items = assortData[i]["items"] as JArray;
                 for (int j = 0; j < items.Count; ++j)
                 {
-                    if (items[j]["parentId"].ToString().Equals("hideout"))
+                    if (items[j]["parentId"] != null && items[j]["parentId"].ToString().Equals("hideout"))
                     {
                         JArray barters = assortData[i]["barter_scheme"][items[j]["_id"].ToString()] as JArray;
                         for (int k = 0; k < barters.Count; ++k)
