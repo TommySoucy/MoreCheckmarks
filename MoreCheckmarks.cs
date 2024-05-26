@@ -1060,6 +1060,12 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.LogError("Failed to get whether item " + templateID + " is quest item: " + ex.Message + "\n" + ex.StackTrace);
             }
 
+            // Check if gunsmith quest item
+            if (Helpers.IsGunsmithItem(templateID))
+            {
+                return true;
+            }
+
             return false;
         }
 
@@ -1144,7 +1150,7 @@ namespace MoreCheckmarks
                 bool craftRequired = MoreCheckmarksMod.showCraft && MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
                 MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
-                bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
+                bool questItem = IsQuestRelevant(item, ___string_5, startQuests, completeQuests);
                 bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
                 List<List<KeyValuePair<string, int>>> bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
                 bool gotBarters = false;
@@ -1247,6 +1253,35 @@ namespace MoreCheckmarks
             }
 
             return true;
+        }
+
+        private static bool IsQuestRelevant(Item item, string ___string_5, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests)
+        {
+            if (Helpers.IsGunsmithItem(item.TemplateId))
+            {
+                return true;
+            }
+
+            if (item.MarkedAsSpawnedInSession)
+            {
+                // If the item is already marked as a quest item, return true immediately.
+                if (item.QuestItem)
+                {
+                    return true;
+                }
+
+                // If including future quests, check associated quest data.
+                if (MoreCheckmarksMod.includeFutureQuests)
+                {
+                    return (startQuests != null && startQuests.questData.Count > 0) ||
+                        (completeQuests != null && completeQuests.questData.Count > 0);
+                }
+
+                // Otherwise, check for specific string content.
+                return (___string_5 != null && ___string_5.Contains("quest"));
+            }
+
+            return false;
         }
 
         private static void SetCheckmark(EFT.UI.DragAndDrop.QuestItemViewPanel __instance, Image ____questIconImage, Sprite sprite, Color color)
@@ -1773,6 +1808,15 @@ namespace MoreCheckmarks
         static void Postfix()
         {
             MoreCheckmarksMod.modInstance.LoadData();
+        }
+    }
+
+    public static class Helpers
+    {
+        
+        public static bool IsGunsmithItem(string itemTemplateID)
+        {
+            return GunsmithItems.WeaponMods.mods.SelectMany(x => x.Value).Contains(itemTemplateID);
         }
     }
 }
