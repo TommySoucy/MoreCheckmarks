@@ -1450,7 +1450,8 @@ namespace MoreCheckmarks
                 {
                     if (kvp.Value.Contains(item.TemplateId))
                     {
-                        var gunsmithTaskNumber = kvp.Key.Substring(2, kvp.Key.Length - 1);
+                        // format is: "gs01", "gs02", etc
+                        var gunsmithTaskNumber = kvp.Key.Substring(2);
                         ___string_5 += "\nNeeded for Gunsmith " + gunsmithTaskNumber;
                         break;
                     }
