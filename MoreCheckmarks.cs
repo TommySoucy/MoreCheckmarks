@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿﻿using UnityEngine;
 using UnityEngine.UI;
 using HarmonyLib;
 using System.Collections.Generic;
@@ -1441,6 +1441,18 @@ namespace MoreCheckmarks
                                 ___string_5 += string.Format("\nItem that has been found in raid for the {0} quest".Localized(null), arg);
                             }
                         }
+                    }
+                }
+
+                // Gunsmith requirements
+                Dictionary<string, List<string>> gunsmithMods = GunsmithItems.WeaponMods.mods;
+                foreach (KeyValuePair<string, List<string>> kvp in gunsmithMods)
+                {
+                    if (kvp.Value.Contains(item.TemplateId))
+                    {
+                        var gunsmithTaskNumber = kvp.Key.Substring(2, kvp.Key.Length - 1);
+                        ___string_5 += "\nNeeded for Gunsmith " + gunsmithTaskNumber;
+                        break;
                     }
                 }
 
