@@ -43,13 +43,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SPT BetterTark\Game\BepInEx\core\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="Aki.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\SPT BetterTark\Game\EscapeFromTarkov_Data\Managed\Aki.Common.dll</HintPath>
-    </Reference>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\SPT BetterTark\Game\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\..\..\SPT Installer Bettertark\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx, Version=5.4.21.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -66,6 +62,9 @@
     <Reference Include="Sirenix.Serialization, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SPT BetterTark\Game\EscapeFromTarkov_Data\Managed\Sirenix.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="spt-common">
+      <HintPath>..\..\..\SPT Installer Bettertark\BepInEx\plugins\spt\spt-common.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="Unity.TextMeshPro, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">

@@ -15,7 +15,7 @@ using EFT.Quests;
 using System.Linq;
 using TMPro;
 using BepInEx;
-using Aki.Common.Http;
+using SPT.Common.Http;
 using Comfort.Common;
 
 using EFT.Hideout;
@@ -36,7 +36,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.13";
+        public const string pluginVersion = "1.5.14";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -788,7 +788,7 @@ namespace MoreCheckmarks
                     // UPDATE: This is to know when a new profile is selected so we can load up to date data
                     // We want to do this when client makes request "/client/game/profile/select"
                     // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    ProfileSelector = assemblies[i].GetType("Class263").GetNestedType("Class1291", BindingFlags.Public);
+                    ProfileSelector = assemblies[i].GetType("Class266").GetNestedType("Class1337", BindingFlags.Public);
                 }
             }
 
@@ -969,7 +969,7 @@ namespace MoreCheckmarks
                     if (currentStage.Production != null && currentStage.Production.Data != null)
                     {
                         bool areaNameAdded = false;
-                        foreach (GClass1922 productionData in currentStage.Production.Data)
+                        foreach (ProductionBuildAbstractClass productionData in currentStage.Production.Data)
                         {
                             Requirement[] requirements = productionData.requirements;
 
@@ -1034,7 +1034,7 @@ namespace MoreCheckmarks
                         {
                             if (quest.Template.Conditions != null)
                             {
-                                foreach (KeyValuePair<EQuestStatus, GClass3368> keyValuePair in quest.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3392> keyValuePair in quest.Template.Conditions)
                                 {
                                     if (keyValuePair.Key == EQuestStatus.AvailableForFinish)
                                     {
@@ -1402,10 +1402,10 @@ namespace MoreCheckmarks
                             {
                                 // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
                                 // with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass3368> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3392> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass3368 gclass;
+                                    GClass3392 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
@@ -1668,20 +1668,20 @@ namespace MoreCheckmarks
     }
 
     [HarmonyPatch]
-    class GClass1249StatusPatch
+    class QuestClassStatusPatch
     {
         private static EQuestStatus preStatus;
 
         // This prefix will run before a quest's status has been set 
-        [HarmonyPatch(typeof(GClass1249), "SetStatus")]
-        static void Prefix(GClass1249 __instance)
+        [HarmonyPatch(typeof(QuestClass), "SetStatus")]
+        static void Prefix(QuestClass __instance)
         {
             preStatus = __instance.QuestStatus;
         }
 
         // This postfix will run after a quest's status has been set 
-        [HarmonyPatch(typeof(GClass1249), "SetStatus")]
-        static void Postfix(GClass1249 __instance)
+        [HarmonyPatch(typeof(QuestClass), "SetStatus")]
+        static void Postfix(QuestClass __instance)
         {
             if(__instance == null)
             {
