@@ -1,27 +1,27 @@
 import { DependencyContainer } from "tsyringe";
-import type { IPreAkiLoadMod } from "@spt-aki/models/external/IPreAkiLoadMod";
-import type { ILogger } from "@spt-aki/models/spt/utils/ILogger";
-import type {DynamicRouterModService} from "@spt-aki/services/mod/dynamicRouter/DynamicRouterModService";
-import type {StaticRouterModService} from "@spt-aki/services/mod/staticRouter/StaticRouterModService";
-import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
-import { ProfileHelper } from "@spt-aki/helpers/ProfileHelper";
-//import { QuestConditionHelper } from "@spt-aki/helpers/QuestConditionHelper";
-import { QuestHelper } from "@spt-aki/helpers/QuestHelper";
-import { IQuestConfig } from "@spt-aki/models/spt/config/IQuestConfig";
-import { ConfigTypes } from "@spt-aki/models/enums/ConfigTypes";
-import { ConfigServer } from "@spt-aki/servers/ConfigServer";
-import { Traders } from "@spt-aki/models/enums/Traders";
-import { TraderHelper } from "@spt-aki/helpers/TraderHelper";
-import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
-import { FenceService } from "@spt-aki/services/FenceService";
-import { ITemplateItem } from "@spt-aki/models/eft/common/tables/ITemplateItem";
-import { ILocaleBase } from "@spt-aki/models/spt/server/ILocaleBase";
+import type { IPreSptLoadMod } from "@spt/models/external/IPreAkiLoadMod";
+import type { ILogger } from "@spt/models/spt/utils/ILogger";
+import type {DynamicRouterModService} from "@spt/services/mod/dynamicRouter/DynamicRouterModService";
+import type {StaticRouterModService} from "@spt/services/mod/staticRouter/StaticRouterModService";
+import { DatabaseServer } from "@spt/servers/DatabaseServer";
+import { ProfileHelper } from "@spt/helpers/ProfileHelper";
+//import { QuestConditionHelper } from "@spt/helpers/QuestConditionHelper";
+import { QuestHelper } from "@spt/helpers/QuestHelper";
+import { IQuestConfig } from "@spt/models/spt/config/IQuestConfig";
+import { ConfigTypes } from "@spt/models/enums/ConfigTypes";
+import { ConfigServer } from "@spt/servers/ConfigServer";
+import { Traders } from "@spt/models/enums/Traders";
+import { TraderHelper } from "@spt/helpers/TraderHelper";
+import { DatabaseServer } from "@spt/servers/DatabaseServer";
+import { FenceService } from "@spt/services/FenceService";
+import { ITemplateItem } from "@spt/models/eft/common/tables/ITemplateItem";
+import { ILocaleBase } from "@spt/models/spt/server/ILocaleBase";
 
-class Mod implements IPreAkiLoadMod
+class Mod implements IPreSptLoadMod
 {
     protected questConfig: IQuestConfig;
 	
-    public preAkiLoad(container: DependencyContainer): void {
+    public preSptLoad(container: DependencyContainer): void {
         const logger = container.resolve<ILogger>("WinstonLogger");
         const dynamicRouterModService = container.resolve<DynamicRouterModService>("DynamicRouterModService");
         const staticRouterModService = container.resolve<StaticRouterModService>("StaticRouterModService");
