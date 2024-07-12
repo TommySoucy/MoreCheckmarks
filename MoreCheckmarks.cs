@@ -45,6 +45,7 @@ namespace MoreCheckmarks
         public static int wishlistPriority = 4;
         public static int barterPriority = 0;
         public static int craftPriority = 1;
+        public static bool showLockedModules = false;
         public static bool showFutureModulesLevels = false;
         public static bool showBarter = true;
         public static bool showCraft = true;
@@ -695,6 +696,10 @@ namespace MoreCheckmarks
                     craftPriority = (int)config["craftPriority"];
                     priorities[4] = craftPriority;
                 }
+                if (config["showLockedModules"] != null)
+                {
+                    showLockedModules = (bool)config["showLockedModules"];
+                }
                 if (config["showFutureModulesLevels"] != null)
                 {
                     showFutureModulesLevels = (bool)config["showFutureModulesLevels"];
@@ -859,6 +864,26 @@ namespace MoreCheckmarks
 
                         try
                         {
+                            if (!MoreCheckmarksMod.showLockedModules)
+                            {
+                                bool isLocked = false;
+                                // Check if all of the AreaRequirements are fulfilled
+                                foreach (var requirement in requirements)
+                                {
+                                    if (requirement != null && requirement is EFT.Hideout.AreaRequirement && !requirement.Fulfilled)
+                                    {
+                                        // This stage requires other areas to be completed first
+                                        isLocked = true;
+                                    }
+                                }
+
+                                if (isLocked)
+                                {
+                                    // Skip adding item requirements for this stage
+                                    continue;
+                                }
+                            }
+
                             foreach (var requirement in requirements)
                             {
                                 if (requirement != null)
