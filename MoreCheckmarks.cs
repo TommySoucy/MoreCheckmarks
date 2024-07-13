@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using HarmonyLib;
 using System.Collections.Generic;
@@ -46,6 +46,8 @@ namespace MoreCheckmarks
         public static int barterPriority = 0;
         public static int craftPriority = 1;
         public static bool showFutureModulesLevels = false;
+        public static bool showModulesMissingArea = true;
+        public static bool showModulesMissingTraderLoyalty = true;
         public static bool showBarter = true;
         public static bool showCraft = true;
         public static bool showFutureCraft = true;
@@ -699,6 +701,14 @@ namespace MoreCheckmarks
                 {
                     showFutureModulesLevels = (bool)config["showFutureModulesLevels"];
                 }
+                if (config["showModulesMissingArea"] != null)
+                {
+                    showModulesMissingArea = (bool)config["showModulesMissingArea"];
+                }
+                if (config["showModulesMissingTraderLoyalty"] != null)
+                {
+                    showModulesMissingTraderLoyalty = (bool)config["showModulesMissingTraderLoyalty"];
+                }
                 if (config["showBarter"] != null)
                 {
                     showBarter = (bool)config["showBarter"];
@@ -837,6 +847,29 @@ namespace MoreCheckmarks
                         {
                             continue;
                         }
+
+                        // If missing area requirement for next level skip
+                        if (!MoreCheckmarksMod.showModulesMissingArea)
+                        {
+                            var hasMissingAreaRequirements = lastStage.Requirements
+                                .Where(x => x.Type == ERequirementType.Area)
+                                .Where(x => x.Fulfilled == false)
+                                .Any();
+                            if (hasMissingAreaRequirements)
+                                break;
+                        }
+
+                        // If missing trader requirement for next level skip
+                        if (!MoreCheckmarksMod.showModulesMissingTraderLoyalty)
+                        {
+                            var hasMissingTraderRequirements = lastStage.Requirements
+                                .Where(x => x.Type == ERequirementType.TraderLoyalty || x.Type == ERequirementType.TraderUnlock)
+                                .Where(x => x.Fulfilled == false)
+                                .Any();
+                            if (hasMissingTraderRequirements)
+                                break;
+                        }
+
                         futureStages.Add(lastStage);
 
                         // If only want next level requirements, skip the rest

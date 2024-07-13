@@ -36,7 +36,9 @@ There are some settings available in the provided config file described below:
       
 - **_questPrioriry_**, **_hideoutPriority_**, **_wishlistPriority_**, and **_barterPriority_**: These settings will decide which checkmark to give priority to. If the item is needed for a quest, needed for a hideout module, and is on the wishlist, the one with the highest priority will be displayed. These are integers, and the greater the number, the higher the priority.
       
-- **_showLockedModules_**: This setting will decide whether to show a hideout checkmark on an item required for a hideout module that is still locked for construction. This is an option because some modules like the bitcoin farm require a lot of items but are locked for a long time and maybe you just don't want to have hideout checkmark on a bunch of random stuff you won't need for a while.
+- **_showModulesMissingArea_**: This setting will decide whether to show a hideout checkmark on an item required for a hideout module that is still locked for construction due to missing an area. This is an option because some modules like the bitcoin farm require a lot of items but are locked for a long time and maybe you just don't want to have hideout checkmark on a bunch of random stuff you won't need for a while.
+
+  **_showModulesMissingTraderLoyalty_**: This setting will decide whether to show a hideout checkmark on an item required for a hideout module that is still locked for construction due to missing trader or trader loyalty. This is an option because some modules like the bitcoin farm require a lot of items but are locked for a long time and maybe you just don't want to have hideout checkmark on a bunch of random stuff you won't need for a while.
 
 - **_showFutureModulesLevels_**: This setting will decide whether to show requirements for future hideout module levels instead of only the next one.
 
