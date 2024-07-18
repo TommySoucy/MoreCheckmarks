@@ -1219,6 +1219,41 @@ namespace MoreCheckmarks
                             }
                         }
                     }
+                    else if (currentNeeded == 0) // quest item
+                    {
+                        if (MoreCheckmarksMod.includeFutureQuests)
+                        {
+                            if (startQuests != null)
+                            {
+                                int totalNeeded = startQuests.count;
+                                if (possessedQuestCount >= totalNeeded)
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                                }
+                                else
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.colors[currentNeeded]);
+                                }
+                            }
+                            if (completeQuests != null)
+                            {
+                                int totalNeeded = completeQuests.count;
+                                if (possessedQuestCount >= totalNeeded)
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                                }
+                                else
+                                {
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.colors[currentNeeded]);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // TODO: set to `fulfilledColor` when `includeFutureQuests` is `false` and condition is fulfilled
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.colors[currentNeeded]);
+                        }
+                    }
                     else // Not area, just set color
                     {
                         SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.colors[currentNeeded]);
