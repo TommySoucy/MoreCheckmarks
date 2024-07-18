@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using HarmonyLib;
 using System.Collections.Generic;
@@ -49,6 +49,7 @@ namespace MoreCheckmarks
         public static bool showBarter = true;
         public static bool showCraft = true;
         public static bool showFutureCraft = true;
+        public static Color futureQuestColor = new Color(0.902f, 0.569f, 0.22f);
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.30588f, 1, 0.27843f);
         public static Color wishlistColor = new Color(0, 0, 1);
@@ -1020,32 +1021,26 @@ namespace MoreCheckmarks
             //QuestControllerClass.GetItemsForCondition
             try
             {
-                if (includeFutureQuests)
+                int result = 0;
+                foreach (QuestDataClass quest in quests)
                 {
-                    return questDataCompleteByItemTemplateID.TryGetValue(templateID, out QuestPair questPair) && questPair.questData.Count > 0;
-                }
-                else
-                {
-                    foreach (QuestDataClass quest in quests)
-                    {
-                        if (quest != null &&
+                    if (quest != null &&
                             quest.Status == EQuestStatus.Started &&
                             quest.Template != null && quest.Template.Conditions != null && quest.Template.Conditions.ContainsKey(EQuestStatus.AvailableForFinish))
+                    {
+                        if (quest.Template.Conditions != null)
                         {
-                            if (quest.Template.Conditions != null)
+                            foreach (KeyValuePair<EQuestStatus, GClass3392> keyValuePair in quest.Template.Conditions)
                             {
-                                foreach (KeyValuePair<EQuestStatus, GClass3392> keyValuePair in quest.Template.Conditions)
+                                if (keyValuePair.Key == EQuestStatus.AvailableForFinish)
                                 {
-                                    if (keyValuePair.Key == EQuestStatus.AvailableForFinish)
+                                    foreach (Condition condition in keyValuePair.Value)
                                     {
-                                        foreach (Condition condition in keyValuePair.Value)
+                                        if (condition is ConditionItem conditionItem)
                                         {
-                                            if (condition is ConditionItem conditionItem)
+                                            if (conditionItem.target != null && conditionItem.target.Contains(templateID))
                                             {
-                                                if (conditionItem.target != null && conditionItem.target.Contains(templateID))
-                                                {
-                                                    return true;
-                                                }
+                                                return 2;
                                             }
                                         }
                                     }
@@ -1054,13 +1049,20 @@ namespace MoreCheckmarks
                         }
                     }
                 }
+                if (questDataCompleteByItemTemplateID.TryGetValue(templateID, out QuestPair questPair) && questPair.questData.Count > 0)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
             }
             catch(Exception ex)
             {
                 MoreCheckmarksMod.LogError("Failed to get whether item " + templateID + " is quest item: " + ex.Message + "\n" + ex.StackTrace);
             }
-
-            return false;
+            return 0;
         }
 
         public static List<List<KeyValuePair<string, int>>> GetBarters(string ID)
@@ -1145,6 +1147,19 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
                 bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
+                int questItemN = 0;
+                if (item.MarkedAsSpawnedInSession && item.QuestItem)
+                {
+                    questItemN = 2;
+                }
+                else
+                {
+                    if (item.MarkedAsSpawnedInSession && MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")))
+                    {
+                        questItemN = 1;
+                    }
+                }
+
                 bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
                 List<List<KeyValuePair<string, int>>> bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
                 bool gotBarters = false;
@@ -1164,7 +1179,7 @@ namespace MoreCheckmarks
                 if (____questItemLabel != null)
                 {
                     // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
-                    if (questItem)
+                    if (questItem && questItemN == 2)
                     {
                         ____questItemLabel.text = "QUEST ITEM";
                     }
@@ -1217,6 +1232,17 @@ namespace MoreCheckmarks
                                     SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
                                 }
                             }
+                        }
+                    }
+                    else if (currentNeeded == 0)
+                    {
+                        if (questItemN == 2)
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.colors[currentNeeded]);
+                        }
+                        else
+                        {
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.futureQuestColor);
                         }
                     }
                     else // Not area, just set color
@@ -1557,15 +1583,21 @@ namespace MoreCheckmarks
                         string craftTooltip = "";
                         bool craftRequired = MoreCheckmarksMod.GetNeededCraft(lootItem.TemplateId, ref craftTooltip, false);
                         bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
-                        bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.QuestsData, lootItem.TemplateId);
+                        int questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.QuestsData, lootItem.TemplateId);
 
                         if (neededStruct.foundNeeded)
                         {
                             if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
                             {
-                                if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                                if (questItem != 0 && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    if (questItem == 2)
+                                    {
+                                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    }
+                                    else {
+                                        action.Name = "<font=\"BenderBold\"><color=#E69138>Take</color></font>";
+                                    }
                                 }
                                 else
                                 {
@@ -1575,9 +1607,15 @@ namespace MoreCheckmarks
                             }
                             else
                             {
-                                if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                if (questItem != 0 && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    if (questItem == 2)
+                                    {
+                                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    }
+                                    else {
+                                        action.Name = "<font=\"BenderBold\"><color=#E69138>Take</color></font>";
+                                    }
                                 }
                                 else
                                 {
@@ -1589,9 +1627,15 @@ namespace MoreCheckmarks
                         {
                             if (wishlist && MoreCheckmarksMod.wishlistPriority > MoreCheckmarksMod.hideoutPriority)
                             {
-                                if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                                if (questItem != 0 && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    if (questItem == 2)
+                                    {
+                                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                    }
+                                    else {
+                                        action.Name = "<font=\"BenderBold\"><color=#E69138>Take</color></font>";
+                                    }
                                 }
                                 else
                                 {
@@ -1602,9 +1646,15 @@ namespace MoreCheckmarks
                             {
                                 if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded)
                                 {
-                                    if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                    if (questItem != 0 && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                     {
-                                        action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                        if (questItem == 2)
+                                        {
+                                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                        }
+                                        else {
+                                            action.Name = "<font=\"BenderBold\"><color=#E69138>Take</color></font>";
+                                        }
                                     }
                                     else
                                     {
@@ -1616,9 +1666,15 @@ namespace MoreCheckmarks
                                     // Check if we trully do not need more of this item for now
                                     if (neededStruct.possessedCount >= neededStruct.requiredCount)
                                     {
-                                        if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                        if (questItem != 0 && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                         {
-                                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                            if (questItem == 2)
+                                            {
+                                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                            }
+                                            else {
+                                                action.Name = "<font=\"BenderBold\"><color=#E69138>Take</color></font>";
+                                            }
                                         }
                                         else
                                         {
@@ -1627,9 +1683,15 @@ namespace MoreCheckmarks
                                     }
                                     else // Still need more
                                     {
-                                        if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
+                                        if (questItem != 0 && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.hideoutPriority)
                                         {
-                                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                            if (questItem == 2)
+                                            {
+                                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                            }
+                                            else {
+                                                action.Name = "<font=\"BenderBold\"><color=#E69138>Take</color></font>";
+                                            }
                                         }
                                         else
                                         {
@@ -1641,18 +1703,30 @@ namespace MoreCheckmarks
                         }
                         else if (wishlist) // We don't want to color it for hideout, but it is in wishlist
                         {
-                            if (questItem && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
+                            if (questItem != 0 && MoreCheckmarksMod.questPriority > MoreCheckmarksMod.wishlistPriority)
                             {
-                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                if (questItem == 2)
+                                {
+                                    action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                                }
+                                else {
+                                    action.Name = "<font=\"BenderBold\"><color=#E69138>Take</color></font>";
+                                }
                             }
                             else
                             {
                                 action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Take</color></font>";
                             }
                         }
-                        else if (questItem) // We don't want to color it for anything but it is a quest item
+                        else if (questItem != 0) // We don't want to color it for anything but it is a quest item
                         {
-                            action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                            if (questItem == 2)
+                            {
+                                action.Name = "<font=\"BenderBold\"><color=#FFE433>Take</color></font>";
+                            }
+                            else {
+                                action.Name = "<font=\"BenderBold\"><color=#E69138>Take</color></font>";
+                            }
                         }
                         //else leave it as it is
 
