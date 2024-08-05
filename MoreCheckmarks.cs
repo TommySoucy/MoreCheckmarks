@@ -804,10 +804,10 @@ namespace MoreCheckmarks
             harmony.Patch(profileSelectorOriginal, null, new HarmonyMethod(profileSelectorPostfix));
         }
 
-        public static NeededStruct GetNeeded(string itemTemplateID, ref List<string> areaNames)
+        public static NeededStruct GetNeeded(string itemTemplateID, ref List<string> areaNames, int possessedCount)
         {
             NeededStruct neededStruct = new NeededStruct();
-            neededStruct.possessedCount = 0;
+            neededStruct.possessedCount = possessedCount;
             neededStruct.requiredCount = 0;
 
             try
@@ -869,12 +869,16 @@ namespace MoreCheckmarks
                                         string requirementTemplate = itemRequirement.TemplateId;
                                         if (itemTemplateID == requirementTemplate)
                                         {
+                                            // if (itemTemplateID == "5e2af22086f7746d3f3c33fa" || itemTemplateID == "619cbf476b8a1b37a54eebf8") {
+                                            //     MoreCheckmarksMod.LogInfo("required: " + itemRequirement.IntCount + ", have: " + itemRequirement.UserItemsCount + ", fulfill: " + requirement.Fulfilled);
+                                            // }
+                                            
                                             // Sum up the total amount of this item required in entire hideout and update possessed amount
                                             neededStruct.requiredCount += itemRequirement.IntCount;
-                                            neededStruct.possessedCount = itemRequirement.UserItemsCount;
+                                            // neededStruct.possessedCount = itemRequirement.UserItemsCount;
 
                                             // A requirement but already have the amount we need
-                                            if (requirement.Fulfilled)
+                                            if (neededStruct.possessedCount >= itemRequirement.IntCount)
                                             {
                                                 // Even if we have enough of this item to fulfill a requirement in one area
                                                 // we might still need it, and if thats the case we want to show that color, not fulfilled color, so you know you still need more of it
@@ -1139,7 +1143,7 @@ namespace MoreCheckmarks
 
                 // Get requirements
                 List<string> areaNames = new List<string>();
-                NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
+                NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames, possessedCount);
                 string craftTooltip = "";
                 bool craftRequired = MoreCheckmarksMod.showCraft && MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
                 MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
@@ -1588,7 +1592,7 @@ namespace MoreCheckmarks
                     if (action.Name.Equals("Take"))
                     {
                         List<string> nullAreaNames = null;
-                        NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
+                        NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames, 0);
                         string craftTooltip = "";
                         bool craftRequired = MoreCheckmarksMod.GetNeededCraft(lootItem.TemplateId, ref craftTooltip, false);
                         bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
