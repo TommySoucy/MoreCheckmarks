@@ -788,7 +788,7 @@ namespace MoreCheckmarks
                     // UPDATE: This is to know when a new profile is selected so we can load up to date data
                     // We want to do this when client makes request "/client/game/profile/select"
                     // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    ProfileSelector = assemblies[i].GetType("Class266").GetNestedType("Class1337", BindingFlags.Public);
+                    ProfileSelector = assemblies[i].GetType("Class301").GetNestedType("Class1438", BindingFlags.Public);
                 }
             }
 
@@ -1034,7 +1034,7 @@ namespace MoreCheckmarks
                         {
                             if (quest.Template.Conditions != null)
                             {
-                                foreach (KeyValuePair<EQuestStatus, GClass3392> keyValuePair in quest.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3779> keyValuePair in quest.Template.Conditions)
                                 {
                                     if (keyValuePair.Key == EQuestStatus.AvailableForFinish)
                                     {
@@ -1104,16 +1104,28 @@ namespace MoreCheckmarks
     [HarmonyPatch]
     class QuestItemViewPanelShowPatch
     {
-        // Replaces the original QuestItemViewPanel.Show() to use custom checkmark colors and tooltips
+        // When an item view gets displayed, QuestItemViewPanel.Show() gets called to decide whether we want the FIR or Quest checkmark
+        // We take this opportunity to instantiate a copy we can use without replacing the default one
+        // We make a copy because we don't want to replace the original if it indicates an FIR item
+        // Postfixes QuestItemViewPanel.Show() to create checkmark with custom colors and tooltips
         [HarmonyPatch(typeof(EFT.UI.DragAndDrop.QuestItemViewPanel), nameof(EFT.UI.DragAndDrop.QuestItemViewPanel.Show))]
-        static bool Prefix(EFT.Profile profile, EFT.InventoryLogic.Item item, EFT.UI.SimpleTooltip tooltip, EFT.UI.DragAndDrop.QuestItemViewPanel __instance,
+        static void Postfix(EFT.Profile profile, EFT.InventoryLogic.Item item, EFT.UI.SimpleTooltip tooltip, EFT.UI.DragAndDrop.QuestItemViewPanel __instance,
                             ref Image ____questIconImage, ref Sprite ____foundInRaidSprite, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0,
                             TextMeshProUGUI ____questItemLabel)
         {
             try
             {
-                // Hide by default
-                __instance.HideGameObject();
+                // First set the vanilla checkmark to FIR if the case
+                // This means we get rid of quest status on the vanilla checkmark
+                // This is because we will do it ourselves on the new one if necessary
+                if (item.MarkedAsSpawnedInSession)
+                {
+                    ____questIconImage.sprite = ____foundInRaidSprite;
+                }
+
+                // Duplicate the original checkmark
+                GameObject dupeObject = GameObject.Instantiate(____questIconImage.gameObject, __instance.transform.parent);
+                Image newCheckmark = dupeObject.GetComponent<Image>();
 
                 int possessedCount = 0;
                 int possessedQuestCount = 0;
@@ -1145,7 +1157,7 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
                 bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
-                bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
+                bool wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(item.TemplateId, true, out EWishlistGroup group);
                 List<List<KeyValuePair<string, int>>> bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
                 bool gotBarters = false;
                 if (bartersByTrader != null)
@@ -1158,17 +1170,6 @@ namespace MoreCheckmarks
                             break;
                         }
                     }
-                }
-
-                // Setup label for inspect view
-                if (____questItemLabel != null)
-                {
-                    // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
-                    if (questItem)
-                    {
-                        ____questItemLabel.text = "QUEST ITEM";
-                    }
-                    ____questItemLabel.gameObject.SetActive(questItem);
                 }
 
                 MoreCheckmarksMod.neededFor[0] = questItem;
@@ -1402,10 +1403,10 @@ namespace MoreCheckmarks
                             {
                                 // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
                                 // with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass3392> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3779> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass3392 gclass;
+                                    GClass3779 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
@@ -1556,7 +1557,7 @@ namespace MoreCheckmarks
                         NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
                         string craftTooltip = "";
                         bool craftRequired = MoreCheckmarksMod.GetNeededCraft(lootItem.TemplateId, ref craftTooltip, false);
-                        bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
+                        bool wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(lootItem.TemplateId, true, out EWishlistGroup group);
                         bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.QuestsData, lootItem.TemplateId);
 
                         if (neededStruct.foundNeeded)
