@@ -36,7 +36,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.14";
+        public const string pluginVersion = "1.5.15";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded = false;
@@ -788,7 +788,7 @@ namespace MoreCheckmarks
                     // UPDATE: This is to know when a new profile is selected so we can load up to date data
                     // We want to do this when client makes request "/client/game/profile/select"
                     // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    ProfileSelector = assemblies[i].GetType("Class266").GetNestedType("Class1337", BindingFlags.Public);
+                    ProfileSelector = assemblies[i].GetType("Class301").GetNestedType("Class1438", BindingFlags.Public);
                 }
             }
 
@@ -1034,7 +1034,7 @@ namespace MoreCheckmarks
                         {
                             if (quest.Template.Conditions != null)
                             {
-                                foreach (KeyValuePair<EQuestStatus, GClass3392> keyValuePair in quest.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3779> keyValuePair in quest.Template.Conditions)
                                 {
                                     if (keyValuePair.Key == EQuestStatus.AvailableForFinish)
                                     {
@@ -1145,7 +1145,7 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
                 bool questItem = item.MarkedAsSpawnedInSession && (item.QuestItem || MoreCheckmarksMod.includeFutureQuests ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
-                bool wishlist = ItemUiContext.Instance.IsInWishList(item.TemplateId);
+                bool wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(item.TemplateId, true, out EWishlistGroup group);
                 List<List<KeyValuePair<string, int>>> bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
                 bool gotBarters = false;
                 if (bartersByTrader != null)
@@ -1402,15 +1402,15 @@ namespace MoreCheckmarks
                             {
                                 // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
                                 // with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass3392> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3779> kvp in questDataClass.Template.Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass3392 gclass;
+                                    GClass3779 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
                                         ConditionItem conditionItem2;
-                                        if (!questDataClass.CompletedConditions.Contains(condition.id) && (conditionItem2 = (condition as ConditionItem)) != null && conditionItem2.target.Contains(item.TemplateId))
+                                        if (!questDataClass.CompletedConditions.Contains(condition.id) && (conditionItem2 = (condition as ConditionItem)) != null && conditionItem2.target.Contains(item.StringTemplateId))
                                         {
                                             RawQuestClass = questDataClass.Template;
                                             conditionItem = conditionItem2;
@@ -1486,7 +1486,7 @@ namespace MoreCheckmarks
                                 string bartersString = "\n With " + (MoreCheckmarksMod.traders.Length > i ? MoreCheckmarksMod.traders[i] : "Custom Trader "+i) + ":";
                                 for (int j = 0; j < bartersByTrader[i].Count; ++j)
                                 {
-                                    bartersString += "\n  <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + bartersByTrader[i][j].Key.LocalizedName() + "</color> (" + bartersByTrader[i][j].Value + ")";
+                                    bartersString += "\n  <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + bartersByTrader[i][j].Key.Localized() + "</color> (" + bartersByTrader[i][j].Value + ")";
                                 }
                                 ___string_5 += bartersString;
                             }
@@ -1556,7 +1556,7 @@ namespace MoreCheckmarks
                         NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
                         string craftTooltip = "";
                         bool craftRequired = MoreCheckmarksMod.GetNeededCraft(lootItem.TemplateId, ref craftTooltip, false);
-                        bool wishlist = ItemUiContext.Instance.IsInWishList(lootItem.TemplateId);
+                        bool wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(lootItem.TemplateId, true, out EWishlistGroup group);
                         bool questItem = MoreCheckmarksMod.IsQuestItem(owner.Player.Profile.QuestsData, lootItem.TemplateId);
 
                         if (neededStruct.foundNeeded)
