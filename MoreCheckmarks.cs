@@ -1196,59 +1196,6 @@ namespace MoreCheckmarks
             return required && gotTooltip;
         }
 
-        // public static bool IsQuestItem(IEnumerable<QuestDataClass> quests, string templateID)
-        // {
-        //     //QuestControllerClass.GetItemsForCondition
-        //     try
-        //     {
-        //         if (includeFutureQuests)
-        //         {
-        //             return questDataCompleteByItemTemplateID.TryGetValue(templateID, out QuestPair questPair) &&
-        //                    questPair.questData.Count > 0;
-        //         }
-        //         else
-        //         {
-        //             foreach (QuestDataClass quest in quests)
-        //             {
-        //                 if (quest != null &&
-        //                     quest.Status == EQuestStatus.Started &&
-        //                     quest.Template != null && quest.Template.Conditions != null &&
-        //                     quest.Template.Conditions.ContainsKey(EQuestStatus.AvailableForFinish))
-        //                 {
-        //                     if (quest.Template.Conditions != null)
-        //                     {
-        //                         foreach (KeyValuePair<EQuestStatus, GClass3779> keyValuePair in quest.Template
-        //                                      .Conditions)
-        //                         {
-        //                             if (keyValuePair.Key == EQuestStatus.AvailableForFinish)
-        //                             {
-        //                                 foreach (Condition condition in keyValuePair.Value)
-        //                                 {
-        //                                     if (condition is ConditionItem conditionItem)
-        //                                     {
-        //                                         if (conditionItem.target != null &&
-        //                                             conditionItem.target.Contains(templateID))
-        //                                         {
-        //                                             return true;
-        //                                         }
-        //                                     }
-        //                                 }
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         LogError("Failed to get whether item " + templateID + " is quest item: " +
-        //                                    ex.Message + "\n" + ex.StackTrace);
-        //     }
-        //
-        //     return false;
-        // }
-
         public static List<List<KeyValuePair<string, int>>> GetBarters(string ID)
         {
             var bartersByTrader = new List<List<KeyValuePair<string, int>>>();
