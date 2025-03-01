@@ -1086,114 +1086,115 @@ namespace MoreCheckmarks
             }
             catch (Exception e)
             {
+                LogError("Failed to find out if item needed for upgrade - - - -" + e.StackTrace);
                 LogError("Failed to get whether item " + itemTemplateID + " was needed for hideout upgrades.");
             }
 
             return neededStruct;
         }
 
-        // public static bool GetNeededCraft(string itemTemplateID, ref string tooltip, bool needTooltip = true)
-        // {
-        //     bool required = false;
-        //     bool gotTooltip = false;
-        //     try
-        //     {
-        //         HideoutClass hideoutInstance = Singleton<HideoutClass>.Instance;
-        //         foreach (AreaData ad in hideoutInstance.AreaDatas)
-        //         {
-        //             // Skip if don't have area data
-        //             if (ad == null || ad.Template == null || ad.Template.Name == null)
-        //             {
-        //                 continue;
-        //             }
-        //
-        //             // Get stage to check productions of
-        //             // Productions are cumulative, a stage will have productions of all previous stages
-        //             Stage currentStage = ad.CurrentStage;
-        //             if (currentStage == null)
-        //             {
-        //                 int level = 0;
-        //                 while (currentStage == null)
-        //                 {
-        //                     currentStage = ad.StageAt(level++);
-        //                 }
-        //             }
-        //
-        //             if (currentStage != null)
-        //             {
-        //                 Stage newStage = ad.StageAt(currentStage.Level + 1);
-        //                 while (newStage != null && newStage.Level != 0)
-        //                 {
-        //                     if (newStage.Level > ad.CurrentLevel && !showFutureCraft)
-        //                     {
-        //                         break;
-        //                     }
-        //
-        //                     currentStage = newStage;
-        //                     newStage = ad.StageAt(currentStage.Level + 1);
-        //                 }
-        //             }
-        //
-        //             if (currentStage == null)
-        //             {
-        //                 continue;
-        //             }
-        //
-        //             // UPDATE: Class here is class used in AreaData.Stage.Production.Data array
-        //             if (currentStage.Production != null && currentStage.Production.Data != null)
-        //             {
-        //                 bool areaNameAdded = false;
-        //                 foreach (ProductionBuildAbstractClass productionData in currentStage.Production.Data)
-        //                 {
-        //                     Requirement[] requirements = productionData.requirements;
-        //
-        //                     foreach (Requirement baseReq in requirements)
-        //                     {
-        //                         if (baseReq.Type == ERequirementType.Item)
-        //                         {
-        //                             ItemRequirement itemRequirement = baseReq as ItemRequirement;
-        //
-        //                             if (itemTemplateID == itemRequirement.TemplateId)
-        //                             {
-        //                                 required = true;
-        //
-        //                                 if (needTooltip)
-        //                                 {
-        //                                     if (productionEndProductByID.TryGetValue(productionData._id,
-        //                                             out string product))
-        //                                     {
-        //                                         gotTooltip = true;
-        //                                         if (!areaNameAdded)
-        //                                         {
-        //                                             tooltip += "\n  " + ad.Template.Name.Localized();
-        //                                             areaNameAdded = true;
-        //                                         }
-        //
-        //                                         tooltip += "\n    <color=#" + ColorUtility.ToHtmlStringRGB(craftColor) +
-        //                                                    ">" + (product + " Name").Localized() + " lvl" +
-        //                                                    productionData.Level + "</color> (" +
-        //                                                    itemRequirement.IntCount + ")";
-        //                                     }
-        //                                 }
-        //                                 else
-        //                                 {
-        //                                     return true;
-        //                                 }
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         LogError("Failed to get whether item " + itemTemplateID +
-        //                                    " was needed for crafting: " + ex.Message);
-        //     }
-        //
-        //     return required && gotTooltip;
-        // }
+        public static bool GetNeededCraft(string itemTemplateID, ref string tooltip, bool needTooltip = true)
+        {
+            bool required = false;
+            bool gotTooltip = false;
+            try
+            {
+                HideoutClass hideoutInstance = Singleton<HideoutClass>.Instance;
+                foreach (AreaData ad in hideoutInstance.AreaDatas)
+                {
+                    // Skip if don't have area data
+                    if (ad == null || ad.Template == null || ad.Template.Name == null)
+                    {
+                        continue;
+                    }
+        
+                    // Get stage to check productions of
+                    // Productions are cumulative, a stage will have productions of all previous stages
+                    Stage currentStage = ad.CurrentStage;
+                    if (currentStage == null)
+                    {
+                        int level = 0;
+                        while (currentStage == null)
+                        {
+                            currentStage = ad.StageAt(level++);
+                        }
+                    }
+        
+                    if (currentStage != null)
+                    {
+                        Stage newStage = ad.StageAt(currentStage.Level + 1);
+                        while (newStage != null && newStage.Level != 0)
+                        {
+                            if (newStage.Level > ad.CurrentLevel && !showFutureCraft)
+                            {
+                                break;
+                            }
+        
+                            currentStage = newStage;
+                            newStage = ad.StageAt(currentStage.Level + 1);
+                        }
+                    }
+        
+                    if (currentStage == null)
+                    {
+                        continue;
+                    }
+        
+                    // UPDATE: Class here is class used in AreaData.Stage.Production.Data array
+                    if (currentStage.Production != null && currentStage.Production.Data != null)
+                    {
+                        bool areaNameAdded = false;
+                        foreach (ProductionBuildAbstractClass productionData in currentStage.Production.Data)
+                        {
+                            Requirement[] requirements = productionData.requirements;
+        
+                            foreach (Requirement baseReq in requirements)
+                            {
+                                if (baseReq.Type == ERequirementType.Item)
+                                {
+                                    ItemRequirement itemRequirement = baseReq as ItemRequirement;
+        
+                                    if (itemTemplateID == itemRequirement.TemplateId)
+                                    {
+                                        required = true;
+        
+                                        if (needTooltip)
+                                        {
+                                            if (productionEndProductByID.TryGetValue(productionData._id,
+                                                    out string product))
+                                            {
+                                                gotTooltip = true;
+                                                if (!areaNameAdded)
+                                                {
+                                                    tooltip += "\n  " + ad.Template.Name.Localized();
+                                                    areaNameAdded = true;
+                                                }
+        
+                                                tooltip += "\n    <color=#" + ColorUtility.ToHtmlStringRGB(craftColor) +
+                                                           ">" + (product + " Name").Localized() + " lvl" +
+                                                           productionData.Level + "</color> (" +
+                                                           itemRequirement.IntCount + ")";
+                                            }
+                                        }
+                                        else
+                                        {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError("Failed to get whether item " + itemTemplateID +
+                                           " was needed for crafting: " + ex.Message);
+            }
+        
+            return required && gotTooltip;
+        }
 
         // public static bool IsQuestItem(IEnumerable<QuestDataClass> quests, string templateID)
         // {
@@ -1324,6 +1325,12 @@ namespace MoreCheckmarks
                     out var startQuests);
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId,
                     out var completeQuests);
+                
+                var wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(item.TemplateId, true, out var group);
+                
+                var craftTooltip = "";
+                bool craftRequired = MoreCheckmarksMod.showCraft &&
+                                     MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
 
                 var questItem = item.MarkedAsSpawnedInSession &&
                                 ((item.QuestItem || MoreCheckmarksMod.includeFutureQuests)
@@ -1342,12 +1349,26 @@ namespace MoreCheckmarks
 
                     ____questItemLabel.gameObject.SetActive(questItem);
                 }
+                
+                var bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
+                var gotBarters = false;
+                if (bartersByTrader != null)
+                {
+                    for (var i = 0; i < bartersByTrader.Count; ++i)
+                    {
+                        if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
+                        {
+                            gotBarters = true;
+                            break;
+                        }
+                    }
+                }
 
                 MoreCheckmarksMod.neededFor[0] = questItem;
                 MoreCheckmarksMod.neededFor[1] = neededStruct.foundNeeded || neededStruct.foundFulfilled;
-                //MoreCheckmarksMod.neededFor[2] = wishlist;
-                //MoreCheckmarksMod.neededFor[3] = gotBarters;
-                //MoreCheckmarksMod.neededFor[4] = craftRequired;
+                MoreCheckmarksMod.neededFor[2] = wishlist;
+                MoreCheckmarksMod.neededFor[3] = gotBarters;
+                MoreCheckmarksMod.neededFor[4] = craftRequired;
 
                 var currentNeeded = -1;
                 var currentHighest = -1;
@@ -1403,178 +1424,18 @@ namespace MoreCheckmarks
                 {
                     SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
                 }
+                
+                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests,
+                    completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist,
+                    bartersByTrader, gotBarters, craftRequired, craftTooltip);
 
                 return false;
             }
             catch (Exception e)
             {
+                MoreCheckmarksMod.LogError("Failed to show checkmark for item " + item.Template.Name + " - " + e.Message);
                 return true;
             }
-
-            // try 
-            // {
-            //     // Hide by default
-            //     //__instance.HideGameObject();
-            //
-            //     var possessedCount = 0;
-            //     var possessedQuestCount = 0;
-            //     
-            //     
-            //     // if (profile != null)
-            //     // {
-            //     //     MoreCheckmarksMod.LogInfo("Profile not null, but hitting commented code");
-            //     //     // IEnumerable<Item> inventoryItems =
-            //     //     //     Singleton<HideoutClass>.Instance.AllStashItems.Where(x => x.TemplateId == item.TemplateId);
-            //     //     // if (inventoryItems != null)
-            //     //     // {
-            //     //     //     foreach (Item currentItem in inventoryItems)
-            //     //     //     {
-            //     //     //         if (currentItem.MarkedAsSpawnedInSession)
-            //     //     //         {
-            //     //     //             possessedQuestCount += currentItem.StackObjectsCount;
-            //     //     //         }
-            //     //     //
-            //     //     //         possessedCount += currentItem.StackObjectsCount;
-            //     //     //     }
-            //     //     // }
-            //     // }
-            //     // else
-            //     // {
-            //     //     MoreCheckmarksMod.LogError("Profile null for item " + item.Template.Name);
-            //     // }
-            //     
-            //     
-            //     // // Get requirements
-            //     // var areaNames = new List<string>();
-            //     // var neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
-            //     // var craftTooltip = "";
-            //     // // bool craftRequired = MoreCheckmarksMod.showCraft &&
-            //     // //                      MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
-            //     // MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId,
-            //     //     out var startQuests);
-            //     // MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId,
-            //     //     out var completeQuests);
-            //     // var questItem = item.MarkedAsSpawnedInSession &&
-            //     //                 ((item.QuestItem || MoreCheckmarksMod.includeFutureQuests)
-            //     //                     ? (startQuests != null && startQuests.questData.Count > 0) ||
-            //     //                       (completeQuests != null && completeQuests.questData.Count > 0)
-            //     //                     : (___string_5 != null && ___string_5.Contains("quest")));
-            //     // var wishlist =
-            //     //     ItemUiContext.Instance.WishlistManager.IsInWishlist(item.TemplateId, true,
-            //     //         out var group);
-            //     // var bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
-            //     // var gotBarters = false;
-            //     // if (bartersByTrader != null)
-            //     // {
-            //     //     for (var i = 0; i < bartersByTrader.Count; ++i)
-            //     //     {
-            //     //         if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
-            //     //         {
-            //     //             gotBarters = true;
-            //     //             break;
-            //     //         }
-            //     //     }
-            //     // }
-            //     //
-            //     // // Setup label for inspect view
-            //     // if (____questItemLabel != null)
-            //     // {
-            //     //     // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
-            //     //     if (questItem)
-            //     //     {
-            //     //         ____questItemLabel.text = "QUEST ITEM";
-            //     //     }
-            //     //
-            //     //     ____questItemLabel.gameObject.SetActive(questItem);
-            //     // }
-            //     //
-            //     // MoreCheckmarksMod.neededFor[0] = questItem;
-            //     // MoreCheckmarksMod.neededFor[1] = neededStruct.foundNeeded || neededStruct.foundFulfilled;
-            //     // MoreCheckmarksMod.neededFor[2] = wishlist;
-            //     // MoreCheckmarksMod.neededFor[3] = gotBarters;
-            //     // //MoreCheckmarksMod.neededFor[4] = craftRequired;
-            //     //
-            //     // // Find needed with highest priority
-            //     // var currentNeeded = -1;
-            //     // var currentHighest = -1;
-            //     // for (var i = 0; i < 5; ++i)
-            //     // {
-            //     //     if (MoreCheckmarksMod.neededFor[i] && MoreCheckmarksMod.priorities[i] > currentHighest)
-            //     //     {
-            //     //         currentNeeded = i;
-            //     //         currentHighest = MoreCheckmarksMod.priorities[i];
-            //     //     }
-            //     // }
-            //     //
-            //     // // Set checkmark if necessary
-            //     // if (currentNeeded > -1)
-            //     // {
-            //     //     // Handle special case of areas
-            //     //     if (currentNeeded == 1)
-            //     //     {
-            //     //         if (neededStruct.foundNeeded) // Need more
-            //     //         {
-            //     //             SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-            //     //                 MoreCheckmarksMod.needMoreColor);
-            //     //         }
-            //     //         else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
-            //     //         {
-            //     //             if (MoreCheckmarksMod
-            //     //                 .fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
-            //     //             {
-            //     //                 SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-            //     //                     MoreCheckmarksMod.fulfilledColor);
-            //     //             }
-            //     //             else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
-            //     //             {
-            //     //                 // Check if we truly do not need more of this item for now
-            //     //                 if (neededStruct.possessedCount >= neededStruct.requiredCount)
-            //     //                 {
-            //     //                     SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-            //     //                         MoreCheckmarksMod.fulfilledColor);
-            //     //                 }
-            //     //                 else // Still need more
-            //     //                 {
-            //     //                     SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-            //     //                         MoreCheckmarksMod.needMoreColor);
-            //     //                 }
-            //     //             }
-            //     //         }
-            //     //     }
-            //     //     else // Not area, just set color
-            //     //     {
-            //     //         SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-            //     //             MoreCheckmarksMod.colors[currentNeeded]);
-            //     //     }
-            //     // }
-            //     // else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
-            //     // {
-            //     //     SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
-            //     // }
-            //     //
-            //     // // Set tooltip based on requirements
-            //     // SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests,
-            //     //     completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist,
-            //     //     bartersByTrader, gotBarters, /* TODO: Update to craftRequired */ false, craftTooltip);
-            //
-            //     return true;
-            // }
-            // catch (Exception ex)
-            // {
-            //     if (item != null)
-            //     {
-            //         MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch failed on item: " + item.TemplateId +
-            //                                    " named " + item.LocalizedName() + ":\n" + ex.Message + ":\n" +
-            //                                    ex.StackTrace);
-            //     }
-            //     else
-            //     {
-            //         MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch failed, item null:\n" + ex.Message + ":\n" +
-            //                                    ex.StackTrace);
-            //     }
-            // }
-            //
-            // return true;
         }
 
         private static void SetCheckmark(QuestItemViewPanel instance, Image questIconImage,
@@ -1911,263 +1772,223 @@ namespace MoreCheckmarks
         }
     }
 
-    // [HarmonyPatch]
-    // class AvailableActionsPatch
-    // {
-    //     // This postfix will run after we get a list of all actions available to interact with the item we are pointing at
-    //     [HarmonyPatch(typeof(GetActionsClass), "smethod_7")]
-    //     static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref ActionsReturnClass __result)
-    //     {
-    //         try
-    //         {
-    //             foreach (ActionsTypesClass action in __result.Actions)
-    //             {
-    //                 if (action.Name.Equals("Take"))
-    //                 {
-    //                     List<string> nullAreaNames = null;
-    //                     NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
-    //                     string craftTooltip = "";
-    //                     bool craftRequired =
-    //                         MoreCheckmarksMod.GetNeededCraft(lootItem.TemplateId, ref craftTooltip, false);
-    //                     bool wishlist =
-    //                         ItemUiContext.Instance.WishlistManager.IsInWishlist(lootItem.TemplateId, true,
-    //                             out EWishlistGroup group);
-    //                     MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(lootItem.TemplateId,
-    //                         out MoreCheckmarksMod.QuestPair startQuests);
-    //                     MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(lootItem.TemplateId,
-    //                         out MoreCheckmarksMod.QuestPair completeQuests);
-    //                     bool questItem = lootItem.Item.MarkedAsSpawnedInSession && (lootItem.Item.QuestItem ||
-    //                         (MoreCheckmarksMod.includeFutureQuests &&
-    //                          (startQuests != null && startQuests.questData.Count > 0) ||
-    //                          (completeQuests != null && completeQuests.questData.Count > 0)));
-    //                     List<List<KeyValuePair<string, int>>> bartersByTrader =
-    //                         MoreCheckmarksMod.GetBarters(lootItem.TemplateId);
-    //                     bool gotBarters = false;
-    //                     if (bartersByTrader != null)
-    //                     {
-    //                         for (int i = 0; i < bartersByTrader.Count; ++i)
-    //                         {
-    //                             if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
-    //                             {
-    //                                 gotBarters = true;
-    //                                 break;
-    //                             }
-    //                         }
-    //                     }
-    //
-    //                     bool[] currentNeededFor =
-    //                     {
-    //                         questItem, neededStruct.foundNeeded || neededStruct.foundFulfilled, wishlist, gotBarters,
-    //                         craftRequired
-    //                     };
-    //                     // Find needed with highest priority
-    //                     int currentNeeded = -1;
-    //                     int currentHighest = -1;
-    //                     for (int i = 0; i < 5; ++i)
-    //                     {
-    //                         if (currentNeededFor[i] && MoreCheckmarksMod.priorities[i] > currentHighest)
-    //                         {
-    //                             currentNeeded = i;
-    //                             currentHighest = MoreCheckmarksMod.priorities[i];
-    //                         }
-    //                     }
-    //
-    //                     if (currentNeeded != -1)
-    //                     {
-    //                         // Handle special case of areas
-    //                         if (currentNeeded == 1)
-    //                         {
-    //                             if (neededStruct.foundNeeded) // Need more
-    //                             {
-    //                                 action.Name = "<font=\"BenderBold\"><color=#" +
-    //                                               ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) +
-    //                                               ">Take</color></font>";
-    //                             }
-    //                             else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
-    //                             {
-    //                                 if (MoreCheckmarksMod
-    //                                     .fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
-    //                                 {
-    //                                     action.Name = "<font=\"BenderBold\"><color=#" +
-    //                                                   ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) +
-    //                                                   ">Take</color></font>";
-    //                                 }
-    //                                 else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
-    //                                 {
-    //                                     // Check if we trully do not need more of this item for now
-    //                                     if (neededStruct.possessedCount >= neededStruct.requiredCount)
-    //                                     {
-    //                                         action.Name = "<font=\"BenderBold\"><color=#" +
-    //                                                       ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod
-    //                                                           .fulfilledColor) + ">Take</color></font>";
-    //                                     }
-    //                                     else // Still need more
-    //                                     {
-    //                                         action.Name = "<font=\"BenderBold\"><color=#" +
-    //                                                       ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod
-    //                                                           .needMoreColor) + ">Take</color></font>";
-    //                                     }
-    //                                 }
-    //                             }
-    //                         }
-    //                         else // Not area, just set color
-    //                         {
-    //                             MoreCheckmarksMod.LogInfo("TAKE NEEDED, NOT FOR AREA, COLORING FOR NEEDED FOR INDEX " +
-    //                                                       currentNeeded + " AS COLOR " +
-    //                                                       ColorUtility.ToHtmlStringRGB(
-    //                                                           MoreCheckmarksMod.colors[currentNeeded]));
-    //                             action.Name = "<font=\"BenderBold\"><color=#" +
-    //                                           ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.colors[currentNeeded]) +
-    //                                           ">Take</color></font>";
-    //                         }
-    //                     }
-    //                     //else leave it as it is
-    //
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //             MoreCheckmarksMod.LogError("Failed to process available actions for loose item: " + ex.Message + "\n" +
-    //                                        ex.StackTrace);
-    //         }
-    //     }
-    // }
-    //
-
     [HarmonyPatch]
-    public class QuestClassStatusPatch
+    class AvailableActionsPatch
     {
-        private static EQuestStatus preStatus;
-
-        // Dynamically resolve the obfuscated type
-        static readonly Type _questClassType = AccessTools.TypeByName("EFT.Quests.QuestClass") ??
-                                               AccessTools.TypeByName("\uF151"); // Fallback to obfuscated name
-        
-        // Apply the patch dynamically
-        [HarmonyPatch]
-        static bool Prepare()
+        // This postfix will run after we get a list of all actions available to interact with the item we are pointing at
+        [HarmonyPatch(typeof(GetActionsClass), "smethod_7")]
+        static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref ActionsReturnClass __result)
         {
-            return _questClassType != null; // Ensure the type is found before patching
-        }
-
-        // Prefix: Run before `SetStatus` is called
-        [HarmonyPatch(methodName: "SetStatus", methodType: MethodType.Normal)]
-        [HarmonyPrefix]
-        static void Prefix(object __instance)
-        {
-            MoreCheckmarksMod.LogInfo("Inside SetStatus Prefix");
-            if (__instance == null || _questClassType == null)
-                return;
-
-            // Get `QuestStatus` property dynamically
-            var questStatusProperty = AccessTools.Property(_questClassType, "QuestStatus");
-            if (questStatusProperty != null)
-            {
-                preStatus = (EQuestStatus)questStatusProperty.GetValue(__instance);
-            }
-        }
-
-        // Postfix: Run after `SetStatus` is called
-        [HarmonyPatch(methodName: "SetStatus", methodType: MethodType.Normal)]
-        [HarmonyPostfix]
-        static void Postfix(object __instance)
-        {
-            if (__instance == null || _questClassType == null)
-            {
-                MoreCheckmarksMod.LogError("Attempted setting quest status, but instance is null.");
-                return;
-            }
-
-            // Dynamically retrieve properties
-            var questStatusProperty = AccessTools.Property(_questClassType, "QuestStatus");
-            var templateProperty = AccessTools.Property(_questClassType, "Template");
-
-            if (questStatusProperty == null || templateProperty == null)
-            {
-                MoreCheckmarksMod.LogError("QuestClass properties not found.");
-                return;
-            }
-
-            var newStatus = (EQuestStatus)questStatusProperty.GetValue(__instance);
-            var template = templateProperty.GetValue(__instance);
-
-            MoreCheckmarksMod.LogInfo($"Quest {template?.ToString()} status set to {newStatus}");
-
-            if (newStatus == preStatus) return;
             try
             {
-                switch (newStatus)
+                foreach (ActionsTypesClass action in __result.Actions)
                 {
-                    case EQuestStatus.Started:
-                        if (preStatus == EQuestStatus.AvailableForStart)
+                    if (action.Name.Equals("Take"))
+                    {
+                        List<string> nullAreaNames = null;
+                        NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
+                        string craftTooltip = "";
+                        bool craftRequired =
+                            MoreCheckmarksMod.GetNeededCraft(lootItem.TemplateId, ref craftTooltip, false);
+                        bool wishlist =
+                            ItemUiContext.Instance.WishlistManager.IsInWishlist(lootItem.TemplateId, true,
+                                out EWishlistGroup group);
+                        MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(lootItem.TemplateId,
+                            out MoreCheckmarksMod.QuestPair startQuests);
+                        MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(lootItem.TemplateId,
+                            out MoreCheckmarksMod.QuestPair completeQuests);
+                        bool questItem = lootItem.Item.MarkedAsSpawnedInSession && (lootItem.Item.QuestItem ||
+                            (MoreCheckmarksMod.includeFutureQuests &&
+                             (startQuests != null && startQuests.questData.Count > 0) ||
+                             (completeQuests != null && completeQuests.questData.Count > 0)));
+                        List<List<KeyValuePair<string, int>>> bartersByTrader =
+                            MoreCheckmarksMod.GetBarters(lootItem.TemplateId);
+                        bool gotBarters = false;
+                        if (bartersByTrader != null)
                         {
-                            HandleQuestStart(template);
+                            for (int i = 0; i < bartersByTrader.Count; ++i)
+                            {
+                                if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
+                                {
+                                    gotBarters = true;
+                                    break;
+                                }
+                            }
                         }
-
+    
+                        bool[] currentNeededFor =
+                        {
+                            questItem, neededStruct.foundNeeded || neededStruct.foundFulfilled, wishlist, gotBarters,
+                            craftRequired
+                        };
+                        // Find needed with highest priority
+                        int currentNeeded = -1;
+                        int currentHighest = -1;
+                        for (int i = 0; i < 5; ++i)
+                        {
+                            if (currentNeededFor[i] && MoreCheckmarksMod.priorities[i] > currentHighest)
+                            {
+                                currentNeeded = i;
+                                currentHighest = MoreCheckmarksMod.priorities[i];
+                            }
+                        }
+    
+                        if (currentNeeded != -1)
+                        {
+                            // Handle special case of areas
+                            if (currentNeeded == 1)
+                            {
+                                if (neededStruct.foundNeeded) // Need more
+                                {
+                                    action.Name = "<font=\"BenderBold\"><color=#" +
+                                                  ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) +
+                                                  ">Take</color></font>";
+                                }
+                                else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
+                                {
+                                    if (MoreCheckmarksMod
+                                        .fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
+                                    {
+                                        action.Name = "<font=\"BenderBold\"><color=#" +
+                                                      ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) +
+                                                      ">Take</color></font>";
+                                    }
+                                    else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
+                                    {
+                                        // Check if we trully do not need more of this item for now
+                                        if (neededStruct.possessedCount >= neededStruct.requiredCount)
+                                        {
+                                            action.Name = "<font=\"BenderBold\"><color=#" +
+                                                          ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod
+                                                              .fulfilledColor) + ">Take</color></font>";
+                                        }
+                                        else // Still need more
+                                        {
+                                            action.Name = "<font=\"BenderBold\"><color=#" +
+                                                          ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod
+                                                              .needMoreColor) + ">Take</color></font>";
+                                        }
+                                    }
+                                }
+                            }
+                            else // Not area, just set color
+                            {
+                                MoreCheckmarksMod.LogInfo("TAKE NEEDED, NOT FOR AREA, COLORING FOR NEEDED FOR INDEX " +
+                                                          currentNeeded + " AS COLOR " +
+                                                          ColorUtility.ToHtmlStringRGB(
+                                                              MoreCheckmarksMod.colors[currentNeeded]));
+                                action.Name = "<font=\"BenderBold\"><color=#" +
+                                              ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.colors[currentNeeded]) +
+                                              ">Take</color></font>";
+                            }
+                        }
+                        //else leave it as it is
+    
                         break;
-                    case EQuestStatus.Success:
-                    case EQuestStatus.Expired:
-                    case EQuestStatus.Fail:
-                        HandleQuestCompletion(template);
-                        break;
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MoreCheckmarksMod.LogError(
-                    $"Failed processing status change for quest {template?.ToString()} to {newStatus}: {ex}");
+                MoreCheckmarksMod.LogError("Failed to process available actions for loose item: " + ex.Message + "\n" +
+                                           ex.StackTrace);
             }
         }
+    }
+    
 
-        static void HandleQuestStart(object template)
+    [HarmonyPatch]
+    class QuestClassStatusPatch
+    {
+        private static EQuestStatus preStatus;
+
+        // This prefix will run before a quest's status has been set 
+        [HarmonyPatch(typeof(QuestClass), "SetStatus")]
+        static void Prefix(QuestClass __instance)
         {
-            var questId = template?.GetType().GetProperty("Id")?.GetValue(template)?.ToString();
-            if (questId == null) return;
+            preStatus = __instance.QuestStatus;
+        }
 
-            if (!MoreCheckmarksMod.neededStartItemsByQuest.TryGetValue(questId, out var startItems)) return;
-            
-            foreach (var itemEntry in startItems)
+        // This postfix will run after a quest's status has been set 
+        [HarmonyPatch(typeof(QuestClass), "SetStatus")]
+        static void Postfix(QuestClass __instance)
+        {
+            if (__instance == null)
             {
-                if (MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(itemEntry.Key,
-                        out var questList))
+                MoreCheckmarksMod.LogError("Attempted setting queststatus but instance is null");
+                return;
+            }
+
+            if (__instance.Template == null)
+            {
+                return;
+            }
+
+            MoreCheckmarksMod.LogInfo("Quest " + __instance.Template.Name + " queststatus set to " +
+                                      __instance.QuestStatus);
+
+            try
+            {
+                if (__instance.QuestStatus != preStatus)
                 {
-                    questList.questData.Remove(questId);
-                    questList.count -= itemEntry.Value;
-                    if (questList.questData.Count == 0)
+                    switch (__instance.QuestStatus)
                     {
-                        MoreCheckmarksMod.questDataStartByItemTemplateID.Remove(itemEntry.Key);
+                        case EQuestStatus.Started:
+                            if (preStatus == EQuestStatus.AvailableForStart)
+                            {
+                                if (MoreCheckmarksMod.neededStartItemsByQuest.TryGetValue(__instance.Template.Id,
+                                        out Dictionary<string, int> startItems))
+                                {
+                                    foreach (KeyValuePair<string, int> itemEntry in startItems)
+                                    {
+                                        if (MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(itemEntry.Key,
+                                                out MoreCheckmarksMod.QuestPair questList))
+                                        {
+                                            questList.questData.Remove(__instance.Template.Id);
+                                            questList.count -= itemEntry.Value;
+                                            if (questList.questData.Count == 0)
+                                            {
+                                                MoreCheckmarksMod.questDataStartByItemTemplateID.Remove(itemEntry.Key);
+                                            }
+                                        }
+                                    }
+
+                                    MoreCheckmarksMod.neededStartItemsByQuest.Remove(__instance.Template.Id);
+                                }
+                            }
+
+                            break;
+                        case EQuestStatus.Success:
+                        case EQuestStatus.Expired:
+                        case EQuestStatus.Fail:
+                            if (MoreCheckmarksMod.neededCompleteItemsByQuest.TryGetValue(__instance.Template.Id,
+                                    out Dictionary<string, int> completeItems))
+                            {
+                                foreach (KeyValuePair<string, int> itemEntry in completeItems)
+                                {
+                                    if (MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(itemEntry.Key,
+                                            out MoreCheckmarksMod.QuestPair questList))
+                                    {
+                                        questList.questData.Remove(__instance.Template.Id);
+                                        questList.count -= itemEntry.Value;
+                                        if (questList.questData.Count == 0)
+                                        {
+                                            MoreCheckmarksMod.questDataCompleteByItemTemplateID.Remove(itemEntry.Key);
+                                        }
+                                    }
+                                }
+
+                                MoreCheckmarksMod.neededCompleteItemsByQuest.Remove(__instance.Template.Id);
+                            }
+
+                            break;
                     }
                 }
             }
-
-            MoreCheckmarksMod.neededStartItemsByQuest.Remove(questId);
-        }
-
-        static void HandleQuestCompletion(object template)
-        {
-            var questId = template?.GetType().GetProperty("Id")?.GetValue(template)?.ToString();
-            if (questId == null) return;
-
-            if (MoreCheckmarksMod.neededCompleteItemsByQuest.TryGetValue(questId,
-                    out var completeItems))
+            catch (Exception ex)
             {
-                foreach (var itemEntry in completeItems)
-                {
-                    if (MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(itemEntry.Key,
-                            out var questList))
-                    {
-                        questList.questData.Remove(questId);
-                        questList.count -= itemEntry.Value;
-                        if (questList.questData.Count == 0)
-                        {
-                            MoreCheckmarksMod.questDataCompleteByItemTemplateID.Remove(itemEntry.Key);
-                        }
-                    }
-                }
-
-                MoreCheckmarksMod.neededCompleteItemsByQuest.Remove(questId);
+                MoreCheckmarksMod.LogError("Failed to process change in status for quest " + __instance.Template.Name +
+                                           " to " + __instance.QuestStatus + ": " + ex.Message + "\n" + ex.StackTrace);
             }
         }
     }
