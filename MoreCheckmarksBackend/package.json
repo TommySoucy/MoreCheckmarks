@@ -1,23 +1,24 @@
 {
     "name": "MoreCheckmarksBackend",
-    "version": "1.5.12",
+    "version": "1.6.0",
     "main": "src/MoreCheckmarksStaticRouter.js",
     "license": "MIT",
     "author": "VIP",
-    "akiVersion": "~3.8",
+    "sptVersion": "~3.11",
     "scripts": {
-        "setup": "npm i",
-        "build": "node ./packageBuild.ts"
+        "setup": "pnpm i",
+        "build": "node ./build.mjs"
     },
     "devDependencies": {
-        "@types/node": "16.18.10",
-        "@typescript-eslint/eslint-plugin": "5.46.1",
-        "@typescript-eslint/parser": "5.46.1",
-        "bestzip": "2.2.1",
-        "eslint": "8.30.0",
-        "fs-extra": "11.1.0",
-        "glob": "8.0.3",
-        "tsyringe": "4.7.0",
-        "typescript": "4.9.4"
+        "@types/node": "20.11",
+        "@typescript-eslint/eslint-plugin": "7.2",
+        "@typescript-eslint/parser": "7.2",
+        "archiver": "^6.0",
+        "eslint": "8.57",
+        "fs-extra": "11.2",
+        "ignore": "^5.2",
+        "tsyringe": "4.8.0",
+        "typescript": "5.4",
+        "winston": "3.12"
     }
 }

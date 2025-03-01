@@ -1,27 +1,29 @@
 import { DependencyContainer } from "tsyringe";
-import type { IPreAkiLoadMod } from "@spt-aki/models/external/IPreAkiLoadMod";
-import type { ILogger } from "@spt-aki/models/spt/utils/ILogger";
-import type {DynamicRouterModService} from "@spt-aki/services/mod/dynamicRouter/DynamicRouterModService";
-import type {StaticRouterModService} from "@spt-aki/services/mod/staticRouter/StaticRouterModService";
-import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
-import { ProfileHelper } from "@spt-aki/helpers/ProfileHelper";
-//import { QuestConditionHelper } from "@spt-aki/helpers/QuestConditionHelper";
-import { QuestHelper } from "@spt-aki/helpers/QuestHelper";
-import { IQuestConfig } from "@spt-aki/models/spt/config/IQuestConfig";
-import { ConfigTypes } from "@spt-aki/models/enums/ConfigTypes";
-import { ConfigServer } from "@spt-aki/servers/ConfigServer";
-import { Traders } from "@spt-aki/models/enums/Traders";
-import { TraderHelper } from "@spt-aki/helpers/TraderHelper";
-import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
-import { FenceService } from "@spt-aki/services/FenceService";
-import { ITemplateItem } from "@spt-aki/models/eft/common/tables/ITemplateItem";
-import { ILocaleBase } from "@spt-aki/models/spt/server/ILocaleBase";
+import type { IPreSptLoadMod } from "@spt/models/external/IPreSptLoadMod";
+import type { ILogger } from "@spt/models/spt/utils/ILogger";
+import type {DynamicRouterModService} from "@spt/services/mod/dynamicRouter/DynamicRouterModService";
+import type {StaticRouterModService} from "@spt/services/mod/staticRouter/StaticRouterModService";
+import { DatabaseServer } from "@spt/servers/DatabaseServer";
+import { ProfileHelper } from "@spt/helpers/ProfileHelper";
+import { QuestHelper } from "@spt/helpers/QuestHelper";
+import { IQuestConfig } from "@spt/models/spt/config/IQuestConfig";
+import { ConfigTypes } from "@spt/models/enums/ConfigTypes";
+import { ConfigServer } from "@spt/servers/ConfigServer";
+import { Traders } from "@spt/models/enums/Traders";
+import { TraderHelper } from "@spt/helpers/TraderHelper";
+import { FenceService } from "@spt/services/FenceService";
+import { ITemplateItem } from "@spt/models/eft/common/tables/ITemplateItem";
+import { ILocaleBase } from "@spt/models/spt/server/ILocaleBase";
+import {IQuest} from "@spt/models/eft/common/tables/IQuest";
+import {IPmcData} from "@spt/models/eft/common/IPmcData";
+import {ITraderAssort} from "@spt/models/eft/common/tables/ITrader";
+import {IHideoutProduction} from "@spt/models/eft/hideout/IHideoutProduction";
 
-class Mod implements IPreAkiLoadMod
+class Mod implements IPreSptLoadMod
 {
     protected questConfig: IQuestConfig;
 	
-    public preAkiLoad(container: DependencyContainer): void {
+    public async preSptLoad(container: DependencyContainer): Promise<void> {
         const logger = container.resolve<ILogger>("WinstonLogger");
         const dynamicRouterModService = container.resolve<DynamicRouterModService>("DynamicRouterModService");
         const staticRouterModService = container.resolve<StaticRouterModService>("StaticRouterModService");
@@ -40,7 +42,7 @@ class Mod implements IPreAkiLoadMod
             [
                 {
                     url: "/MoreCheckmarksRoutes/quests",
-                    action: (url, info, sessionID, output) => 
+                    action: async (url, info, sessionID, output) =>
                     {
                         logger.info("MoreCheckmarks making quest data request");
 						const quests: IQuest[] = [];
@@ -91,7 +93,7 @@ class Mod implements IPreAkiLoadMod
                 },
                 {
                     url: "/MoreCheckmarksRoutes/assorts",
-                    action: (url, info, sessionID, output) => 
+                    action: async (url, info, sessionID, output) =>
                     {
                         logger.info("MoreCheckmarks making trader assort data request");
 						const assorts: ITraderAssort[] = [];
@@ -123,7 +125,7 @@ class Mod implements IPreAkiLoadMod
                 },
                 {
                     url: "/MoreCheckmarksRoutes/items",
-                    action: (url, info, sessionID, output) => 
+                    action: async (url, info, sessionID, output) =>
                     {
                         logger.info("MoreCheckmarks making item data request");
 						
@@ -140,10 +142,11 @@ class Mod implements IPreAkiLoadMod
                 },
                 {
                     url: "/MoreCheckmarksRoutes/locales",
-                    action: (url, info, sessionID, output) => 
+                    action: async (url, info, sessionID, output) =>
                     {
                         logger.info("MoreCheckmarks making locale request");
-						
+
+						// @ts-ignore
 						const locales: ILocaleBase = {};
 						if(databaseServer && databaseServer.getTables() && databaseServer.getTables().locales)
 						{
@@ -157,10 +160,11 @@ class Mod implements IPreAkiLoadMod
                 },
                 {
                     url: "/MoreCheckmarksRoutes/productions",
-                    action: (url, info, sessionID, output) => 
+                    action: async (url, info, sessionID, output) =>
                     {
                         logger.info("MoreCheckmarks making productions request");
 						
+						// @ts-ignore
 						const production: IHideoutProduction = {};
 						if(databaseServer && databaseServer.getTables() && databaseServer.getTables().hideout && databaseServer.getTables().hideout.production)
 						{
