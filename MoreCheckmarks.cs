@@ -980,17 +980,17 @@ namespace MoreCheckmarks
 
         public static NeededStruct GetNeeded(string itemTemplateID, ref List<string> areaNames)
         {
-            var neededStruct = new NeededStruct();
-            neededStruct.possessedCount = 0;
-            neededStruct.requiredCount = 0;
+            var neededStruct = new NeededStruct
+            {
+                possessedCount = 0,
+                requiredCount = 0
+            };
 
             try
             {
-                var hideoutInstance = Singleton<HideoutController>.Instance;
-                foreach (var hideoutArea in hideoutInstance.Areas)
+                var hideoutInstance = Singleton<HideoutClass>.Instance;
+                foreach (var ad in hideoutInstance.AreaDatas)
                 {
-                    var ad = hideoutArea.Value.Data;
-                    LogInfo("We got area data with status: " + ad.Status);
                     // Skip if don't have area data
                     if (ad == null || ad.Template == null || ad.Template.Name == null || ad.NextStage == null)
                     {
@@ -1107,7 +1107,7 @@ namespace MoreCheckmarks
                     {
                         continue;
                     }
-        
+
                     // Get stage to check productions of
                     // Productions are cumulative, a stage will have productions of all previous stages
                     Stage currentStage = ad.CurrentStage;
@@ -1119,7 +1119,7 @@ namespace MoreCheckmarks
                             currentStage = ad.StageAt(level++);
                         }
                     }
-        
+
                     if (currentStage != null)
                     {
                         Stage newStage = ad.StageAt(currentStage.Level + 1);
@@ -1129,17 +1129,17 @@ namespace MoreCheckmarks
                             {
                                 break;
                             }
-        
+
                             currentStage = newStage;
                             newStage = ad.StageAt(currentStage.Level + 1);
                         }
                     }
-        
+
                     if (currentStage == null)
                     {
                         continue;
                     }
-        
+
                     // UPDATE: Class here is class used in AreaData.Stage.Production.Data array
                     if (currentStage.Production != null && currentStage.Production.Data != null)
                     {
@@ -1147,17 +1147,17 @@ namespace MoreCheckmarks
                         foreach (ProductionBuildAbstractClass productionData in currentStage.Production.Data)
                         {
                             Requirement[] requirements = productionData.requirements;
-        
+
                             foreach (Requirement baseReq in requirements)
                             {
                                 if (baseReq.Type == ERequirementType.Item)
                                 {
                                     ItemRequirement itemRequirement = baseReq as ItemRequirement;
-        
+
                                     if (itemTemplateID == itemRequirement.TemplateId)
                                     {
                                         required = true;
-        
+
                                         if (needTooltip)
                                         {
                                             if (productionEndProductByID.TryGetValue(productionData._id,
@@ -1169,7 +1169,7 @@ namespace MoreCheckmarks
                                                     tooltip += "\n  " + ad.Template.Name.Localized();
                                                     areaNameAdded = true;
                                                 }
-        
+
                                                 tooltip += "\n    <color=#" + ColorUtility.ToHtmlStringRGB(craftColor) +
                                                            ">" + (product + " Name").Localized() + " lvl" +
                                                            productionData.Level + "</color> (" +
@@ -1190,9 +1190,9 @@ namespace MoreCheckmarks
             catch (Exception ex)
             {
                 LogError("Failed to get whether item " + itemTemplateID +
-                                           " was needed for crafting: " + ex.Message);
+                         " was needed for crafting: " + ex.Message);
             }
-        
+
             return required && gotTooltip;
         }
 
@@ -1259,7 +1259,16 @@ namespace MoreCheckmarks
 
                 if (profile != null)
                 {
-                    MoreCheckmarksMod.LogInfo("Profile not null, but hitting commented code");
+                    var inventoryItems = Singleton<HideoutClass>.Instance.AllStashItems.Where(x => x.TemplateId == item.TemplateId);
+                    foreach (var currentItem in inventoryItems)
+                    {
+                        if (currentItem.MarkedAsSpawnedInSession)
+                        {
+                            possessedQuestCount += currentItem.StackObjectsCount;
+                        }
+
+                        possessedCount += currentItem.StackObjectsCount;
+                    }
                 }
                 else
                 {
@@ -1272,11 +1281,11 @@ namespace MoreCheckmarks
                     out var startQuests);
                 MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId,
                     out var completeQuests);
-                
-                var wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(item.TemplateId, true, out var group);
-                
+
+                var wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(item.TemplateId, true, out _);
+
                 var craftTooltip = "";
-                bool craftRequired = MoreCheckmarksMod.showCraft &&
+                var craftRequired = MoreCheckmarksMod.showCraft &&
                                      MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
 
                 var questItem = item.MarkedAsSpawnedInSession &&
@@ -1296,18 +1305,14 @@ namespace MoreCheckmarks
 
                     ____questItemLabel.gameObject.SetActive(questItem);
                 }
-                
+
                 var bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
                 var gotBarters = false;
                 if (bartersByTrader != null)
                 {
-                    for (var i = 0; i < bartersByTrader.Count; ++i)
+                    if (bartersByTrader.Any(t => t != null && t.Count > 0))
                     {
-                        if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
-                        {
-                            gotBarters = true;
-                            break;
-                        }
+                        gotBarters = true;
                     }
                 }
 
@@ -1371,7 +1376,7 @@ namespace MoreCheckmarks
                 {
                     SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
                 }
-                
+
                 SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests,
                     completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist,
                     bartersByTrader, gotBarters, craftRequired, craftTooltip);
@@ -1380,7 +1385,8 @@ namespace MoreCheckmarks
             }
             catch (Exception e)
             {
-                MoreCheckmarksMod.LogError("Failed to show checkmark for item " + item.Template.Name + " - " + e.Message);
+                MoreCheckmarksMod.LogError(
+                    "Failed to show checkmark for item " + item.Template.Name + " - " + e.Message);
                 return true;
             }
         }
@@ -1577,7 +1583,7 @@ namespace MoreCheckmarks
                                 }
                             }
                         }
-                        
+
                         if (RawQuestClass != null)
                         {
                             string arg = "<color=#dd831a>" + RawQuestClass.Name + "</color>";
@@ -1587,7 +1593,7 @@ namespace MoreCheckmarks
                                 ___string_5 += string.Format("\nItem is related to an active {0} quest".Localized(null),
                                     arg);
                             }
-                        
+
                             Weapon weapon;
                             ConditionWeaponAssembly condition;
                             if (!gotQuest && (weapon = (item as Weapon)) != null &&
@@ -1598,7 +1604,7 @@ namespace MoreCheckmarks
                                 ___string_5 +=
                                     string.Format("\nItem fits the active {0} quest requirements".Localized(null), arg);
                             }
-                        
+
                             if (!gotQuest && item.MarkedAsSpawnedInSession)
                             {
                                 gotQuest = true;
@@ -1722,7 +1728,7 @@ namespace MoreCheckmarks
     class AvailableActionsPatch
     {
         // This postfix will run after we get a list of all actions available to interact with the item we are pointing at
-        [HarmonyPatch(typeof(GetActionsClass), "smethod_7")]
+        [HarmonyPatch(typeof(GetActionsClass), "smethod_8")]
         static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref ActionsReturnClass __result)
         {
             try
@@ -1761,7 +1767,7 @@ namespace MoreCheckmarks
                                 }
                             }
                         }
-    
+
                         bool[] currentNeededFor =
                         {
                             questItem, neededStruct.foundNeeded || neededStruct.foundFulfilled, wishlist, gotBarters,
@@ -1778,7 +1784,7 @@ namespace MoreCheckmarks
                                 currentHighest = MoreCheckmarksMod.priorities[i];
                             }
                         }
-    
+
                         if (currentNeeded != -1)
                         {
                             // Handle special case of areas
@@ -1829,7 +1835,7 @@ namespace MoreCheckmarks
                             }
                         }
                         //else leave it as it is
-    
+
                         break;
                     }
                 }
@@ -1841,7 +1847,7 @@ namespace MoreCheckmarks
             }
         }
     }
-    
+
 
     [HarmonyPatch]
     class QuestClassStatusPatch
