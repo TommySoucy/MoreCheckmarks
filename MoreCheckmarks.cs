@@ -38,13 +38,13 @@ namespace MoreCheckmarks
         public const string pluginVersion = "1.5.16";
 
         // Config settings
-        public static bool fulfilledAnyCanBeUpgraded = false;
+        public static bool fulfilledAnyCanBeUpgraded;
         public static int questPriority = 2;
         public static int hideoutPriority = 3;
         public static int wishlistPriority = 4;
-        public static int barterPriority = 0;
+        public static int barterPriority;
         public static int craftPriority = 1;
-        public static bool showFutureModulesLevels = false;
+        public static bool showFutureModulesLevels;
         public static bool showBarter = true;
         public static bool showCraft = true;
         public static bool showFutureCraft = true;
