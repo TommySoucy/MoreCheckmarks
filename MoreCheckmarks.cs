@@ -1548,66 +1548,65 @@ namespace MoreCheckmarks
                     }
                     else // Don't include future quests, do as vanilla
                     {
-                        MoreCheckmarksMod.LogInfo("TODO: Hitting the else for quests");
-                        //     RawQuestClass RawQuestClass = null;
-                        //     ConditionItem conditionItem = null;
-                        //     foreach (QuestDataClass questDataClass in profile.QuestsData)
-                        //     {
-                        //         if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
-                        //         {
-                        //             // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
-                        //             // with QuestConditionsList, for the value
-                        //             foreach (KeyValuePair<EQuestStatus, GClass3779> kvp in questDataClass.Template
-                        //                          .Conditions)
-                        //             {
-                        //                 EQuestStatus equestStatus;
-                        //                 GClass3779 gclass;
-                        //                 kvp.Deconstruct(out equestStatus, out gclass);
-                        //                 foreach (Condition condition in gclass)
-                        //                 {
-                        //                     ConditionItem conditionItem2;
-                        //                     if (!questDataClass.CompletedConditions.Contains(condition.id) &&
-                        //                         (conditionItem2 = (condition as ConditionItem)) != null &&
-                        //                         conditionItem2.target.Contains(item.StringTemplateId))
-                        //                     {
-                        //                         RawQuestClass = questDataClass.Template;
-                        //                         conditionItem = conditionItem2;
-                        //                         break;
-                        //                     }
-                        //                 }
-                        //             }
-                        //         }
-                        //     }
-                        //
-                        //     if (RawQuestClass != null)
-                        //     {
-                        //         string arg = "<color=#dd831a>" + RawQuestClass.Name + "</color>";
-                        //         if (item.QuestItem)
-                        //         {
-                        //             gotQuest = true;
-                        //             ___string_5 += string.Format("\nItem is related to an active {0} quest".Localized(null),
-                        //                 arg);
-                        //         }
-                        //
-                        //         Weapon weapon;
-                        //         ConditionWeaponAssembly condition;
-                        //         if (!gotQuest && (weapon = (item as Weapon)) != null &&
-                        //             (condition = (conditionItem as ConditionWeaponAssembly)) != null &&
-                        //             Inventory.IsWeaponFitsCondition(weapon, condition, false))
-                        //         {
-                        //             gotQuest = true;
-                        //             ___string_5 +=
-                        //                 string.Format("\nItem fits the active {0} quest requirements".Localized(null), arg);
-                        //         }
-                        //
-                        //         if (!gotQuest && item.MarkedAsSpawnedInSession)
-                        //         {
-                        //             gotQuest = true;
-                        //             ___string_5 +=
-                        //                 string.Format(
-                        //                     "\nItem that has been found in raid for the {0} quest".Localized(null), arg);
-                        //         }
-                        //     }
+                        RawQuestClass RawQuestClass = null;
+                        ConditionItem conditionItem = null;
+                        foreach (QuestDataClass questDataClass in profile.QuestsData)
+                        {
+                            if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
+                            {
+                                // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
+                                // with QuestConditionsList, for the value
+                                foreach (KeyValuePair<EQuestStatus, GClass3878> kvp in questDataClass.Template
+                                             .Conditions)
+                                {
+                                    EQuestStatus equestStatus;
+                                    GClass3878 gclass;
+                                    kvp.Deconstruct(out equestStatus, out gclass);
+                                    foreach (Condition condition in gclass)
+                                    {
+                                        ConditionItem conditionItem2;
+                                        if (!questDataClass.CompletedConditions.Contains(condition.id) &&
+                                            (conditionItem2 = (condition as ConditionItem)) != null &&
+                                            conditionItem2.target.Contains(item.StringTemplateId))
+                                        {
+                                            RawQuestClass = questDataClass.Template;
+                                            conditionItem = conditionItem2;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (RawQuestClass != null)
+                        {
+                            string arg = "<color=#dd831a>" + RawQuestClass.Name + "</color>";
+                            if (item.QuestItem)
+                            {
+                                gotQuest = true;
+                                ___string_5 += string.Format("\nItem is related to an active {0} quest".Localized(null),
+                                    arg);
+                            }
+                        
+                            Weapon weapon;
+                            ConditionWeaponAssembly condition;
+                            if (!gotQuest && (weapon = (item as Weapon)) != null &&
+                                (condition = (conditionItem as ConditionWeaponAssembly)) != null &&
+                                Inventory.IsWeaponFitsCondition(weapon, condition, false))
+                            {
+                                gotQuest = true;
+                                ___string_5 +=
+                                    string.Format("\nItem fits the active {0} quest requirements".Localized(null), arg);
+                            }
+                        
+                            if (!gotQuest && item.MarkedAsSpawnedInSession)
+                            {
+                                gotQuest = true;
+                                ___string_5 +=
+                                    string.Format(
+                                        "\nItem that has been found in raid for the {0} quest".Localized(null), arg);
+                            }
+                        }
                     }
                 }
 
