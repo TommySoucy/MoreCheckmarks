@@ -17,7 +17,6 @@ using TMPro;
 using BepInEx;
 using SPT.Common.Http;
 using Comfort.Common;
-
 using EFT.Hideout;
 
 namespace MoreCheckmarks
@@ -36,16 +35,16 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.15";
+        public const string pluginVersion = "1.5.16";
 
         // Config settings
-        public static bool fulfilledAnyCanBeUpgraded = false;
+        public static bool fulfilledAnyCanBeUpgraded;
         public static int questPriority = 2;
         public static int hideoutPriority = 3;
         public static int wishlistPriority = 4;
-        public static int barterPriority = 0;
+        public static int barterPriority;
         public static int craftPriority = 1;
-        public static bool showFutureModulesLevels = false;
+        public static bool showFutureModulesLevels;
         public static bool showBarter = true;
         public static bool showCraft = true;
         public static bool showFutureCraft = true;
@@ -64,25 +63,44 @@ namespace MoreCheckmarks
 
         // Live
         public static MoreCheckmarksMod modInstance;
+
         // Quest IDs and Names by items in their requirements
-        public static Dictionary<string, QuestPair> questDataStartByItemTemplateID = new Dictionary<string, QuestPair>();
-        public static Dictionary<string, Dictionary<string, int>> neededStartItemsByQuest = new Dictionary<string, Dictionary<string, int>>();
-        public static Dictionary<string, QuestPair> questDataCompleteByItemTemplateID = new Dictionary<string, QuestPair>();
-        public static Dictionary<string, Dictionary<string, int>> neededCompleteItemsByQuest = new Dictionary<string, Dictionary<string, int>>();
+        public static Dictionary<string, QuestPair>
+            questDataStartByItemTemplateID = new Dictionary<string, QuestPair>();
+
+        public static Dictionary<string, Dictionary<string, int>> neededStartItemsByQuest =
+            new Dictionary<string, Dictionary<string, int>>();
+
+        public static Dictionary<string, QuestPair> questDataCompleteByItemTemplateID =
+            new Dictionary<string, QuestPair>();
+
+        public static Dictionary<string, Dictionary<string, int>> neededCompleteItemsByQuest =
+            new Dictionary<string, Dictionary<string, int>>();
+
         public class QuestPair
         {
             public Dictionary<string, string> questData = new Dictionary<string, string>();
-            public int count = 0;
+            public int count;
         }
+
         public static JObject itemData;
         public static JObject locales;
+
         public static Dictionary<string, string> productionEndProductByID = new Dictionary<string, string>();
+
         // Barter item name and amount of price by items in price
-        public static List<Dictionary<string, List<KeyValuePair<string, int>>>> bartersByItemByTrader = new List<Dictionary<string, List<KeyValuePair<string, int>>>>();
-        public static string[] traders = new string[] {"Prapor","Therapist","Fence","Skier","Peacekeeper","Mechanic","Ragman","Jaeger","Lighthouse keeper"};
-        public static int[] priorities = new int[] {0,1,2,3,4};
+        public static List<Dictionary<string, List<KeyValuePair<string, int>>>> bartersByItemByTrader =
+            new List<Dictionary<string, List<KeyValuePair<string, int>>>>();
+
+        public static string[] traders =
+        {
+            "Prapor", "Therapist", "Fence", "Skier", "Peacekeeper", "Mechanic", "Ragman", "Jaeger", "Lighthouse keeper"
+        };
+
+        public static int[] priorities = { 0, 1, 2, 3, 4 };
         public static bool[] neededFor = new bool[5];
-        public static Color[] colors = new Color[] { Color.yellow, needMoreColor, wishlistColor, barterColor, craftColor };
+
+        public static Color[] colors = { Color.yellow, needMoreColor, wishlistColor, barterColor, craftColor };
 
         private void Start()
         {
@@ -95,8 +113,14 @@ namespace MoreCheckmarks
 
         private void Init()
         {
-            modPath = Path.GetDirectoryName(System.Reflection.Assembly.GetAssembly(typeof(MoreCheckmarksMod)).Location);
-            modPath.Replace('\\', '/');
+            modPath = Path.GetDirectoryName(Assembly.GetAssembly(typeof(MoreCheckmarksMod)).Location);
+            if (modPath == null)
+            {
+                Logger.LogError("MoreCheckmarks Mod Path is null");
+                return;
+            }
+
+            modPath = modPath.Replace('\\', '/');
 
             LoadConfig();
 
@@ -111,18 +135,18 @@ namespace MoreCheckmarks
         {
             LogInfo("Loading data");
             LogInfo("\tQuests");
-            JArray questData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/quests"));
+            var questData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/quests"));
             questDataStartByItemTemplateID.Clear();
             neededStartItemsByQuest.Clear();
             questDataCompleteByItemTemplateID.Clear();
             neededCompleteItemsByQuest.Clear();
 
-            for (int i = 0; i < questData.Count; ++i)
+            foreach (var t in questData)
             {
-                if(questData[i]["conditions"] != null && questData[i]["conditions"]["AvailableForFinish"] != null)
+                if (t["conditions"] != null && t["conditions"]["AvailableForFinish"] != null)
                 {
-                    JArray availableForFinishConditions = questData[i]["conditions"]["AvailableForFinish"] as JArray;
-                    for (int j = 0; j < availableForFinishConditions.Count; ++j)
+                    var availableForFinishConditions = t["conditions"]["AvailableForFinish"] as JArray;
+                    for (var j = 0; j < availableForFinishConditions.Count; ++j)
                     {
                         if (availableForFinishConditions[j]["conditionType"] != null)
                         {
@@ -130,48 +154,59 @@ namespace MoreCheckmarks
                             {
                                 if (availableForFinishConditions[j]["target"] != null)
                                 {
-                                    JArray targets = availableForFinishConditions[j]["target"] as JArray;
-                                    for (int k = 0; k < targets.Count; ++k)
+                                    var targets = availableForFinishConditions[j]["target"] as JArray;
+                                    for (var k = 0; k < targets.Count; ++k)
                                     {
-                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(),
+                                                out var quests))
                                         {
-                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
-                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                                quests.questData.Add(t["name"].ToString(),
+                                                    t["QuestName"].ToString());
                                             }
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             quests.count += parsedValue;
                                         }
                                         else
                                         {
-                                            QuestPair newPair = new QuestPair();
-                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newPair = new QuestPair();
+                                            newPair.questData.Add(t["name"].ToString(),
+                                                t["QuestName"].ToString());
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newPair.count = parsedValue;
                                             questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
                                         }
 
-                                        if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        if (neededCompleteItemsByQuest.TryGetValue(t["_id"].ToString(),
+                                                out var items))
                                         {
                                             if (!items.ContainsKey(targets[k].ToString()))
                                             {
                                                 items.Add(targets[k].ToString(), 0);
                                             }
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             items[targets[k].ToString()] += parsedValue;
                                         }
                                         else
                                         {
-                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newDict.Add(targets[k].ToString(), parsedValue);
-                                            neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                            neededCompleteItemsByQuest.Add(t["_id"].ToString(), newDict);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    LogError("Quest " + questData[i]["_id"].ToString() + " finish condition " + j + " of type HandoverItem missing target");
+                                    LogError("Quest " + t["_id"].ToString() + " finish condition " + j +
+                                             " of type HandoverItem missing target");
                                 }
                             }
 
@@ -179,20 +214,25 @@ namespace MoreCheckmarks
                             {
                                 if (availableForFinishConditions[j]["target"] != null)
                                 {
-                                    JArray targets = availableForFinishConditions[j]["target"] as JArray;
-                                    for (int k = 0; k < targets.Count; ++k)
+                                    var targets = availableForFinishConditions[j]["target"] as JArray;
+                                    for (var k = 0; k < targets.Count; ++k)
                                     {
                                         // Check if there is a hand in item condition for the same item and at least the same count
                                         // If so skip this, we will count the hand in instead
-                                        bool foundInHandin = false;
-                                        for (int l = 0; l < availableForFinishConditions.Count; ++l)
+                                        var foundInHandin = false;
+                                        for (var l = 0; l < availableForFinishConditions.Count; ++l)
                                         {
-                                            if (availableForFinishConditions[l]["conditionType"].ToString().Equals("HandoverItem"))
+                                            if (availableForFinishConditions[l]["conditionType"].ToString()
+                                                .Equals("HandoverItem"))
                                             {
-                                                JArray handInTargets = availableForFinishConditions[l]["target"] as JArray;
-                                                if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
-                                                    (!int.TryParse(availableForFinishConditions[l]["value"].ToString(), out int parsedValue) ||
-                                                     !int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int currentParsedValue) ||
+                                                var handInTargets =
+                                                    availableForFinishConditions[l]["target"] as JArray;
+                                                if (handInTargets != null &&
+                                                    StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
+                                                    (!int.TryParse(availableForFinishConditions[l]["value"].ToString(),
+                                                         out var parsedValue) ||
+                                                     !int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                         out var currentParsedValue) ||
                                                      parsedValue == currentParsedValue))
                                                 {
                                                     foundInHandin = true;
@@ -200,99 +240,123 @@ namespace MoreCheckmarks
                                                 }
                                             }
                                         }
+
                                         if (foundInHandin)
                                         {
                                             continue;
                                         }
 
-                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(),
+                                                out var quests))
                                         {
-                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
-                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                                quests.questData.Add(t["name"].ToString(),
+                                                    t["QuestName"].ToString());
                                             }
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             quests.count += parsedValue;
                                         }
                                         else
                                         {
-                                            QuestPair newPair = new QuestPair();
-                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newPair = new QuestPair();
+                                            newPair.questData.Add(t["name"].ToString(),
+                                                t["QuestName"].ToString());
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newPair.count = parsedValue;
                                             questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
                                         }
 
-                                        if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        if (neededCompleteItemsByQuest.TryGetValue(t["_id"].ToString(),
+                                                out var items))
                                         {
                                             if (!items.ContainsKey(targets[k].ToString()))
                                             {
                                                 items.Add(targets[k].ToString(), 0);
                                             }
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             items[targets[k].ToString()] += parsedValue;
                                         }
                                         else
                                         {
-                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newDict.Add(targets[k].ToString(), parsedValue);
-                                            neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                            neededCompleteItemsByQuest.Add(t["_id"].ToString(), newDict);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    LogError("Quest " + questData[i]["_id"].ToString() + " finish condition " + j + " of type FindItem missing target");
+                                    LogError("Quest " + t["_id"].ToString() + " finish condition " + j +
+                                             " of type FindItem missing target");
                                 }
                             }
 
-                            if (availableForFinishConditions[j]["conditionType"].ToString().Equals("LeaveItemAtLocation"))
+                            if (availableForFinishConditions[j]["conditionType"].ToString()
+                                .Equals("LeaveItemAtLocation"))
                             {
                                 if (availableForFinishConditions[j]["target"] != null)
                                 {
-                                    JArray targets = availableForFinishConditions[j]["target"] as JArray;
-                                    for (int k = 0; k < targets.Count; ++k)
+                                    var targets = availableForFinishConditions[j]["target"] as JArray;
+                                    for (var k = 0; k < targets.Count; ++k)
                                     {
-                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(),
+                                                out var quests))
                                         {
-                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
-                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                                quests.questData.Add(t["name"].ToString(),
+                                                    t["QuestName"].ToString());
                                             }
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             quests.count += parsedValue;
                                         }
                                         else
                                         {
-                                            QuestPair newPair = new QuestPair();
-                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newPair = new QuestPair();
+                                            newPair.questData.Add(t["name"].ToString(),
+                                                t["QuestName"].ToString());
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newPair.count = parsedValue;
                                             questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
                                         }
 
-                                        if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        if (neededCompleteItemsByQuest.TryGetValue(t["_id"].ToString(),
+                                                out var items))
                                         {
                                             if (!items.ContainsKey(targets[k].ToString()))
                                             {
                                                 items.Add(targets[k].ToString(), 0);
                                             }
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             items[targets[k].ToString()] += parsedValue;
                                         }
                                         else
                                         {
-                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newDict.Add(targets[k].ToString(), parsedValue);
-                                            neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                            neededCompleteItemsByQuest.Add(t["_id"].ToString(), newDict);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    LogError("Quest " + questData[i]["_id"].ToString() + " finish condition " + j + " of type LeaveItemAtLocation missing target");
+                                    LogError("Quest " + t["_id"].ToString() + " finish condition " + j +
+                                             " of type LeaveItemAtLocation missing target");
                                 }
                             }
 
@@ -300,66 +364,78 @@ namespace MoreCheckmarks
                             {
                                 if (availableForFinishConditions[j]["target"] != null)
                                 {
-                                    JArray targets = availableForFinishConditions[j]["target"] as JArray;
-                                    for (int k = 0; k < targets.Count; ++k)
+                                    var targets = availableForFinishConditions[j]["target"] as JArray;
+                                    for (var k = 0; k < targets.Count; ++k)
                                     {
-                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(),
+                                                out var quests))
                                         {
-                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
-                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                                quests.questData.Add(t["name"].ToString(),
+                                                    t["QuestName"].ToString());
                                             }
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             quests.count += parsedValue;
                                         }
                                         else
                                         {
-                                            QuestPair newPair = new QuestPair();
-                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newPair = new QuestPair();
+                                            newPair.questData.Add(t["name"].ToString(),
+                                                t["QuestName"].ToString());
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newPair.count = parsedValue;
                                             questDataCompleteByItemTemplateID.Add(targets[k].ToString(), newPair);
                                         }
 
-                                        if (neededCompleteItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        if (neededCompleteItemsByQuest.TryGetValue(t["_id"].ToString(),
+                                                out var items))
                                         {
                                             if (!items.ContainsKey(targets[k].ToString()))
                                             {
                                                 items.Add(targets[k].ToString(), 0);
                                             }
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             items[targets[k].ToString()] += parsedValue;
                                         }
                                         else
                                         {
-                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForFinishConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newDict.Add(targets[k].ToString(), parsedValue);
-                                            neededCompleteItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                            neededCompleteItemsByQuest.Add(t["_id"].ToString(), newDict);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    LogError("Quest " + questData[i]["_id"].ToString() + " finish condition " + j + " of type PlaceBeacon missing target");
+                                    LogError("Quest " + t["_id"].ToString() + " finish condition " + j +
+                                             " of type PlaceBeacon missing target");
                                 }
                             }
                         }
                         else
                         {
-                            LogError("Quest " + questData[i]["_id"].ToString() + " finish condition "+j+" missing condition type");
+                            LogError("Quest " + t["_id"].ToString() + " finish condition " + j +
+                                     " missing condition type");
                         }
                     }
                 }
                 else
                 {
-                    LogError("Quest " + questData[i]["_id"].ToString() + " missing finish conditions");
+                    LogError("Quest " + t["_id"].ToString() + " missing finish conditions");
                 }
 
-                if (questData[i]["conditions"] != null && questData[i]["conditions"]["AvailableForFinish"] != null)
+                if (t["conditions"] != null && t["conditions"]["AvailableForFinish"] != null)
                 {
-                    JArray availableForStartConditions = questData[i]["conditions"]["AvailableForStart"] as JArray;
-                    for (int j = 0; j < availableForStartConditions.Count; ++j)
+                    var availableForStartConditions = t["conditions"]["AvailableForStart"] as JArray;
+                    for (var j = 0; j < availableForStartConditions.Count; ++j)
                     {
                         if (availableForStartConditions[j]["conditionType"] != null)
                         {
@@ -367,48 +443,59 @@ namespace MoreCheckmarks
                             {
                                 if (availableForStartConditions[j]["target"] != null)
                                 {
-                                    JArray targets = availableForStartConditions[j]["target"] as JArray;
-                                    for (int k = 0; k < targets.Count; ++k)
+                                    var targets = availableForStartConditions[j]["target"] as JArray;
+                                    for (var k = 0; k < targets.Count; ++k)
                                     {
-                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(),
+                                                out var quests))
                                         {
-                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
-                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                                quests.questData.Add(t["name"].ToString(),
+                                                    t["QuestName"].ToString());
                                             }
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             quests.count += parsedValue;
                                         }
                                         else
                                         {
-                                            QuestPair newPair = new QuestPair();
-                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newPair = new QuestPair();
+                                            newPair.questData.Add(t["name"].ToString(),
+                                                t["QuestName"].ToString());
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newPair.count = parsedValue;
                                             questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
                                         }
 
-                                        if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        if (neededStartItemsByQuest.TryGetValue(t["_id"].ToString(),
+                                                out var items))
                                         {
                                             if (!items.ContainsKey(targets[k].ToString()))
                                             {
                                                 items.Add(targets[k].ToString(), 0);
                                             }
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             items[targets[k].ToString()] += parsedValue;
                                         }
                                         else
                                         {
-                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newDict.Add(targets[k].ToString(), parsedValue);
-                                            neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                            neededStartItemsByQuest.Add(t["_id"].ToString(), newDict);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " of type HandoverItem missing target");
+                                    LogError("Quest " + t["_id"].ToString() + " start condition " + j +
+                                             " of type HandoverItem missing target");
                                 }
                             }
 
@@ -416,20 +503,25 @@ namespace MoreCheckmarks
                             {
                                 if (availableForStartConditions[j]["target"] != null)
                                 {
-                                    JArray targets = availableForStartConditions[j]["target"] as JArray;
-                                    for (int k = 0; k < targets.Count; ++k)
+                                    var targets = availableForStartConditions[j]["target"] as JArray;
+                                    for (var k = 0; k < targets.Count; ++k)
                                     {
                                         // Check if there is a hand in item condition for the same item and at least the same count
                                         // If so skip this, we will count the hand in instead
-                                        bool foundInHandin = false;
-                                        for (int l = 0; l < availableForStartConditions.Count; ++l)
+                                        var foundInHandin = false;
+                                        for (var l = 0; l < availableForStartConditions.Count; ++l)
                                         {
-                                            if (availableForStartConditions[l]["conditionType"].ToString().Equals("HandoverItem"))
+                                            if (availableForStartConditions[l]["conditionType"].ToString()
+                                                .Equals("HandoverItem"))
                                             {
-                                                JArray handInTargets = availableForStartConditions[l]["target"] as JArray;
-                                                if (handInTargets != null && StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
-                                                    (!int.TryParse(availableForStartConditions[l]["value"].ToString(), out int parsedValue) ||
-                                                     !int.TryParse(availableForStartConditions[j]["value"].ToString(), out int currentParsedValue) ||
+                                                var handInTargets =
+                                                    availableForStartConditions[l]["target"] as JArray;
+                                                if (handInTargets != null &&
+                                                    StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
+                                                    (!int.TryParse(availableForStartConditions[l]["value"].ToString(),
+                                                         out var parsedValue) ||
+                                                     !int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                         out var currentParsedValue) ||
                                                      parsedValue == currentParsedValue))
                                                 {
                                                     foundInHandin = true;
@@ -437,99 +529,123 @@ namespace MoreCheckmarks
                                                 }
                                             }
                                         }
+
                                         if (foundInHandin)
                                         {
                                             continue;
                                         }
 
-                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(),
+                                                out var quests))
                                         {
-                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
-                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                                quests.questData.Add(t["name"].ToString(),
+                                                    t["QuestName"].ToString());
                                             }
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             quests.count += parsedValue;
                                         }
                                         else
                                         {
-                                            QuestPair newPair = new QuestPair();
-                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newPair = new QuestPair();
+                                            newPair.questData.Add(t["name"].ToString(),
+                                                t["QuestName"].ToString());
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newPair.count = parsedValue;
                                             questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
                                         }
 
-                                        if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        if (neededStartItemsByQuest.TryGetValue(t["_id"].ToString(),
+                                                out var items))
                                         {
                                             if (!items.ContainsKey(targets[k].ToString()))
                                             {
                                                 items.Add(targets[k].ToString(), 0);
                                             }
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             items[targets[k].ToString()] += parsedValue;
                                         }
                                         else
                                         {
-                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newDict.Add(targets[k].ToString(), parsedValue);
-                                            neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                            neededStartItemsByQuest.Add(t["_id"].ToString(), newDict);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " of type FindItem missing target");
+                                    LogError("Quest " + t["_id"].ToString() + " start condition " + j +
+                                             " of type FindItem missing target");
                                 }
                             }
 
-                            if (availableForStartConditions[j]["conditionType"].ToString().Equals("LeaveItemAtLocation"))
+                            if (availableForStartConditions[j]["conditionType"].ToString()
+                                .Equals("LeaveItemAtLocation"))
                             {
                                 if (availableForStartConditions[j]["target"] != null)
                                 {
-                                    JArray targets = availableForStartConditions[j]["target"] as JArray;
-                                    for (int k = 0; k < targets.Count; ++k)
+                                    var targets = availableForStartConditions[j]["target"] as JArray;
+                                    for (var k = 0; k < targets.Count; ++k)
                                     {
-                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(),
+                                                out var quests))
                                         {
-                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
-                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                                quests.questData.Add(t["name"].ToString(),
+                                                    t["QuestName"].ToString());
                                             }
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             quests.count += parsedValue;
                                         }
                                         else
                                         {
-                                            QuestPair newPair = new QuestPair();
-                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newPair = new QuestPair();
+                                            newPair.questData.Add(t["name"].ToString(),
+                                                t["QuestName"].ToString());
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newPair.count = parsedValue;
                                             questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
                                         }
 
-                                        if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        if (neededStartItemsByQuest.TryGetValue(t["_id"].ToString(),
+                                                out var items))
                                         {
                                             if (!items.ContainsKey(targets[k].ToString()))
                                             {
                                                 items.Add(targets[k].ToString(), 0);
                                             }
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             items[targets[k].ToString()] += parsedValue;
                                         }
                                         else
                                         {
-                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newDict.Add(targets[k].ToString(), parsedValue);
-                                            neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                            neededStartItemsByQuest.Add(t["_id"].ToString(), newDict);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " of type LeaveItemAtLocation missing target");
+                                    LogError("Quest " + t["_id"].ToString() + " start condition " + j +
+                                             " of type LeaveItemAtLocation missing target");
                                 }
                             }
 
@@ -537,99 +653,118 @@ namespace MoreCheckmarks
                             {
                                 if (availableForStartConditions[j]["target"] != null)
                                 {
-                                    JArray targets = availableForStartConditions[j]["target"] as JArray;
-                                    for (int k = 0; k < targets.Count; ++k)
+                                    var targets = availableForStartConditions[j]["target"] as JArray;
+                                    for (var k = 0; k < targets.Count; ++k)
                                     {
-                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(), out QuestPair quests))
+                                        if (questDataStartByItemTemplateID.TryGetValue(targets[k].ToString(),
+                                                out var quests))
                                         {
-                                            if (!quests.questData.ContainsKey(questData[i]["name"].ToString()))
+                                            if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
-                                                quests.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
+                                                quests.questData.Add(t["name"].ToString(),
+                                                    t["QuestName"].ToString());
                                             }
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             quests.count += parsedValue;
                                         }
                                         else
                                         {
-                                            QuestPair newPair = new QuestPair();
-                                            newPair.questData.Add(questData[i]["name"].ToString(), questData[i]["QuestName"].ToString());
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newPair = new QuestPair();
+                                            newPair.questData.Add(t["name"].ToString(),
+                                                t["QuestName"].ToString());
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newPair.count = parsedValue;
                                             questDataStartByItemTemplateID.Add(targets[k].ToString(), newPair);
                                         }
 
-                                        if (neededStartItemsByQuest.TryGetValue(questData[i]["_id"].ToString(), out Dictionary<string, int> items))
+                                        if (neededStartItemsByQuest.TryGetValue(t["_id"].ToString(),
+                                                out var items))
                                         {
                                             if (!items.ContainsKey(targets[k].ToString()))
                                             {
                                                 items.Add(targets[k].ToString(), 0);
                                             }
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             items[targets[k].ToString()] += parsedValue;
                                         }
                                         else
                                         {
-                                            Dictionary<string, int> newDict = new Dictionary<string, int>();
-                                            int.TryParse(availableForStartConditions[j]["value"].ToString(), out int parsedValue);
+                                            var newDict = new Dictionary<string, int>();
+                                            int.TryParse(availableForStartConditions[j]["value"].ToString(),
+                                                out var parsedValue);
                                             newDict.Add(targets[k].ToString(), parsedValue);
-                                            neededStartItemsByQuest.Add(questData[i]["_id"].ToString(), newDict);
+                                            neededStartItemsByQuest.Add(t["_id"].ToString(), newDict);
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " of type PlaceBeacon missing target");
+                                    LogError("Quest " + t["_id"].ToString() + " start condition " + j +
+                                             " of type PlaceBeacon missing target");
                                 }
                             }
                         }
                         else
                         {
-                            LogError("Quest " + questData[i]["_id"].ToString() + " start condition " + j + " missing condition type");
+                            LogError("Quest " + t["_id"].ToString() + " start condition " + j +
+                                     " missing condition type");
                         }
                     }
                 }
                 else
                 {
-                    LogError("Quest " + questData[i]["_id"].ToString() + " missing start conditions");
+                    LogError("Quest " + t["_id"].ToString() + " missing start conditions");
                 }
             }
 
             LogInfo("\tItems");
-            string euro = "569668774bdc2da2298b4568";
-            string rouble = "5449016a4bdc2d6f028b456f";
-            string dollar = "5696686a4bdc2da3298b456a";
+            var euro = "569668774bdc2da2298b4568";
+            var rouble = "5449016a4bdc2d6f028b456f";
+            var dollar = "5696686a4bdc2da3298b456a";
             if (itemData == null)
             {
                 itemData = JObject.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/items"));
             }
 
             LogInfo("\tAssorts");
-            JArray assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts"));
+            var assortData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/assorts"));
             bartersByItemByTrader.Clear();
-            for (int i=0; i < assortData.Count; ++i)
+            for (var i = 0; i < assortData.Count; ++i)
             {
                 bartersByItemByTrader.Add(new Dictionary<string, List<KeyValuePair<string, int>>>());
-                JArray items = assortData[i]["items"] as JArray;
-                for (int j = 0; j < items.Count; ++j)
+                var items = assortData[i]["items"] as JArray;
+                for (var j = 0; j < items.Count; ++j)
                 {
                     if (items[j]["parentId"] != null && items[j]["parentId"].ToString().Equals("hideout"))
                     {
-                        JArray barters = assortData[i]["barter_scheme"][items[j]["_id"].ToString()] as JArray;
-                        for (int k = 0; k < barters.Count; ++k)
+                        var barters = assortData[i]["barter_scheme"][items[j]["_id"].ToString()] as JArray;
+                        for (var k = 0; k < barters.Count; ++k)
                         {
-                            JArray barter = barters[k] as JArray;
-                            for (int l = 0; l < barter.Count; ++l)
+                            var barter = barters[k] as JArray;
+                            for (var l = 0; l < barter.Count; ++l)
                             {
-                                string priceTPL = barter[l]["_tpl"].ToString();
+                                var priceTPL = barter[l]["_tpl"].ToString();
                                 if (!priceTPL.Equals(euro) && !priceTPL.Equals(rouble) && !priceTPL.Equals(dollar))
                                 {
-                                    if (bartersByItemByTrader[i].TryGetValue(priceTPL, out List<KeyValuePair<string, int>> barterList))
+                                    if (bartersByItemByTrader[i].TryGetValue(priceTPL,
+                                            out var barterList))
                                     {
-                                        barterList.Add(new KeyValuePair<string, int>(items[j]["_tpl"].ToString(), (int)(barter[l]["count"])));
+                                        barterList.Add(new KeyValuePair<string, int>(items[j]["_tpl"].ToString(),
+                                            (int)(barter[l]["count"])));
                                     }
                                     else
                                     {
-                                        bartersByItemByTrader[i].Add(priceTPL, new List<KeyValuePair<string, int>>() { new KeyValuePair<string, int>(items[j]["_tpl"].ToString(), (int)(barter[l]["count"])) });
+                                        bartersByItemByTrader[i].Add(priceTPL,
+                                            new List<KeyValuePair<string, int>>()
+                                            {
+                                                new KeyValuePair<string, int>(items[j]["_tpl"].ToString(),
+                                                    (int)(barter[l]["count"]))
+                                            });
                                     }
                                 }
                             }
@@ -639,24 +774,26 @@ namespace MoreCheckmarks
             }
 
             LogInfo("\tProductions");
-            JObject productionData = JObject.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/productions"));
+            var productionData = JObject.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/productions"));
             productionEndProductByID.Clear();
-            JArray productionRecipes = productionData["recipes"] as JArray;
-            for (int i = 0; i < productionRecipes.Count; ++i)
+            var productionRecipes = productionData["recipes"] as JArray;
+            for (var i = 0; i < productionRecipes.Count; ++i)
             {
-                productionEndProductByID.Add(productionRecipes[i]["_id"].ToString(), productionRecipes[i]["endProduct"].ToString());
+                productionEndProductByID.Add(productionRecipes[i]["_id"].ToString(),
+                    productionRecipes[i]["endProduct"].ToString());
             }
         }
 
         private bool StringJArrayContainsString(JArray arr, string s)
         {
-            for(int i=0; i < arr.Count; ++i)
+            for (var i = 0; i < arr.Count; ++i)
             {
                 if (arr[i].ToString().Equals(s))
                 {
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -670,70 +807,90 @@ namespace MoreCheckmarks
                 {
                     fulfilledAnyCanBeUpgraded = (bool)config["fulfilledAnyCanBeUpgraded"];
                 }
+
                 if (config["questPriority"] != null)
                 {
                     questPriority = (int)config["questPriority"];
                     priorities[0] = questPriority;
                 }
+
                 if (config["hideoutPriority"] != null)
                 {
                     hideoutPriority = (int)config["hideoutPriority"];
                     priorities[1] = hideoutPriority;
                 }
+
                 if (config["wishlistPriority"] != null)
                 {
                     wishlistPriority = (int)config["wishlistPriority"];
                     priorities[2] = wishlistPriority;
                 }
+
                 if (config["barterPriority"] != null)
                 {
                     barterPriority = (int)config["barterPriority"];
                     priorities[3] = barterPriority;
                 }
+
                 if (config["craftPriority"] != null)
                 {
                     craftPriority = (int)config["craftPriority"];
                     priorities[4] = craftPriority;
                 }
+
                 if (config["showFutureModulesLevels"] != null)
                 {
                     showFutureModulesLevels = (bool)config["showFutureModulesLevels"];
                 }
+
                 if (config["showBarter"] != null)
                 {
                     showBarter = (bool)config["showBarter"];
                 }
+
                 if (config["needMoreColor"] != null)
                 {
-                    needMoreColor = new Color((float)config["needMoreColor"][0], (float)config["needMoreColor"][1], (float)config["needMoreColor"][2]);
+                    needMoreColor = new Color((float)config["needMoreColor"][0], (float)config["needMoreColor"][1],
+                        (float)config["needMoreColor"][2]);
                 }
+
                 if (config["fulfilledColor"] != null)
                 {
-                    fulfilledColor = new Color((float)config["fulfilledColor"][0], (float)config["fulfilledColor"][1], (float)config["fulfilledColor"][2]);
+                    fulfilledColor = new Color((float)config["fulfilledColor"][0], (float)config["fulfilledColor"][1],
+                        (float)config["fulfilledColor"][2]);
                 }
+
                 if (config["wishlistColor"] != null)
                 {
-                    wishlistColor = new Color((float)config["wishlistColor"][0], (float)config["wishlistColor"][1], (float)config["wishlistColor"][2]);
+                    wishlistColor = new Color((float)config["wishlistColor"][0], (float)config["wishlistColor"][1],
+                        (float)config["wishlistColor"][2]);
                     colors[2] = wishlistColor;
                 }
+
                 if (config["barterColor"] != null)
                 {
-                    barterColor = new Color((float)config["barterColor"][0], (float)config["barterColor"][1], (float)config["barterColor"][2]);
+                    barterColor = new Color((float)config["barterColor"][0], (float)config["barterColor"][1],
+                        (float)config["barterColor"][2]);
                     colors[3] = barterColor;
                 }
+
                 if (config["craftColor"] != null)
                 {
-                    craftColor = new Color((float)config["craftColor"][0], (float)config["craftColor"][1], (float)config["craftColor"][2]);
+                    craftColor = new Color((float)config["craftColor"][0], (float)config["craftColor"][1],
+                        (float)config["craftColor"][2]);
                     colors[4] = craftColor;
                 }
+
                 if (config["includeFutureQuests"] != null)
                 {
                     includeFutureQuests = (bool)config["includeFutureQuests"];
                 }
+
                 if (config["showCraft"] != null)
                 {
                     showCraft = (bool)config["showCraft"];
                 }
+
                 if (config["showFutureCraft"] != null)
                 {
                     showFutureCraft = (bool)config["showFutureCraft"];
@@ -741,17 +898,24 @@ namespace MoreCheckmarks
 
                 Logger.LogInfo("Configs loaded");
             }
-            catch (FileNotFoundException) { /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */ }
-            catch (Exception ex) { MoreCheckmarksMod.LogError("Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: " + ex.Message); }
+            catch (FileNotFoundException)
+            {
+                /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */
+            }
+            catch (Exception ex)
+            {
+                LogError(
+                    "Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: " + ex.Message);
+            }
         }
 
         private void LoadAssets()
         {
-            AssetBundle assetBundle = AssetBundle.LoadFromFile(modPath+"/MoreCheckmarksAssets");
+            var assetBundle = AssetBundle.LoadFromFile(modPath + "/MoreCheckmarksAssets");
 
-            if(assetBundle == null)
+            if (assetBundle == null)
             {
-                MoreCheckmarksMod.LogError("Failed to load assets, inspect window checkmark may be miscolored");
+                LogError("Failed to load assets, inspect window checkmark may be miscolored");
             }
             else
             {
@@ -760,7 +924,7 @@ namespace MoreCheckmarks
                 benderBold = assetBundle.LoadAsset<TMP_FontAsset>("BenderBold");
                 TMP_Text.OnFontAssetRequest += TMP_Text_onFontAssetRequest;
 
-                MoreCheckmarksMod.LogInfo("Assets loaded");
+                LogInfo("Assets loaded");
             }
         }
 
@@ -776,146 +940,154 @@ namespace MoreCheckmarks
             }
         }
 
-        public static void DoPatching()
+        private static void DoPatching()
         {
             // Get assemblies
-            Type ProfileSelector = null;
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for(int i=0; i < assemblies.Length; ++i)
+            Type profileSelector = null;
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (var i = 0; i < assemblies.Length; ++i)
             {
                 if (assemblies[i].GetName().Name.Equals("Assembly-CSharp"))
                 {
                     // UPDATE: This is to know when a new profile is selected so we can load up to date data
                     // We want to do this when client makes request "/client/game/profile/select"
                     // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    ProfileSelector = assemblies[i].GetType("Class301").GetNestedType("Class1438", BindingFlags.Public);
+                    profileSelector = assemblies[i].GetType("Class301").GetNestedType("Class1452", BindingFlags.Public);
                 }
             }
 
-            var harmony = new HarmonyLib.Harmony("VIP.TommySoucy.MoreCheckmarks");
+            var harmony = new Harmony("VIP.TommySoucy.MoreCheckmarks");
 
             // Auto patch
             harmony.PatchAll();
 
             // Manual patch
-            MethodInfo profileSelectorOriginal = ProfileSelector.GetMethod("method_0", BindingFlags.Public | BindingFlags.Instance);
-            MethodInfo profileSelectorPostfix = typeof(ProfileSelectionPatch).GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static);
+            if (profileSelector != null)
+            {
+                var profileSelectorOriginal =
+                    profileSelector.GetMethod("method_0", BindingFlags.Public | BindingFlags.Instance);
 
-            harmony.Patch(profileSelectorOriginal, null, new HarmonyMethod(profileSelectorPostfix));
+                var profileSelectorPostfix =
+                    typeof(ProfileSelectionPatch).GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static);
+
+                harmony.Patch(profileSelectorOriginal, null, new HarmonyMethod(profileSelectorPostfix));
+            }
+            else
+            {
+                LogError("Failed to Patch Profile Selector - Missing profileSelector");
+            }
         }
 
         public static NeededStruct GetNeeded(string itemTemplateID, ref List<string> areaNames)
         {
-            NeededStruct neededStruct = new NeededStruct();
-            neededStruct.possessedCount = 0;
-            neededStruct.requiredCount = 0;
+            var neededStruct = new NeededStruct
+            {
+                possessedCount = 0,
+                requiredCount = 0
+            };
 
             try
             {
-                HideoutClass hideoutInstance = Comfort.Common.Singleton<HideoutClass>.Instance;
-                foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
+                var hideoutInstance = Singleton<HideoutClass>.Instance;
+                foreach (var ad in hideoutInstance.AreaDatas)
                 {
                     // Skip if don't have area data
-                    if(ad == null || ad.Template == null || ad.Template.Name == null || ad.NextStage == null)
+                    if (ad == null || ad.Template == null || ad.Template.Name == null || ad.NextStage == null)
                     {
                         continue;
                     }
 
-                    // Skip if the area has no future upgrade
-                    if (ad.Status == EFT.Hideout.EAreaStatus.NoFutureUpgrades)
+                    // Skip if the area has no future upgradez
+                    if (ad.Status == EAreaStatus.NoFutureUpgrades)
                     {
                         continue;
                     }
 
                     // Collect all future stages
-                    List<EFT.Hideout.Stage> futureStages = new List<EFT.Hideout.Stage>();
-                    EFT.Hideout.Stage lastStage = ad.CurrentStage;
+                    var futureStages = new List<Stage>();
+                    var lastStage = ad.CurrentStage;
                     while ((lastStage = ad.StageAt(lastStage.Level + 1)) != null && lastStage.Level != 0)
                     {
                         // Don't want to check requirements for an area we are currently constructing/upgrading
-                        if(ad.Status == EFT.Hideout.EAreaStatus.Constructing || ad.Status == EFT.Hideout.EAreaStatus.Upgrading)
+                        if (ad.Status == EAreaStatus.Constructing ||
+                            ad.Status == EAreaStatus.Upgrading)
                         {
                             continue;
                         }
+
                         futureStages.Add(lastStage);
 
                         // If only want next level requirements, skip the rest
-                        if (!MoreCheckmarksMod.showFutureModulesLevels)
+                        if (!showFutureModulesLevels)
                         {
                             break;
                         }
                     }
 
                     // Skip are if no stages were found to check requirements for
-                    if(futureStages.Count == 0)
+                    if (futureStages.Count == 0)
                     {
                         continue;
                     }
 
                     // Check requirements
-                    foreach (EFT.Hideout.Stage stage in futureStages)
+                    foreach (var stage in futureStages)
                     {
-                        EFT.Hideout.RelatedRequirements requirements = stage.Requirements;
+                        var requirements = stage.Requirements;
 
                         try
                         {
                             foreach (var requirement in requirements)
                             {
-                                if (requirement != null)
+                                if (!(requirement is ItemRequirement itemRequirement)) continue;
+                                var requirementTemplate = itemRequirement.TemplateId;
+                                if (itemTemplateID != requirementTemplate) continue;
+                                // Sum up the total amount of this item required in entire hideout and update possessed amount
+                                neededStruct.requiredCount += itemRequirement.IntCount;
+                                neededStruct.possessedCount = itemRequirement.UserItemsCount;
+
+                                // A requirement but already have the amount we need
+                                if (requirement.Fulfilled)
                                 {
-                                    EFT.Hideout.ItemRequirement itemRequirement = requirement as EFT.Hideout.ItemRequirement;
-                                    if (itemRequirement != null)
+                                    // Even if we have enough of this item to fulfill a requirement in one area
+                                    // we might still need it, and if thats the case we want to show that color, not fulfilled color, so you know you still need more of it
+                                    // So only set color to fulfilled if not needed
+                                    if (!neededStruct.foundNeeded && !neededStruct.foundFulfilled)
                                     {
-                                        string requirementTemplate = itemRequirement.TemplateId;
-                                        if (itemTemplateID == requirementTemplate)
-                                        {
-                                            // Sum up the total amount of this item required in entire hideout and update possessed amount
-                                            neededStruct.requiredCount += itemRequirement.IntCount;
-                                            neededStruct.possessedCount = itemRequirement.UserItemsCount;
-
-                                            // A requirement but already have the amount we need
-                                            if (requirement.Fulfilled)
-                                            {
-                                                // Even if we have enough of this item to fulfill a requirement in one area
-                                                // we might still need it, and if thats the case we want to show that color, not fulfilled color, so you know you still need more of it
-                                                // So only set color to fulfilled if not needed
-                                                if (!neededStruct.foundNeeded && !neededStruct.foundFulfilled)
-                                                {
-                                                    neededStruct.foundFulfilled = true;
-                                                }
-
-                                                if (areaNames != null)
-                                                {
-                                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">" + ad.Template.Name + " lvl"+stage.Level+"</color>");
-                                                }
-                                            }
-                                            else
-                                            {
-                                                if (!neededStruct.foundNeeded)
-                                                {
-                                                    neededStruct.foundNeeded = true;
-                                                }
-
-                                                if (areaNames != null)
-                                                {
-                                                    areaNames.Add("<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">" + ad.Template.Name + " lvl" + stage.Level + "</color>");
-                                                }
-                                            }
-                                        }
+                                        neededStruct.foundFulfilled = true;
                                     }
+
+                                    areaNames?.Add("<color=#" +
+                                                   ColorUtility.ToHtmlStringRGB(fulfilledColor) + ">" +
+                                                   ad.Template.Name +
+                                                   " lvl" + stage.Level + "</color>");
+                                }
+                                else
+                                {
+                                    if (!neededStruct.foundNeeded)
+                                    {
+                                        neededStruct.foundNeeded = true;
+                                    }
+
+                                    areaNames?.Add("<color=#" +
+                                                   ColorUtility.ToHtmlStringRGB(needMoreColor) + ">" +
+                                                   ad.Template.Name +
+                                                   " lvl" + stage.Level + "</color>");
                                 }
                             }
                         }
                         catch (Exception)
                         {
-                            MoreCheckmarksMod.LogError("Failed to get whether item " + itemTemplateID + " was needed for hideout area: " + ad.Template.Name);
+                            LogError("Failed to get whether item " + itemTemplateID +
+                                     " was needed for hideout area: " + ad.Template.Name);
                         }
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                MoreCheckmarksMod.LogError("Failed to get whether item "+itemTemplateID+" was needed for hideout upgrades.");
+                LogError("Failed to find out if item needed for upgrade - - - -" + e.StackTrace);
+                LogError("Failed to get whether item " + itemTemplateID + " was needed for hideout upgrades.");
             }
 
             return neededStruct;
@@ -927,8 +1099,8 @@ namespace MoreCheckmarks
             bool gotTooltip = false;
             try
             {
-                HideoutClass hideoutInstance = Comfort.Common.Singleton<HideoutClass>.Instance;
-                foreach (EFT.Hideout.AreaData ad in hideoutInstance.AreaDatas)
+                HideoutClass hideoutInstance = Singleton<HideoutClass>.Instance;
+                foreach (AreaData ad in hideoutInstance.AreaDatas)
                 {
                     // Skip if don't have area data
                     if (ad == null || ad.Template == null || ad.Template.Name == null)
@@ -939,28 +1111,31 @@ namespace MoreCheckmarks
                     // Get stage to check productions of
                     // Productions are cumulative, a stage will have productions of all previous stages
                     Stage currentStage = ad.CurrentStage;
-                    if(currentStage == null)
+                    if (currentStage == null)
                     {
                         int level = 0;
-                        while(currentStage == null)
+                        while (currentStage == null)
                         {
                             currentStage = ad.StageAt(level++);
                         }
                     }
+
                     if (currentStage != null)
                     {
                         Stage newStage = ad.StageAt(currentStage.Level + 1);
                         while (newStage != null && newStage.Level != 0)
                         {
-                            if (newStage.Level > ad.CurrentLevel && !showFutureCraft) 
+                            if (newStage.Level > ad.CurrentLevel && !showFutureCraft)
                             {
                                 break;
                             }
+
                             currentStage = newStage;
                             newStage = ad.StageAt(currentStage.Level + 1);
                         }
                     }
-                    if(currentStage == null)
+
+                    if (currentStage == null)
                     {
                         continue;
                     }
@@ -974,7 +1149,7 @@ namespace MoreCheckmarks
                             Requirement[] requirements = productionData.requirements;
 
                             foreach (Requirement baseReq in requirements)
-                            { 
+                            {
                                 if (baseReq.Type == ERequirementType.Item)
                                 {
                                     ItemRequirement itemRequirement = baseReq as ItemRequirement;
@@ -985,7 +1160,8 @@ namespace MoreCheckmarks
 
                                         if (needTooltip)
                                         {
-                                            if (productionEndProductByID.TryGetValue(productionData._id, out string product))
+                                            if (productionEndProductByID.TryGetValue(productionData._id,
+                                                    out string product))
                                             {
                                                 gotTooltip = true;
                                                 if (!areaNameAdded)
@@ -993,7 +1169,11 @@ namespace MoreCheckmarks
                                                     tooltip += "\n  " + ad.Template.Name.Localized();
                                                     areaNameAdded = true;
                                                 }
-                                                tooltip += "\n    <color=#" + ColorUtility.ToHtmlStringRGB(craftColor) + ">" + (product + " Name").Localized() + " lvl" + productionData.Level + "</color> (" + itemRequirement.IntCount + ")";
+
+                                                tooltip += "\n    <color=#" + ColorUtility.ToHtmlStringRGB(craftColor) +
+                                                           ">" + (product + " Name").Localized() + " lvl" +
+                                                           productionData.Level + "</color> (" +
+                                                           itemRequirement.IntCount + ")";
                                             }
                                         }
                                         else
@@ -1009,67 +1189,20 @@ namespace MoreCheckmarks
             }
             catch (Exception ex)
             {
-                MoreCheckmarksMod.LogError("Failed to get whether item "+itemTemplateID+" was needed for crafting: "+ex.Message);
+                LogError("Failed to get whether item " + itemTemplateID +
+                         " was needed for crafting: " + ex.Message);
             }
 
             return required && gotTooltip;
         }
 
-        public static bool IsQuestItem(IEnumerable<QuestDataClass> quests, string templateID)
-        {
-            //QuestControllerClass.GetItemsForCondition
-            try
-            {
-                if (includeFutureQuests)
-                {
-                    return questDataCompleteByItemTemplateID.TryGetValue(templateID, out QuestPair questPair) && questPair.questData.Count > 0;
-                }
-                else
-                {
-                    foreach (QuestDataClass quest in quests)
-                    {
-                        if (quest != null &&
-                            quest.Status == EQuestStatus.Started &&
-                            quest.Template != null && quest.Template.Conditions != null && quest.Template.Conditions.ContainsKey(EQuestStatus.AvailableForFinish))
-                        {
-                            if (quest.Template.Conditions != null)
-                            {
-                                foreach (KeyValuePair<EQuestStatus, GClass3779> keyValuePair in quest.Template.Conditions)
-                                {
-                                    if (keyValuePair.Key == EQuestStatus.AvailableForFinish)
-                                    {
-                                        foreach (Condition condition in keyValuePair.Value)
-                                        {
-                                            if (condition is ConditionItem conditionItem)
-                                            {
-                                                if (conditionItem.target != null && conditionItem.target.Contains(templateID))
-                                                {
-                                                    return true;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch(Exception ex)
-            {
-                MoreCheckmarksMod.LogError("Failed to get whether item " + templateID + " is quest item: " + ex.Message + "\n" + ex.StackTrace);
-            }
-
-            return false;
-        }
-
         public static List<List<KeyValuePair<string, int>>> GetBarters(string ID)
         {
-            List<List<KeyValuePair<string, int>>> bartersByTrader = new List<List<KeyValuePair<string, int>>>();
+            var bartersByTrader = new List<List<KeyValuePair<string, int>>>();
 
             if (showBarter)
             {
-                for (int i = 0; i < bartersByItemByTrader.Count; ++i)
+                for (var i = 0; i < bartersByItemByTrader.Count; ++i)
                 {
                     List<KeyValuePair<string, int>> current = null;
 
@@ -1078,7 +1211,7 @@ namespace MoreCheckmarks
                         bartersByItemByTrader[i].TryGetValue(ID, out current);
                     }
 
-                    if(current == null)
+                    if (current == null)
                     {
                         current = new List<KeyValuePair<string, int>>();
                     }
@@ -1105,31 +1238,36 @@ namespace MoreCheckmarks
     class QuestItemViewPanelShowPatch
     {
         // Replaces the original QuestItemViewPanel.Show() to use custom checkmark colors and tooltips
-        [HarmonyPatch(typeof(EFT.UI.DragAndDrop.QuestItemViewPanel), nameof(EFT.UI.DragAndDrop.QuestItemViewPanel.Show))]
-        static bool Prefix(EFT.Profile profile, EFT.InventoryLogic.Item item, EFT.UI.SimpleTooltip tooltip, EFT.UI.DragAndDrop.QuestItemViewPanel __instance,
-                            ref Image ____questIconImage, ref Sprite ____foundInRaidSprite, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0,
-                            TextMeshProUGUI ____questItemLabel)
+        [HarmonyPatch(typeof(QuestItemViewPanel), nameof(QuestItemViewPanel.Show))]
+        static bool Prefix(
+            Profile profile,
+            Item item,
+            SimpleTooltip tooltip,
+            QuestItemViewPanel __instance,
+            ref Image ____questIconImage,
+            ref Sprite ____foundInRaidSprite,
+            ref string ___string_5,
+            ref SimpleTooltip ___simpleTooltip_0,
+            TextMeshProUGUI ____questItemLabel)
         {
             try
             {
-                // Hide by default
+                var possessedCount = 0;
+                var possessedQuestCount = 0;
+
                 __instance.HideGameObject();
 
-                int possessedCount = 0;
-                int possessedQuestCount = 0;
                 if (profile != null)
                 {
-                    IEnumerable<Item> inventoryItems = Singleton<HideoutClass>.Instance.AllStashItems.Where(x => x.TemplateId == item.TemplateId);
-                    if (inventoryItems != null)
+                    var inventoryItems = Singleton<HideoutClass>.Instance.AllStashItems.Where(x => x.TemplateId == item.TemplateId);
+                    foreach (var currentItem in inventoryItems)
                     {
-                        foreach (Item currentItem in inventoryItems)
+                        if (currentItem.MarkedAsSpawnedInSession)
                         {
-                            if (currentItem.MarkedAsSpawnedInSession)
-                            {
-                                possessedQuestCount += currentItem.StackObjectsCount;
-                            }
-                            possessedCount += currentItem.StackObjectsCount;
+                            possessedQuestCount += currentItem.StackObjectsCount;
                         }
+
+                        possessedCount += currentItem.StackObjectsCount;
                     }
                 }
                 else
@@ -1137,30 +1275,26 @@ namespace MoreCheckmarks
                     MoreCheckmarksMod.LogError("Profile null for item " + item.Template.Name);
                 }
 
-                // Get requirements
-                List<string> areaNames = new List<string>();
-                NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
-                string craftTooltip = "";
-                bool craftRequired = MoreCheckmarksMod.showCraft && MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
-                MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
-                MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
-                bool questItem = item.MarkedAsSpawnedInSession && ((item.QuestItem || MoreCheckmarksMod.includeFutureQuests) ? (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0) : (___string_5 != null && ___string_5.Contains("quest")));
-                bool wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(item.TemplateId, true, out EWishlistGroup group);
-                List<List<KeyValuePair<string, int>>> bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
-                bool gotBarters = false;
-                if (bartersByTrader != null)
-                {
-                    for (int i = 0; i < bartersByTrader.Count; ++i)
-                    {
-                        if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
-                        {
-                            gotBarters = true;
-                            break;
-                        }
-                    }
-                }
+                var areaNames = new List<string>();
+                var neededStruct = MoreCheckmarksMod.GetNeeded(item.TemplateId, ref areaNames);
+                MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(item.TemplateId,
+                    out var startQuests);
+                MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(item.TemplateId,
+                    out var completeQuests);
 
-                // Setup label for inspect view
+                var wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(item.TemplateId, true, out _);
+
+                var craftTooltip = "";
+                var craftRequired = MoreCheckmarksMod.showCraft &&
+                                     MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
+
+                var questItem = item.MarkedAsSpawnedInSession &&
+                                ((item.QuestItem || MoreCheckmarksMod.includeFutureQuests)
+                                    ? (startQuests != null && startQuests.questData.Count > 0) ||
+                                      (completeQuests != null && completeQuests.questData.Count > 0)
+                                    : ___string_5 != null && ___string_5.Contains("quest"));
+
+
                 if (____questItemLabel != null)
                 {
                     // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
@@ -1168,7 +1302,18 @@ namespace MoreCheckmarks
                     {
                         ____questItemLabel.text = "QUEST ITEM";
                     }
+
                     ____questItemLabel.gameObject.SetActive(questItem);
+                }
+
+                var bartersByTrader = MoreCheckmarksMod.GetBarters(item.TemplateId);
+                var gotBarters = false;
+                if (bartersByTrader != null)
+                {
+                    if (bartersByTrader.Any(t => t != null && t.Count > 0))
+                    {
+                        gotBarters = true;
+                    }
                 }
 
                 MoreCheckmarksMod.neededFor[0] = questItem;
@@ -1177,19 +1322,16 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.neededFor[3] = gotBarters;
                 MoreCheckmarksMod.neededFor[4] = craftRequired;
 
-                // Find needed with highest priority
-                int currentNeeded = -1;
-                int currentHighest = -1;
-                for(int i=0; i < 5; ++i)
+                var currentNeeded = -1;
+                var currentHighest = -1;
+
+                for (var i = 0; i < 5; ++i)
                 {
-                    if (MoreCheckmarksMod.neededFor[i] && MoreCheckmarksMod.priorities[i] > currentHighest)
-                    {
-                        currentNeeded = i;
-                        currentHighest = MoreCheckmarksMod.priorities[i];
-                    }
+                    if (!MoreCheckmarksMod.neededFor[i] || MoreCheckmarksMod.priorities[i] <= currentHighest) continue;
+                    currentNeeded = i;
+                    currentHighest = MoreCheckmarksMod.priorities[i];
                 }
 
-                // Set checkmark if necessary
                 if (currentNeeded > -1)
                 {
                     // Handle special case of areas
@@ -1197,31 +1339,37 @@ namespace MoreCheckmarks
                     {
                         if (neededStruct.foundNeeded) // Need more
                         {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
+                                MoreCheckmarksMod.needMoreColor);
                         }
                         else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
                         {
-                            if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
+                            if (MoreCheckmarksMod
+                                .fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
                             {
-                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
+                                    MoreCheckmarksMod.fulfilledColor);
                             }
                             else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
                             {
-                                // Check if we trully do not need more of this item for now
+                                // Check if we truly do not need more of this item for now
                                 if (neededStruct.possessedCount >= neededStruct.requiredCount)
                                 {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.fulfilledColor);
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
+                                        MoreCheckmarksMod.fulfilledColor);
                                 }
                                 else // Still need more
                                 {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.needMoreColor);
+                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
+                                        MoreCheckmarksMod.needMoreColor);
                                 }
                             }
                         }
                     }
                     else // Not area, just set color
                     {
-                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, MoreCheckmarksMod.colors[currentNeeded]);
+                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
+                            MoreCheckmarksMod.colors[currentNeeded]);
                     }
                 }
                 else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
@@ -1229,34 +1377,29 @@ namespace MoreCheckmarks
                     SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
                 }
 
-                // Set tooltip based on requirements
-                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests, completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist, bartersByTrader, gotBarters, craftRequired, craftTooltip);
+                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests,
+                    completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist,
+                    bartersByTrader, gotBarters, craftRequired, craftTooltip);
 
                 return false;
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                if(item != null)
-                {
-                    MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch failed on item: " + item.TemplateId + " named " + item.LocalizedName()+":\n"+ex.Message+":\n"+ex.StackTrace);
-                }
-                else
-                {
-                    MoreCheckmarksMod.LogError("QuestItemViewPanelShowPatch failed, item null:\n" + ex.Message + ":\n" + ex.StackTrace);
-                }
+                MoreCheckmarksMod.LogError(
+                    "Failed to show checkmark for item " + item.Template.Name + " - " + e.Message);
+                return true;
             }
-
-            return true;
         }
 
-        private static void SetCheckmark(EFT.UI.DragAndDrop.QuestItemViewPanel __instance, Image ____questIconImage, Sprite sprite, Color color)
+        private static void SetCheckmark(QuestItemViewPanel instance, Image questIconImage,
+            Sprite sprite, Color color)
         {
             try
             {
                 // Following calls base class method ShowGameObject()
-                __instance.ShowGameObject();
-                ____questIconImage.sprite = sprite;
-                ____questIconImage.color = color;
+                instance.ShowGameObject();
+                questIconImage.sprite = sprite;
+                questIconImage.color = color;
             }
             catch
             {
@@ -1264,15 +1407,19 @@ namespace MoreCheckmarks
             }
         }
 
-        private static void SetTooltip(EFT.Profile profile, List<string> areaNames, ref string ___string_5, ref EFT.UI.SimpleTooltip ___simpleTooltip_0, ref EFT.UI.SimpleTooltip tooltip,
-                                       EFT.InventoryLogic.Item item, MoreCheckmarksMod.QuestPair startQuests, MoreCheckmarksMod.QuestPair completeQuests,
-                                       int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist, List<List<KeyValuePair<string, int>>> bartersByTrader, bool gotBarters,
-                                       bool craftRequired, string craftTooltip)
+        private static void SetTooltip(Profile profile, List<string> areaNames, ref string ___string_5,
+            ref SimpleTooltip ___simpleTooltip_0, ref SimpleTooltip tooltip,
+            Item item, MoreCheckmarksMod.QuestPair startQuests,
+            MoreCheckmarksMod.QuestPair completeQuests,
+            int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist,
+            List<List<KeyValuePair<string, int>>> bartersByTrader, bool gotBarters,
+            bool craftRequired, string craftTooltip)
         {
             try
             {
                 // Reset string
-                ___string_5 = "STASH".Localized(null) + ": <color=#dd831a>" + possessedQuestCount + "</color>/" + possessedCount;
+                ___string_5 = "STASH".Localized(null) + ": <color=#dd831a>" + possessedQuestCount + "</color>/" +
+                              possessedCount;
 
                 // Show found in raid if found in raid
                 if (item.MarkedAsSpawnedInSession)
@@ -1281,15 +1428,15 @@ namespace MoreCheckmarks
                 }
 
                 // Add quests
-                bool gotQuest = false;
+                var gotQuest = false;
                 if (item.MarkedAsSpawnedInSession)
                 {
                     if (MoreCheckmarksMod.includeFutureQuests)
                     {
-                        string questStartString = "<color=#dd831a>";
-                        bool gotStartQuests = false;
-                        bool gotMoreThanOneStartQuest = false;
-                        int totalItemCount = 0;
+                        var questStartString = "<color=#dd831a>";
+                        var gotStartQuests = false;
+                        var gotMoreThanOneStartQuest = false;
+                        var totalItemCount = 0;
                         if (startQuests != null)
                         {
                             if (startQuests.questData.Count > 0)
@@ -1297,15 +1444,17 @@ namespace MoreCheckmarks
                                 gotStartQuests = true;
                                 totalItemCount = startQuests.count;
                             }
+
                             if (startQuests.questData.Count > 1)
                             {
                                 gotMoreThanOneStartQuest = true;
                             }
-                            int count = startQuests.questData.Count;
-                            int index = 0;
-                            foreach (KeyValuePair<string, string> questEntry in startQuests.questData)
+
+                            var count = startQuests.questData.Count;
+                            var index = 0;
+                            foreach (var questEntry in startQuests.questData)
                             {
-                                string localizedName = questEntry.Key.Localized(null);
+                                var localizedName = questEntry.Key.Localized(null);
                                 if (questEntry.Key.Equals(localizedName))
                                 {
                                     // Could not localize name, just use default name
@@ -1322,6 +1471,7 @@ namespace MoreCheckmarks
                                 {
                                     questStartString += localizedName;
                                 }
+
                                 if (index != count - 1)
                                 {
                                     questStartString += ",\n  ";
@@ -1334,14 +1484,18 @@ namespace MoreCheckmarks
                                 ++index;
                             }
                         }
+
                         if (gotStartQuests)
                         {
                             gotQuest = true;
-                            ___string_5 = "\nNeeded (" + possessedQuestCount + "/" + totalItemCount + ") to start quest" + (gotMoreThanOneStartQuest ? "s" : "") + ":\n  " + questStartString;
+                            ___string_5 = "\nNeeded (" + possessedQuestCount + "/" + totalItemCount +
+                                          ") to start quest" + (gotMoreThanOneStartQuest ? "s" : "") + ":\n  " +
+                                          questStartString;
                         }
-                        string questCompleteString = "<color=#dd831a>";
-                        bool gotCompleteQuests = false;
-                        bool gotMoreThanOneCompleteQuest = false;
+
+                        var questCompleteString = "<color=#dd831a>";
+                        var gotCompleteQuests = false;
+                        var gotMoreThanOneCompleteQuest = false;
                         if (completeQuests != null)
                         {
                             if (completeQuests.questData.Count > 0)
@@ -1349,15 +1503,17 @@ namespace MoreCheckmarks
                                 gotCompleteQuests = true;
                                 totalItemCount = completeQuests.count;
                             }
+
                             if (completeQuests.questData.Count > 1)
                             {
                                 gotMoreThanOneCompleteQuest = true;
                             }
-                            int count = completeQuests.questData.Count;
-                            int index = 0;
-                            foreach (KeyValuePair<string, string> questEntry in completeQuests.questData)
+
+                            var count = completeQuests.questData.Count;
+                            var index = 0;
+                            foreach (var questEntry in completeQuests.questData)
                             {
-                                string localizedName = questEntry.Key.Localized(null);
+                                var localizedName = questEntry.Key.Localized(null);
                                 if (questEntry.Key.Equals(localizedName))
                                 {
                                     // Could not localize name, just use default name
@@ -1374,6 +1530,7 @@ namespace MoreCheckmarks
                                 {
                                     questCompleteString += localizedName;
                                 }
+
                                 if (index != count - 1)
                                 {
                                     questCompleteString += ",\n  ";
@@ -1386,10 +1543,13 @@ namespace MoreCheckmarks
                                 ++index;
                             }
                         }
+
                         if (gotCompleteQuests)
                         {
                             gotQuest = true;
-                            ___string_5 += "\nNeeded (" + possessedQuestCount + "/" + totalItemCount + ") to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + ":\n  " + questCompleteString;
+                            ___string_5 += "\nNeeded (" + possessedQuestCount + "/" + totalItemCount +
+                                           ") to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + ":\n  " +
+                                           questCompleteString;
                         }
                     }
                     else // Don't include future quests, do as vanilla
@@ -1402,15 +1562,18 @@ namespace MoreCheckmarks
                             {
                                 // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
                                 // with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass3779> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, GClass3878> kvp in questDataClass.Template
+                                             .Conditions)
                                 {
                                     EQuestStatus equestStatus;
-                                    GClass3779 gclass;
+                                    GClass3878 gclass;
                                     kvp.Deconstruct(out equestStatus, out gclass);
                                     foreach (Condition condition in gclass)
                                     {
                                         ConditionItem conditionItem2;
-                                        if (!questDataClass.CompletedConditions.Contains(condition.id) && (conditionItem2 = (condition as ConditionItem)) != null && conditionItem2.target.Contains(item.StringTemplateId))
+                                        if (!questDataClass.CompletedConditions.Contains(condition.id) &&
+                                            (conditionItem2 = (condition as ConditionItem)) != null &&
+                                            conditionItem2.target.Contains(item.StringTemplateId))
                                         {
                                             RawQuestClass = questDataClass.Template;
                                             conditionItem = conditionItem2;
@@ -1420,46 +1583,60 @@ namespace MoreCheckmarks
                                 }
                             }
                         }
+
                         if (RawQuestClass != null)
                         {
                             string arg = "<color=#dd831a>" + RawQuestClass.Name + "</color>";
                             if (item.QuestItem)
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nItem is related to an active {0} quest".Localized(null), arg);
+                                ___string_5 += string.Format("\nItem is related to an active {0} quest".Localized(null),
+                                    arg);
                             }
+
                             Weapon weapon;
                             ConditionWeaponAssembly condition;
-                            if (!gotQuest && (weapon = (item as Weapon)) != null && (condition = (conditionItem as ConditionWeaponAssembly)) != null && Inventory.IsWeaponFitsCondition(weapon, condition, false))
+                            if (!gotQuest && (weapon = (item as Weapon)) != null &&
+                                (condition = (conditionItem as ConditionWeaponAssembly)) != null &&
+                                Inventory.IsWeaponFitsCondition(weapon, condition, false))
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nItem fits the active {0} quest requirements".Localized(null), arg);
+                                ___string_5 +=
+                                    string.Format("\nItem fits the active {0} quest requirements".Localized(null), arg);
                             }
+
                             if (!gotQuest && item.MarkedAsSpawnedInSession)
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nItem that has been found in raid for the {0} quest".Localized(null), arg);
+                                ___string_5 +=
+                                    string.Format(
+                                        "\nItem that has been found in raid for the {0} quest".Localized(null), arg);
                             }
                         }
                     }
                 }
 
                 // Add areas
-                bool gotAreas = areaNames.Count > 0;
-                string areaNamesString = "";
-                for (int i = 0; i < areaNames.Count; ++i)
+                var gotAreas = areaNames.Count > 0;
+                var areaNamesString = "";
+                for (var i = 0; i < areaNames.Count; ++i)
                 {
                     areaNamesString += "\n  " + areaNames[i];
                 }
+
                 if (!areaNamesString.Equals(""))
                 {
-                    ___string_5 += string.Format("\nNeeded ({1}/{2}) for area"+(areaNames.Count == 1 ? "" : "s") +":{0}", areaNamesString, possessedCount, requiredCount);
+                    ___string_5 +=
+                        string.Format("\nNeeded ({1}/{2}) for area" + (areaNames.Count == 1 ? "" : "s") + ":{0}",
+                            areaNamesString, possessedCount, requiredCount);
                 }
 
                 // Add wishlist
                 if (wishlist)
                 {
-                    ___string_5 += string.Format("\nOn {0}", "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) + ">Wish List</color>");
+                    ___string_5 += string.Format("\nOn {0}",
+                        "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.wishlistColor) +
+                        ">Wish List</color>");
                 }
 
                 // Add craft
@@ -1471,10 +1648,10 @@ namespace MoreCheckmarks
                 // Add barters
                 if (gotBarters)
                 {
-                    bool firstBarter = false;
+                    var firstBarter = false;
                     if (bartersByTrader != null)
                     {
-                        for (int i = 0; i < bartersByTrader.Count; ++i)
+                        for (var i = 0; i < bartersByTrader.Count; ++i)
                         {
                             if (bartersByTrader[i] != null && bartersByTrader[i].Count > 0)
                             {
@@ -1483,11 +1660,18 @@ namespace MoreCheckmarks
                                     ___string_5 += "\n" + "Barter".Localized(null) + ":";
                                     firstBarter = true;
                                 }
-                                string bartersString = "\n With " + (MoreCheckmarksMod.traders.Length > i ? MoreCheckmarksMod.traders[i] : "Custom Trader "+i) + ":";
-                                for (int j = 0; j < bartersByTrader[i].Count; ++j)
+
+                                var bartersString = "\n With " + (MoreCheckmarksMod.traders.Length > i
+                                    ? MoreCheckmarksMod.traders[i]
+                                    : "Custom Trader " + i) + ":";
+                                for (var j = 0; j < bartersByTrader[i].Count; ++j)
                                 {
-                                    bartersString += "\n  <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" + (bartersByTrader[i][j].Key + " Name").Localized() + "</color> (" + bartersByTrader[i][j].Value + ")";
+                                    bartersString += "\n  <color=#" +
+                                                     ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.barterColor) + ">" +
+                                                     (bartersByTrader[i][j].Key + " Name").Localized() + "</color> (" +
+                                                     bartersByTrader[i][j].Value + ")";
                                 }
+
                                 ___string_5 += bartersString;
                             }
                         }
@@ -1513,7 +1697,7 @@ namespace MoreCheckmarks
         // This postfix will run after the inspect window sets its checkmark if there is one
         // If there is one, the postfix for the QuestItemViewPanel will always have run before
         // This patch just changes the sprite to a default white one so we can set its color to whatever we need
-        [HarmonyPatch(typeof(EFT.UI.ItemSpecificationPanel), "method_2")]
+        [HarmonyPatch(typeof(ItemSpecificationPanel), "method_2")]
         static void Postfix(ref Item ___item_0, ref QuestItemViewPanel ____questItemViewPanel)
         {
             try
@@ -1522,9 +1706,10 @@ namespace MoreCheckmarks
                 if (____questItemViewPanel != null)
                 {
                     // Get access to QuestItemViewPanel's private _questIconImage
-                    BindingFlags bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-                    FieldInfo iconImageField = typeof(QuestItemViewPanel).GetField("_questIconImage", bindFlags);
-                    Image _questIconImage = iconImageField.GetValue(____questItemViewPanel) as Image;
+                    var bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
+                                    BindingFlags.Static;
+                    var iconImageField = typeof(QuestItemViewPanel).GetField("_questIconImage", bindFlags);
+                    var _questIconImage = iconImageField.GetValue(____questItemViewPanel) as Image;
 
                     if (_questIconImage != null)
                     {
@@ -1543,7 +1728,7 @@ namespace MoreCheckmarks
     class AvailableActionsPatch
     {
         // This postfix will run after we get a list of all actions available to interact with the item we are pointing at
-        [HarmonyPatch(typeof(GetActionsClass), "smethod_7")]
+        [HarmonyPatch(typeof(GetActionsClass), "smethod_8")]
         static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref ActionsReturnClass __result)
         {
             try
@@ -1555,12 +1740,21 @@ namespace MoreCheckmarks
                         List<string> nullAreaNames = null;
                         NeededStruct neededStruct = MoreCheckmarksMod.GetNeeded(lootItem.TemplateId, ref nullAreaNames);
                         string craftTooltip = "";
-                        bool craftRequired = MoreCheckmarksMod.GetNeededCraft(lootItem.TemplateId, ref craftTooltip, false);
-                        bool wishlist = ItemUiContext.Instance.WishlistManager.IsInWishlist(lootItem.TemplateId, true, out EWishlistGroup group);
-                        MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(lootItem.TemplateId, out MoreCheckmarksMod.QuestPair startQuests);
-                        MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(lootItem.TemplateId, out MoreCheckmarksMod.QuestPair completeQuests);
-                        bool questItem = lootItem.Item.MarkedAsSpawnedInSession && (lootItem.Item.QuestItem || (MoreCheckmarksMod.includeFutureQuests && (startQuests != null && startQuests.questData.Count > 0) || (completeQuests != null && completeQuests.questData.Count > 0)));
-                        List<List<KeyValuePair<string, int>>> bartersByTrader = MoreCheckmarksMod.GetBarters(lootItem.TemplateId);
+                        bool craftRequired =
+                            MoreCheckmarksMod.GetNeededCraft(lootItem.TemplateId, ref craftTooltip, false);
+                        bool wishlist =
+                            ItemUiContext.Instance.WishlistManager.IsInWishlist(lootItem.TemplateId, true,
+                                out EWishlistGroup group);
+                        MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(lootItem.TemplateId,
+                            out MoreCheckmarksMod.QuestPair startQuests);
+                        MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(lootItem.TemplateId,
+                            out MoreCheckmarksMod.QuestPair completeQuests);
+                        bool questItem = lootItem.Item.MarkedAsSpawnedInSession && (lootItem.Item.QuestItem ||
+                            (MoreCheckmarksMod.includeFutureQuests &&
+                             (startQuests != null && startQuests.questData.Count > 0) ||
+                             (completeQuests != null && completeQuests.questData.Count > 0)));
+                        List<List<KeyValuePair<string, int>>> bartersByTrader =
+                            MoreCheckmarksMod.GetBarters(lootItem.TemplateId);
                         bool gotBarters = false;
                         if (bartersByTrader != null)
                         {
@@ -1574,7 +1768,11 @@ namespace MoreCheckmarks
                             }
                         }
 
-                        bool[] currentNeededFor = { questItem, neededStruct.foundNeeded || neededStruct.foundFulfilled, wishlist, gotBarters, craftRequired };
+                        bool[] currentNeededFor =
+                        {
+                            questItem, neededStruct.foundNeeded || neededStruct.foundFulfilled, wishlist, gotBarters,
+                            craftRequired
+                        };
                         // Find needed with highest priority
                         int currentNeeded = -1;
                         int currentHighest = -1;
@@ -1586,6 +1784,7 @@ namespace MoreCheckmarks
                                 currentHighest = MoreCheckmarksMod.priorities[i];
                             }
                         }
+
                         if (currentNeeded != -1)
                         {
                             // Handle special case of areas
@@ -1593,32 +1792,46 @@ namespace MoreCheckmarks
                             {
                                 if (neededStruct.foundNeeded) // Need more
                                 {
-                                    action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
+                                    action.Name = "<font=\"BenderBold\"><color=#" +
+                                                  ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) +
+                                                  ">Take</color></font>";
                                 }
                                 else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
                                 {
-                                    if (MoreCheckmarksMod.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
+                                    if (MoreCheckmarksMod
+                                        .fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
                                     {
-                                        action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Take</color></font>";
+                                        action.Name = "<font=\"BenderBold\"><color=#" +
+                                                      ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) +
+                                                      ">Take</color></font>";
                                     }
                                     else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
                                     {
                                         // Check if we trully do not need more of this item for now
                                         if (neededStruct.possessedCount >= neededStruct.requiredCount)
                                         {
-                                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.fulfilledColor) + ">Take</color></font>";
+                                            action.Name = "<font=\"BenderBold\"><color=#" +
+                                                          ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod
+                                                              .fulfilledColor) + ">Take</color></font>";
                                         }
                                         else // Still need more
                                         {
-                                            action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.needMoreColor) + ">Take</color></font>";
+                                            action.Name = "<font=\"BenderBold\"><color=#" +
+                                                          ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod
+                                                              .needMoreColor) + ">Take</color></font>";
                                         }
                                     }
                                 }
                             }
                             else // Not area, just set color
                             {
-                                MoreCheckmarksMod.LogInfo("TAKE NEEDED, NOT FOR AREA, COLORING FOR NEEDED FOR INDEX " + currentNeeded + " AS COLOR " + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.colors[currentNeeded]));
-                                action.Name = "<font=\"BenderBold\"><color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.colors[currentNeeded]) + ">Take</color></font>";
+                                MoreCheckmarksMod.LogInfo("TAKE NEEDED, NOT FOR AREA, COLORING FOR NEEDED FOR INDEX " +
+                                                          currentNeeded + " AS COLOR " +
+                                                          ColorUtility.ToHtmlStringRGB(
+                                                              MoreCheckmarksMod.colors[currentNeeded]));
+                                action.Name = "<font=\"BenderBold\"><color=#" +
+                                              ColorUtility.ToHtmlStringRGB(MoreCheckmarksMod.colors[currentNeeded]) +
+                                              ">Take</color></font>";
                             }
                         }
                         //else leave it as it is
@@ -1627,12 +1840,14 @@ namespace MoreCheckmarks
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                MoreCheckmarksMod.LogError("Failed to process available actions for loose item: "+ex.Message+"\n"+ex.StackTrace);
+                MoreCheckmarksMod.LogError("Failed to process available actions for loose item: " + ex.Message + "\n" +
+                                           ex.StackTrace);
             }
         }
     }
+
 
     [HarmonyPatch]
     class QuestClassStatusPatch
@@ -1650,17 +1865,19 @@ namespace MoreCheckmarks
         [HarmonyPatch(typeof(QuestClass), "SetStatus")]
         static void Postfix(QuestClass __instance)
         {
-            if(__instance == null)
+            if (__instance == null)
             {
                 MoreCheckmarksMod.LogError("Attempted setting queststatus but instance is null");
                 return;
             }
-            if(__instance.Template == null)
+
+            if (__instance.Template == null)
             {
                 return;
             }
 
-            MoreCheckmarksMod.LogInfo("Quest "+__instance.Template.Name+ " queststatus set to "+ __instance.QuestStatus);
+            MoreCheckmarksMod.LogInfo("Quest " + __instance.Template.Name + " queststatus set to " +
+                                      __instance.QuestStatus);
 
             try
             {
@@ -1671,11 +1888,13 @@ namespace MoreCheckmarks
                         case EQuestStatus.Started:
                             if (preStatus == EQuestStatus.AvailableForStart)
                             {
-                                if (MoreCheckmarksMod.neededStartItemsByQuest.TryGetValue(__instance.Template.Id, out Dictionary<string, int> startItems))
+                                if (MoreCheckmarksMod.neededStartItemsByQuest.TryGetValue(__instance.Template.Id,
+                                        out Dictionary<string, int> startItems))
                                 {
                                     foreach (KeyValuePair<string, int> itemEntry in startItems)
                                     {
-                                        if (MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(itemEntry.Key, out MoreCheckmarksMod.QuestPair questList))
+                                        if (MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(itemEntry.Key,
+                                                out MoreCheckmarksMod.QuestPair questList))
                                         {
                                             questList.questData.Remove(__instance.Template.Id);
                                             questList.count -= itemEntry.Value;
@@ -1689,15 +1908,18 @@ namespace MoreCheckmarks
                                     MoreCheckmarksMod.neededStartItemsByQuest.Remove(__instance.Template.Id);
                                 }
                             }
+
                             break;
                         case EQuestStatus.Success:
                         case EQuestStatus.Expired:
                         case EQuestStatus.Fail:
-                            if (MoreCheckmarksMod.neededCompleteItemsByQuest.TryGetValue(__instance.Template.Id, out Dictionary<string, int> completeItems))
+                            if (MoreCheckmarksMod.neededCompleteItemsByQuest.TryGetValue(__instance.Template.Id,
+                                    out Dictionary<string, int> completeItems))
                             {
                                 foreach (KeyValuePair<string, int> itemEntry in completeItems)
                                 {
-                                    if (MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(itemEntry.Key, out MoreCheckmarksMod.QuestPair questList))
+                                    if (MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(itemEntry.Key,
+                                            out MoreCheckmarksMod.QuestPair questList))
                                     {
                                         questList.questData.Remove(__instance.Template.Id);
                                         questList.count -= itemEntry.Value;
@@ -1710,16 +1932,19 @@ namespace MoreCheckmarks
 
                                 MoreCheckmarksMod.neededCompleteItemsByQuest.Remove(__instance.Template.Id);
                             }
+
                             break;
                     }
                 }
             }
             catch (Exception ex)
             {
-                MoreCheckmarksMod.LogError("Failed to process change in status for quest " + __instance.Template.Name + " to " + __instance.QuestStatus + ": " + ex.Message + "\n" + ex.StackTrace);
+                MoreCheckmarksMod.LogError("Failed to process change in status for quest " + __instance.Template.Name +
+                                           " to " + __instance.QuestStatus + ": " + ex.Message + "\n" + ex.StackTrace);
             }
         }
     }
+
 
     class ProfileSelectionPatch
     {
