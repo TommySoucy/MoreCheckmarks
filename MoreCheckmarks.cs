@@ -945,14 +945,14 @@ namespace MoreCheckmarks
             // Get assemblies
             Type profileSelector = null;
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for (var i = 0; i < assemblies.Length; ++i)
+            foreach (var t in assemblies)
             {
-                if (assemblies[i].GetName().Name.Equals("Assembly-CSharp"))
+                if (t.GetName().Name.Equals("Assembly-CSharp"))
                 {
                     // UPDATE: This is to know when a new profile is selected so we can load up to date data
                     // We want to do this when client makes request "/client/game/profile/select"
                     // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    profileSelector = assemblies[i].GetType("Class301").GetNestedType("Class1452", BindingFlags.Public);
+                    profileSelector = t.GetType("Class303").GetNestedType("Class1470", BindingFlags.Public);
                 }
             }
 
