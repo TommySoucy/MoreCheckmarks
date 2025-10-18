@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30413.136
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoreCheckmarks", "MoreCheckmarks.csproj", "{1C987E9F-C3DF-456E-A956-CE3A11E960A7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoreCheckmarks", "Client\MoreCheckmarks.csproj", "{1C987E9F-C3DF-456E-A956-CE3A11E960A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoreCheckmarksBackend", "Server\MoreCheckmarksBackend.csproj", "{A4FDCD39-7106-49E8-C948-2EC324205497}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{1C987E9F-C3DF-456E-A956-CE3A11E960A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C987E9F-C3DF-456E-A956-CE3A11E960A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C987E9F-C3DF-456E-A956-CE3A11E960A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4FDCD39-7106-49E8-C948-2EC324205497}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4FDCD39-7106-49E8-C948-2EC324205497}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4FDCD39-7106-49E8-C948-2EC324205497}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4FDCD39-7106-49E8-C948-2EC324205497}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

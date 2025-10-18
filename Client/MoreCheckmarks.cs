@@ -1,23 +1,24 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
+﻿using BepInEx;
+using Comfort.Common;
+using EFT;
+using EFT.Hideout;
+using EFT.Interactive;
+using EFT.InventoryLogic;
+using EFT.Quests;
+using EFT.UI;
+using EFT.UI.DragAndDrop;
 using HarmonyLib;
+using Newtonsoft.Json.Linq;
+using SPT.Common.Http;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json.Linq;
-using System;
-using EFT;
-using EFT.UI.DragAndDrop;
-using System.Reflection;
-using EFT.InventoryLogic;
-using EFT.UI;
-using EFT.Interactive;
-using EFT.Quests;
 using System.Linq;
+using System.Reflection;
 using TMPro;
-using BepInEx;
-using SPT.Common.Http;
-using Comfort.Common;
-using EFT.Hideout;
+using UnityEngine;
+using UnityEngine.UI;
+using static EFT.HalloweenEventVisual;
 
 namespace MoreCheckmarks
 {
@@ -35,7 +36,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "1.5.17";
+        public const string pluginVersion = "1.5.18";
 
         // Config settings
         public static bool fulfilledAnyCanBeUpgraded;
@@ -136,6 +137,7 @@ namespace MoreCheckmarks
             LogInfo("Loading data");
             LogInfo("\tQuests");
             var questData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/quests"));
+            LogInfo(questData.ToString());
             questDataStartByItemTemplateID.Clear();
             neededStartItemsByQuest.Clear();
             questDataCompleteByItemTemplateID.Clear();
@@ -146,7 +148,7 @@ namespace MoreCheckmarks
                 if (t["conditions"] != null && t["conditions"]["AvailableForFinish"] != null)
                 {
                     var availableForFinishConditions = t["conditions"]["AvailableForFinish"] as JArray;
-                    for (var j = 0; j < availableForFinishConditions.Count; ++j)
+                    for (int j = 0; j != availableForFinishConditions.Count; ++j)
                     {
                         if (availableForFinishConditions[j]["conditionType"] != null)
                         {
@@ -155,7 +157,7 @@ namespace MoreCheckmarks
                                 if (availableForFinishConditions[j]["target"] != null)
                                 {
                                     var targets = availableForFinishConditions[j]["target"] as JArray;
-                                    for (var k = 0; k < targets.Count; ++k)
+                                    for (int k = 0; k != targets.Count; ++k)
                                     {
                                         if (questDataCompleteByItemTemplateID.TryGetValue(targets[k].ToString(),
                                                 out var quests))
@@ -225,9 +227,7 @@ namespace MoreCheckmarks
                                             if (availableForFinishConditions[l]["conditionType"].ToString()
                                                 .Equals("HandoverItem"))
                                             {
-                                                var handInTargets =
-                                                    availableForFinishConditions[l]["target"] as JArray;
-                                                if (handInTargets != null &&
+                                                if (availableForFinishConditions[l]["target"] is JArray handInTargets &&
                                                     StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
                                                     (!int.TryParse(availableForFinishConditions[l]["value"].ToString(),
                                                          out var parsedValue) ||
@@ -511,12 +511,9 @@ namespace MoreCheckmarks
                                         var foundInHandin = false;
                                         for (var l = 0; l < availableForStartConditions.Count; ++l)
                                         {
-                                            if (availableForStartConditions[l]["conditionType"].ToString()
-                                                .Equals("HandoverItem"))
+                                            if (availableForStartConditions[l]["conditionType"].ToString().Equals("HandoverItem"))
                                             {
-                                                var handInTargets =
-                                                    availableForStartConditions[l]["target"] as JArray;
-                                                if (handInTargets != null &&
+                                                if (availableForStartConditions[l]["target"] is JArray handInTargets &&
                                                     StringJArrayContainsString(handInTargets, targets[k].ToString()) &&
                                                     (!int.TryParse(availableForStartConditions[l]["value"].ToString(),
                                                          out var parsedValue) ||
@@ -904,8 +901,7 @@ namespace MoreCheckmarks
             }
             catch (Exception ex)
             {
-                LogError(
-                    "Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: " + ex.Message);
+                LogError("Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: " + ex.Message);
             }
         }
 
@@ -920,10 +916,8 @@ namespace MoreCheckmarks
             else
             {
                 whiteCheckmark = assetBundle.LoadAsset<Sprite>("WhiteCheckmark");
-
                 benderBold = assetBundle.LoadAsset<TMP_FontAsset>("BenderBold");
                 TMP_Text.OnFontAssetRequest += TMP_Text_onFontAssetRequest;
-
                 LogInfo("Assets loaded");
             }
         }
@@ -942,6 +936,8 @@ namespace MoreCheckmarks
 
         private static void DoPatching()
         {
+            const string profileTypeString = "Class308"; // Class303
+            const string derivedTypeString = "Class1596"; // Class1470
             // Get assemblies
             Type profileSelector = null;
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -952,14 +948,12 @@ namespace MoreCheckmarks
                     // UPDATE: This is to know when a new profile is selected so we can load up to date data
                     // We want to do this when client makes request "/client/game/profile/select"
                     // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    profileSelector = t.GetType("Class303").GetNestedType("Class1470", BindingFlags.Public);
+                    profileSelector = t.GetType(profileTypeString).GetNestedType(derivedTypeString, BindingFlags.Public);
                 }
             }
 
             var harmony = new Harmony("VIP.TommySoucy.MoreCheckmarks");
-
-            // Auto patch
-            harmony.PatchAll();
+            harmony.PatchAll(); // Auto patch
 
             // Manual patch
             if (profileSelector != null)
@@ -1206,10 +1200,7 @@ namespace MoreCheckmarks
                 {
                     List<KeyValuePair<string, int>> current = null;
 
-                    if (bartersByItemByTrader[i] != null)
-                    {
-                        bartersByItemByTrader[i].TryGetValue(ID, out current);
-                    }
+                    bartersByItemByTrader[i]?.TryGetValue(ID, out current);
 
                     if (current == null)
                     {
@@ -1560,14 +1551,10 @@ namespace MoreCheckmarks
                         {
                             if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
                             {
-                                // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass
-                                // with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass3878> kvp in questDataClass.Template
-                                             .Conditions)
+                                // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass with QuestConditionsList, for the value
+                                foreach (KeyValuePair<EQuestStatus, GClass1631> kvp in questDataClass.Template.Conditions)
                                 {
-                                    EQuestStatus equestStatus;
-                                    GClass3878 gclass;
-                                    kvp.Deconstruct(out equestStatus, out gclass);
+                                    kvp.Deconstruct(out EQuestStatus equestStatus, out GClass1631 gclass);
                                     foreach (Condition condition in gclass)
                                     {
                                         ConditionItem conditionItem2;
