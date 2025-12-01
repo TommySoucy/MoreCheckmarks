@@ -66,7 +66,7 @@ public class MoreCheckmarksServer(
     public Quest[]? HandleQuests(MongoId sessionId) 
     {
         logger.Info("MoreCheckmarks making quest data request");
-        Quest[] quests = [];
+        var quests = new List<Quest>();
         var allQuests = questHelper.GetQuestsFromDb();
         var profile = profileHelper.GetPmcProfile(sessionId);
 
@@ -106,27 +106,21 @@ public class MoreCheckmarksServer(
                 continue;
             }
             var questStatus = profile.GetQuestStatus(quest.Id);
-            /*
-                Locked = 0,
-                AvailableForStart = 1,
-                Started = 2,
-                AvailableForFinish = 3,
-                Success = 4,
-                Fail = 5,
-                FailRestartable = 6,
-                MarkedAsFailed = 7,
-                Expired = 8,
-                AvailableAfter = 9
-            */
-            if (questStatus > QuestStatusEnum.AvailableForStart
-                && questStatus < QuestStatusEnum.AvailableAfter)
+            
+            // Include ALL quests the player hasn't completed yet (for "includeFutureQuests" feature)
+            // This includes Locked quests (future quests where prerequisites aren't met yet)
+            // Only exclude quests that are done: Success, Fail, FailRestartable, MarkedAsFailed, Expired
+            if (questStatus != QuestStatusEnum.Success
+                && questStatus != QuestStatusEnum.Fail
+                && questStatus != QuestStatusEnum.FailRestartable
+                && questStatus != QuestStatusEnum.MarkedAsFailed
+                && questStatus != QuestStatusEnum.Expired)
             {
-                continue;
+                quests.Add(quest);
             }
-            _ = quests.Append(quest);
         }
-        logger.Info("Got quests");
-        return quests;
+        logger.Info($"Got {quests.Count} quests for MoreCheckmarks");
+        return quests.ToArray();
     }
 
     public TraderAssort[]? HandleAssorts()
