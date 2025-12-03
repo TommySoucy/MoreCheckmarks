@@ -50,11 +50,11 @@ namespace MoreCheckmarks
         public static ConfigEntry<bool> configShowBarter;
         public static ConfigEntry<bool> configShowCraft;
         public static ConfigEntry<bool> configShowFutureCraft;
-        public static ConfigEntry<string> configNeedMoreColor;
-        public static ConfigEntry<string> configFulfilledColor;
-        public static ConfigEntry<string> configWishlistColor;
-        public static ConfigEntry<string> configBarterColor;
-        public static ConfigEntry<string> configCraftColor;
+        public static ConfigEntry<Color> configNeedMoreColor;
+        public static ConfigEntry<Color> configFulfilledColor;
+        public static ConfigEntry<Color> configWishlistColor;
+        public static ConfigEntry<Color> configBarterColor;
+        public static ConfigEntry<Color> configCraftColor;
         public static ConfigEntry<bool> configIncludeFutureQuests;
         public static ConfigEntry<bool> configShowPrerequisiteQuests;
 
@@ -854,6 +854,13 @@ namespace MoreCheckmarks
 
         private void BindConfig()
         {
+            // Note about changes requiring menu refresh
+            Config.Bind(
+                "0. Important Note",
+                "Refresh Required",
+                "Switch menus to apply changes",
+                new ConfigDescription("Changes don't apply immediately. To see updates: leave your current menu (e.g. stash), go to main menu, then return.", null, new ConfigurationManagerAttributes { ReadOnly = true, HideDefaultButton = true }));
+
             // Hideout Settings
             configFulfilledAnyCanBeUpgraded = Config.Bind(
                 "Hideout",
@@ -899,67 +906,77 @@ namespace MoreCheckmarks
                 true,
                 "Show crafting recipes that are not yet unlocked.");
 
-            // Priority Settings (higher = takes precedence)
+            // Priority Settings (higher = takes precedence, ordered by default priority)
             configQuestPriority = Config.Bind(
                 "Priority",
                 "Quest Priority",
                 4,
-                new ConfigDescription("Priority for quest checkmarks. Higher number = higher priority when item is needed for multiple things.", new AcceptableValueRange<int>(0, 10)));
+                new ConfigDescription("Priority for quest checkmarks. Higher number = higher priority when item is needed for multiple things.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 5 }));
 
             configHideoutPriority = Config.Bind(
                 "Priority",
                 "Hideout Priority",
                 3,
-                new ConfigDescription("Priority for hideout checkmarks. Higher number = higher priority.", new AcceptableValueRange<int>(0, 10)));
+                new ConfigDescription("Priority for hideout checkmarks. Higher number = higher priority.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 4 }));
 
             configWishlistPriority = Config.Bind(
                 "Priority",
                 "Wishlist Priority",
                 2,
-                new ConfigDescription("Priority for wishlist checkmarks. Higher number = higher priority.", new AcceptableValueRange<int>(0, 10)));
+                new ConfigDescription("Priority for wishlist checkmarks. Higher number = higher priority.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 3 }));
 
             configBarterPriority = Config.Bind(
                 "Priority",
                 "Barter Priority",
                 1,
-                new ConfigDescription("Priority for barter checkmarks. Higher number = higher priority.", new AcceptableValueRange<int>(0, 10)));
+                new ConfigDescription("Priority for barter checkmarks. Higher number = higher priority.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 2 }));
 
             configCraftPriority = Config.Bind(
                 "Priority",
                 "Craft Priority",
                 0,
-                new ConfigDescription("Priority for craft checkmarks. Higher number = higher priority.", new AcceptableValueRange<int>(0, 10)));
+                new ConfigDescription("Priority for craft checkmarks. Higher number = higher priority.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 1 }));
 
-            // Color Settings (hex format)
+            // Color Settings (RGB sliders in F12 menu)
             configNeedMoreColor = Config.Bind(
                 "Colors",
                 "Need More Color",
-                "#FF5F5F",
-                "Color for items where you need more (light red). Use hex format: #RRGGBB");
+                new Color(1f, 0.37255f, 0.37255f),
+                "Color for items where you need more (default: light red)");
 
             configFulfilledColor = Config.Bind(
                 "Colors",
                 "Fulfilled Color",
-                "#4EFF47",
-                "Color for items where requirement is fulfilled (light green). Use hex format: #RRGGBB");
+                new Color(0.30588f, 1f, 0.27843f),
+                "Color for items where requirement is fulfilled (default: light green)");
 
             configWishlistColor = Config.Bind(
                 "Colors",
                 "Wishlist Color",
-                "#3BEFFF",
-                "Color for wishlist items (light blue). Use hex format: #RRGGBB");
+                new Color(0.23137f, 0.93725f, 1f),
+                "Color for wishlist items (default: light blue)");
 
             configBarterColor = Config.Bind(
                 "Colors",
                 "Barter Color",
-                "#FF00FF",
-                "Color for barter items (magenta). Use hex format: #RRGGBB");
+                new Color(1f, 0f, 1f),
+                "Color for barter items (default: magenta)");
 
             configCraftColor = Config.Bind(
                 "Colors",
                 "Craft Color",
-                "#00FFFF",
-                "Color for craft items (cyan). Use hex format: #RRGGBB");
+                new Color(0f, 1f, 1f),
+                "Color for craft items (default: cyan)");
 
             // Subscribe to config changes
             configNeedMoreColor.SettingChanged += (s, e) => UpdateColors();
@@ -982,25 +999,16 @@ namespace MoreCheckmarks
 
         private static void UpdateColors()
         {
-            if (ColorUtility.TryParseHtmlString(configNeedMoreColor.Value, out var parsedNeedMore))
-                needMoreColor = parsedNeedMore;
-            if (ColorUtility.TryParseHtmlString(configFulfilledColor.Value, out var parsedFulfilled))
-                fulfilledColor = parsedFulfilled;
-            if (ColorUtility.TryParseHtmlString(configWishlistColor.Value, out var parsedWishlist))
-            {
-                wishlistColor = parsedWishlist;
-                colors[2] = wishlistColor;
-            }
-            if (ColorUtility.TryParseHtmlString(configBarterColor.Value, out var parsedBarter))
-            {
-                barterColor = parsedBarter;
-                colors[3] = barterColor;
-            }
-            if (ColorUtility.TryParseHtmlString(configCraftColor.Value, out var parsedCraft))
-            {
-                craftColor = parsedCraft;
-                colors[4] = craftColor;
-            }
+            needMoreColor = configNeedMoreColor.Value;
+            fulfilledColor = configFulfilledColor.Value;
+            wishlistColor = configWishlistColor.Value;
+            barterColor = configBarterColor.Value;
+            craftColor = configCraftColor.Value;
+            
+            // Update the colors array
+            colors[2] = wishlistColor;
+            colors[3] = barterColor;
+            colors[4] = craftColor;
         }
 
         private static void UpdatePriorities()
@@ -2198,5 +2206,22 @@ namespace MoreCheckmarks
         {
             MoreCheckmarksMod.modInstance.LoadData();
         }
+    }
+
+    /// <summary>
+    /// Class to pass settings to the ConfigurationManager.
+    /// Used by BepInEx.ConfigurationManager to control how settings appear in the F12 menu.
+    /// </summary>
+    internal sealed class ConfigurationManagerAttributes
+    {
+        public bool? ReadOnly;
+        public bool? HideDefaultButton;
+        public bool? HideSettingName;
+        public string Category;
+        public int? Order;
+        public bool? Browsable;
+        public string Description;
+        public object DefaultValue;
+        public bool? IsAdvanced;
     }
 }
