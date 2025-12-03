@@ -46,7 +46,7 @@ All settings are accessible via the **BepInEx F12 in-game menu**. Press F12 whil
   - **Green** `(0 prereqs)` - Quest is available now
   - **Yellow** `(1-9 prereqs)` - Quest is close to being available
   - **Gray** `(10+ prereqs)` - Quest is far away
-  Set to **false** to disable and show only quest names.
+    Set to **false** to disable and show only quest names.
 
 ### Barter & Craft Settings
 
