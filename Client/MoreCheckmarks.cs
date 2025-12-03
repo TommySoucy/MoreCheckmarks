@@ -80,9 +80,15 @@ namespace MoreCheckmarks
 
         public class QuestPair
         {
-            public Dictionary<string, string> questData = new Dictionary<string, string>();
+            // Key: quest name key, Value: (QuestName, QuestId)
+            public Dictionary<string, (string questName, string questId)> questData = new Dictionary<string, (string, string)>();
             public int count;
         }
+
+        // Quest prerequisite tracking
+        public static Dictionary<string, HashSet<string>> questPrerequisites = new Dictionary<string, HashSet<string>>();
+        public static Dictionary<string, HashSet<string>> prereqCache = new Dictionary<string, HashSet<string>>();
+        public static HashSet<string> completedQuestIds = new HashSet<string>();
 
         public static JObject itemData;
         public static JObject locales;
@@ -142,6 +148,9 @@ namespace MoreCheckmarks
             neededStartItemsByQuest.Clear();
             questDataCompleteByItemTemplateID.Clear();
             neededCompleteItemsByQuest.Clear();
+            questPrerequisites.Clear();
+            prereqCache.Clear();
+            completedQuestIds.Clear();
 
             foreach (var t in questData)
             {
@@ -165,7 +174,7 @@ namespace MoreCheckmarks
                                             if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
                                                 quests.questData.Add(t["name"].ToString(),
-                                                    t["QuestName"].ToString());
+                                                    (t["QuestName"].ToString(), t["_id"].ToString()));
                                             }
 
                                             int.TryParse(availableForFinishConditions[j]["value"].ToString(),
@@ -176,7 +185,7 @@ namespace MoreCheckmarks
                                         {
                                             var newPair = new QuestPair();
                                             newPair.questData.Add(t["name"].ToString(),
-                                                t["QuestName"].ToString());
+                                                (t["QuestName"].ToString(), t["_id"].ToString()));
                                             int.TryParse(availableForFinishConditions[j]["value"].ToString(),
                                                 out var parsedValue);
                                             newPair.count = parsedValue;
@@ -252,7 +261,7 @@ namespace MoreCheckmarks
                                             if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
                                                 quests.questData.Add(t["name"].ToString(),
-                                                    t["QuestName"].ToString());
+                                                    (t["QuestName"].ToString(), t["_id"].ToString()));
                                             }
 
                                             int.TryParse(availableForFinishConditions[j]["value"].ToString(),
@@ -263,7 +272,7 @@ namespace MoreCheckmarks
                                         {
                                             var newPair = new QuestPair();
                                             newPair.questData.Add(t["name"].ToString(),
-                                                t["QuestName"].ToString());
+                                                (t["QuestName"].ToString(), t["_id"].ToString()));
                                             int.TryParse(availableForFinishConditions[j]["value"].ToString(),
                                                 out var parsedValue);
                                             newPair.count = parsedValue;
@@ -313,7 +322,7 @@ namespace MoreCheckmarks
                                             if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
                                                 quests.questData.Add(t["name"].ToString(),
-                                                    t["QuestName"].ToString());
+                                                    (t["QuestName"].ToString(), t["_id"].ToString()));
                                             }
 
                                             int.TryParse(availableForFinishConditions[j]["value"].ToString(),
@@ -324,7 +333,7 @@ namespace MoreCheckmarks
                                         {
                                             var newPair = new QuestPair();
                                             newPair.questData.Add(t["name"].ToString(),
-                                                t["QuestName"].ToString());
+                                                (t["QuestName"].ToString(), t["_id"].ToString()));
                                             int.TryParse(availableForFinishConditions[j]["value"].ToString(),
                                                 out var parsedValue);
                                             newPair.count = parsedValue;
@@ -373,7 +382,7 @@ namespace MoreCheckmarks
                                             if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
                                                 quests.questData.Add(t["name"].ToString(),
-                                                    t["QuestName"].ToString());
+                                                    (t["QuestName"].ToString(), t["_id"].ToString()));
                                             }
 
                                             int.TryParse(availableForFinishConditions[j]["value"].ToString(),
@@ -384,7 +393,7 @@ namespace MoreCheckmarks
                                         {
                                             var newPair = new QuestPair();
                                             newPair.questData.Add(t["name"].ToString(),
-                                                t["QuestName"].ToString());
+                                                (t["QuestName"].ToString(), t["_id"].ToString()));
                                             int.TryParse(availableForFinishConditions[j]["value"].ToString(),
                                                 out var parsedValue);
                                             newPair.count = parsedValue;
@@ -452,7 +461,7 @@ namespace MoreCheckmarks
                                             if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
                                                 quests.questData.Add(t["name"].ToString(),
-                                                    t["QuestName"].ToString());
+                                                    (t["QuestName"].ToString(), t["_id"].ToString()));
                                             }
 
                                             int.TryParse(availableForStartConditions[j]["value"].ToString(),
@@ -463,7 +472,7 @@ namespace MoreCheckmarks
                                         {
                                             var newPair = new QuestPair();
                                             newPair.questData.Add(t["name"].ToString(),
-                                                t["QuestName"].ToString());
+                                                (t["QuestName"].ToString(), t["_id"].ToString()));
                                             int.TryParse(availableForStartConditions[j]["value"].ToString(),
                                                 out var parsedValue);
                                             newPair.count = parsedValue;
@@ -538,7 +547,7 @@ namespace MoreCheckmarks
                                             if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
                                                 quests.questData.Add(t["name"].ToString(),
-                                                    t["QuestName"].ToString());
+                                                    (t["QuestName"].ToString(), t["_id"].ToString()));
                                             }
 
                                             int.TryParse(availableForStartConditions[j]["value"].ToString(),
@@ -549,7 +558,7 @@ namespace MoreCheckmarks
                                         {
                                             var newPair = new QuestPair();
                                             newPair.questData.Add(t["name"].ToString(),
-                                                t["QuestName"].ToString());
+                                                (t["QuestName"].ToString(), t["_id"].ToString()));
                                             int.TryParse(availableForStartConditions[j]["value"].ToString(),
                                                 out var parsedValue);
                                             newPair.count = parsedValue;
@@ -599,7 +608,7 @@ namespace MoreCheckmarks
                                             if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
                                                 quests.questData.Add(t["name"].ToString(),
-                                                    t["QuestName"].ToString());
+                                                    (t["QuestName"].ToString(), t["_id"].ToString()));
                                             }
 
                                             int.TryParse(availableForStartConditions[j]["value"].ToString(),
@@ -610,7 +619,7 @@ namespace MoreCheckmarks
                                         {
                                             var newPair = new QuestPair();
                                             newPair.questData.Add(t["name"].ToString(),
-                                                t["QuestName"].ToString());
+                                                (t["QuestName"].ToString(), t["_id"].ToString()));
                                             int.TryParse(availableForStartConditions[j]["value"].ToString(),
                                                 out var parsedValue);
                                             newPair.count = parsedValue;
@@ -659,7 +668,7 @@ namespace MoreCheckmarks
                                             if (!quests.questData.ContainsKey(t["name"].ToString()))
                                             {
                                                 quests.questData.Add(t["name"].ToString(),
-                                                    t["QuestName"].ToString());
+                                                    (t["QuestName"].ToString(), t["_id"].ToString()));
                                             }
 
                                             int.TryParse(availableForStartConditions[j]["value"].ToString(),
@@ -670,7 +679,7 @@ namespace MoreCheckmarks
                                         {
                                             var newPair = new QuestPair();
                                             newPair.questData.Add(t["name"].ToString(),
-                                                t["QuestName"].ToString());
+                                                (t["QuestName"].ToString(), t["_id"].ToString()));
                                             int.TryParse(availableForStartConditions[j]["value"].ToString(),
                                                 out var parsedValue);
                                             newPair.count = parsedValue;
@@ -718,6 +727,33 @@ namespace MoreCheckmarks
                     LogError("Quest " + t["_id"].ToString() + " missing start conditions");
                 }
             }
+
+            // Build prerequisite map from quest conditions
+            LogInfo("\tBuilding prerequisite map");
+            foreach (var quest in questData)
+            {
+                var questId = quest["_id"]?.ToString();
+                if (string.IsNullOrEmpty(questId)) continue;
+
+                var prereqs = new HashSet<string>();
+                var startConditions = quest["conditions"]?["AvailableForStart"] as JArray;
+                if (startConditions != null)
+                {
+                    foreach (var condition in startConditions)
+                    {
+                        if (condition["conditionType"]?.ToString() == "Quest")
+                        {
+                            var targetQuestId = condition["target"]?.ToString();
+                            if (!string.IsNullOrEmpty(targetQuestId))
+                            {
+                                prereqs.Add(targetQuestId);
+                            }
+                        }
+                    }
+                }
+                questPrerequisites[questId] = prereqs;
+            }
+            LogInfo($"\tBuilt prerequisite map for {questPrerequisites.Count} quests");
 
             LogInfo("\tItems");
             var euro = "569668774bdc2da2298b4568";
@@ -1214,6 +1250,115 @@ namespace MoreCheckmarks
             return bartersByTrader;
         }
 
+        /// <summary>
+        /// Gets all prerequisite quest IDs for a given quest (recursive, with caching)
+        /// </summary>
+        public static HashSet<string> GetAllPrerequisites(string questId)
+        {
+            // Return cached result if available
+            if (prereqCache.TryGetValue(questId, out var cached))
+                return cached;
+
+            var result = new HashSet<string>();
+            var queue = new Queue<string>();
+
+            // Add direct prerequisites to queue
+            if (questPrerequisites.TryGetValue(questId, out var directPrereqs))
+            {
+                foreach (var prereq in directPrereqs)
+                    queue.Enqueue(prereq);
+            }
+
+            // BFS to find all prerequisites
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (result.Contains(current)) continue;
+
+                result.Add(current);
+
+                if (questPrerequisites.TryGetValue(current, out var prereqs))
+                {
+                    foreach (var prereq in prereqs)
+                    {
+                        if (!result.Contains(prereq))
+                            queue.Enqueue(prereq);
+                    }
+                }
+            }
+
+            // Cache and return
+            prereqCache[questId] = result;
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the count of remaining (incomplete) prerequisite quests
+        /// </summary>
+        public static int GetRemainingPrerequisiteCount(string questId, Profile profile)
+        {
+            var allPrereqs = GetAllPrerequisites(questId);
+            int remaining = 0;
+
+            foreach (var prereqId in allPrereqs)
+            {
+                // Use the cached IsQuestCompleted check
+                if (!IsQuestCompleted(prereqId, profile))
+                {
+                    remaining++;
+                }
+            }
+
+            return remaining;
+        }
+
+        /// <summary>
+        /// Checks if a quest is completed (Success status). Caches true results since quests can't be un-completed.
+        /// </summary>
+        public static bool IsQuestCompleted(string questId, Profile profile)
+        {
+            // Check cache first - if we've seen this quest completed before, it's still completed
+            if (completedQuestIds.Contains(questId))
+                return true;
+
+            foreach (var questDataClass in profile.QuestsData)
+            {
+                if (questDataClass.Template != null && questDataClass.Template.Id == questId)
+                {
+                    if (questDataClass.Status == EQuestStatus.Success)
+                    {
+                        // Cache the result - quest completion is permanent
+                        completedQuestIds.Add(questId);
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Gets the prerequisite status string for display in tooltip (uses pre-computed count)
+        /// </summary>
+        public static string GetPrerequisiteStatusString(int remaining)
+        {
+            if (remaining == 0)
+            {
+                // Green for available quests
+                return " <color=#00ff00>(0 prereqs)</color>";
+            }
+            else if (remaining < 10)
+            {
+                // Yellow for quests with few prerequisites (1-9)
+                return $" <color=#ffff00>({remaining} prereq{(remaining == 1 ? "" : "s")})</color>";
+            }
+            else
+            {
+                // Gray for quests with many prerequisites (10+)
+                return $" <color=#888888>({remaining} prereqs)</color>";
+            }
+        }
+
         public static void LogInfo(string msg)
         {
             modInstance.Logger.LogInfo(msg);
@@ -1430,38 +1575,49 @@ namespace MoreCheckmarks
                         var totalItemCount = 0;
                         if (startQuests != null)
                         {
-                            if (startQuests.questData.Count > 0)
+                            // Filter out completed quests, compute prerequisite counts, then sort
+                            var startQuestsWithPrereqs = startQuests.questData
+                                .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile))
+                                .Select(q => new { Entry = q, PrereqCount = MoreCheckmarksMod.GetRemainingPrerequisiteCount(q.Value.questId, profile) })
+                                .OrderBy(q => q.PrereqCount)
+                                .ToList();
+                            var count = startQuestsWithPrereqs.Count;
+
+                            if (count > 0)
                             {
                                 gotStartQuests = true;
                                 totalItemCount = startQuests.count;
                             }
 
-                            if (startQuests.questData.Count > 1)
+                            if (count > 1)
                             {
                                 gotMoreThanOneStartQuest = true;
                             }
 
-                            var count = startQuests.questData.Count;
                             var index = 0;
-                            foreach (var questEntry in startQuests.questData)
+                            foreach (var questWithPrereq in startQuestsWithPrereqs)
                             {
+                                var questEntry = questWithPrereq.Entry;
                                 var localizedName = questEntry.Key.Localized(null);
                                 if (questEntry.Key.Equals(localizedName))
                                 {
                                     // Could not localize name, just use default name
-                                    if (questEntry.Value.IsNullOrEmpty())
+                                    if (string.IsNullOrEmpty(questEntry.Value.questName))
                                     {
                                         questStartString += "Unknown Quest";
                                     }
                                     else
                                     {
-                                        questStartString += questEntry.Value;
+                                        questStartString += questEntry.Value.questName;
                                     }
                                 }
                                 else
                                 {
                                     questStartString += localizedName;
                                 }
+
+                                // Add prerequisite status (using pre-computed count)
+                                questStartString += MoreCheckmarksMod.GetPrerequisiteStatusString(questWithPrereq.PrereqCount);
 
                                 if (index != count - 1)
                                 {
@@ -1489,38 +1645,49 @@ namespace MoreCheckmarks
                         var gotMoreThanOneCompleteQuest = false;
                         if (completeQuests != null)
                         {
-                            if (completeQuests.questData.Count > 0)
+                            // Filter out completed quests, compute prerequisite counts, then sort
+                            var completeQuestsWithPrereqs = completeQuests.questData
+                                .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile))
+                                .Select(q => new { Entry = q, PrereqCount = MoreCheckmarksMod.GetRemainingPrerequisiteCount(q.Value.questId, profile) })
+                                .OrderBy(q => q.PrereqCount)
+                                .ToList();
+                            var count = completeQuestsWithPrereqs.Count;
+
+                            if (count > 0)
                             {
                                 gotCompleteQuests = true;
                                 totalItemCount = completeQuests.count;
                             }
 
-                            if (completeQuests.questData.Count > 1)
+                            if (count > 1)
                             {
                                 gotMoreThanOneCompleteQuest = true;
                             }
 
-                            var count = completeQuests.questData.Count;
                             var index = 0;
-                            foreach (var questEntry in completeQuests.questData)
+                            foreach (var questWithPrereq in completeQuestsWithPrereqs)
                             {
+                                var questEntry = questWithPrereq.Entry;
                                 var localizedName = questEntry.Key.Localized(null);
                                 if (questEntry.Key.Equals(localizedName))
                                 {
                                     // Could not localize name, just use default name
-                                    if (questEntry.Value.IsNullOrEmpty())
+                                    if (string.IsNullOrEmpty(questEntry.Value.questName))
                                     {
                                         questCompleteString += "Unknown Quest";
                                     }
                                     else
                                     {
-                                        questCompleteString += questEntry.Value;
+                                        questCompleteString += questEntry.Value.questName;
                                     }
                                 }
                                 else
                                 {
                                     questCompleteString += localizedName;
                                 }
+
+                                // Add prerequisite status (using pre-computed count)
+                                questCompleteString += MoreCheckmarksMod.GetPrerequisiteStatusString(questWithPrereq.PrereqCount);
 
                                 if (index != count - 1)
                                 {
