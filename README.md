@@ -46,6 +46,13 @@ There are some settings available in the provided config file described below:
 
 - **_includeFutureQuests_**: This setting will decide whether to consider future quests when checking which quests an item is required for. If false, will just be as vanilla.
 
+- **_showPrerequisiteQuests_**: This setting will decide whether to show the number of prerequisite quests needed before each quest becomes available in the tooltip. When enabled, quests are sorted by prerequisite count (closest to available first) and display color-coded status:
+    - **Green** `(0 prereqs)` - Quest is available now
+    - **Yellow** `(1-9 prereqs)` - Quest is close to being available
+    - **Gray** `(10+ prereqs)` - Quest is far away
+    
+    Set to **false** to disable this feature and show only quest names without prerequisite information.
+
 ## Used libraries
 
 - Harmony

@@ -55,6 +55,7 @@ namespace MoreCheckmarks
         public static Color barterColor = new Color(1, 0, 1);
         public static Color craftColor = new Color(0, 1, 1);
         public static bool includeFutureQuests = true;
+        public static bool showPrerequisiteQuests = true;
 
         // Assets
         public static JObject config;
@@ -919,6 +920,11 @@ namespace MoreCheckmarks
                     includeFutureQuests = (bool)config["includeFutureQuests"];
                 }
 
+                if (config["showPrerequisiteQuests"] != null)
+                {
+                    showPrerequisiteQuests = (bool)config["showPrerequisiteQuests"];
+                }
+
                 if (config["showCraft"] != null)
                 {
                     showCraft = (bool)config["showCraft"];
@@ -1342,6 +1348,12 @@ namespace MoreCheckmarks
         /// </summary>
         public static string GetPrerequisiteStatusString(int remaining)
         {
+            // If feature is disabled, return empty string
+            if (!showPrerequisiteQuests)
+            {
+                return "";
+            }
+
             if (remaining == 0)
             {
                 // Green for available quests
@@ -1575,12 +1587,19 @@ namespace MoreCheckmarks
                         var totalItemCount = 0;
                         if (startQuests != null)
                         {
-                            // Filter out completed quests, compute prerequisite counts, then sort
-                            var startQuestsWithPrereqs = startQuests.questData
-                                .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile))
-                                .Select(q => new { Entry = q, PrereqCount = MoreCheckmarksMod.GetRemainingPrerequisiteCount(q.Value.questId, profile) })
-                                .OrderBy(q => q.PrereqCount)
-                                .ToList();
+                            // Filter out completed quests
+                            var filteredStartQuests = startQuests.questData
+                                .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile));
+
+                            // Only compute and sort by prereq counts if feature is enabled
+                            var startQuestsWithPrereqs = MoreCheckmarksMod.showPrerequisiteQuests
+                                ? filteredStartQuests
+                                    .Select(q => new { Entry = q, PrereqCount = MoreCheckmarksMod.GetRemainingPrerequisiteCount(q.Value.questId, profile) })
+                                    .OrderBy(q => q.PrereqCount)
+                                    .ToList()
+                                : filteredStartQuests
+                                    .Select(q => new { Entry = q, PrereqCount = 0 })
+                                    .ToList();
                             var count = startQuestsWithPrereqs.Count;
 
                             if (count > 0)
@@ -1616,7 +1635,7 @@ namespace MoreCheckmarks
                                     questStartString += localizedName;
                                 }
 
-                                // Add prerequisite status (using pre-computed count)
+                                // Add prerequisite status (using pre-computed count, empty string if disabled)
                                 questStartString += MoreCheckmarksMod.GetPrerequisiteStatusString(questWithPrereq.PrereqCount);
 
                                 if (index != count - 1)
@@ -1645,12 +1664,19 @@ namespace MoreCheckmarks
                         var gotMoreThanOneCompleteQuest = false;
                         if (completeQuests != null)
                         {
-                            // Filter out completed quests, compute prerequisite counts, then sort
-                            var completeQuestsWithPrereqs = completeQuests.questData
-                                .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile))
-                                .Select(q => new { Entry = q, PrereqCount = MoreCheckmarksMod.GetRemainingPrerequisiteCount(q.Value.questId, profile) })
-                                .OrderBy(q => q.PrereqCount)
-                                .ToList();
+                            // Filter out completed quests
+                            var filteredCompleteQuests = completeQuests.questData
+                                .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile));
+
+                            // Only compute and sort by prereq counts if feature is enabled
+                            var completeQuestsWithPrereqs = MoreCheckmarksMod.showPrerequisiteQuests
+                                ? filteredCompleteQuests
+                                    .Select(q => new { Entry = q, PrereqCount = MoreCheckmarksMod.GetRemainingPrerequisiteCount(q.Value.questId, profile) })
+                                    .OrderBy(q => q.PrereqCount)
+                                    .ToList()
+                                : filteredCompleteQuests
+                                    .Select(q => new { Entry = q, PrereqCount = 0 })
+                                    .ToList();
                             var count = completeQuestsWithPrereqs.Count;
 
                             if (count > 0)
@@ -1686,7 +1712,7 @@ namespace MoreCheckmarks
                                     questCompleteString += localizedName;
                                 }
 
-                                // Add prerequisite status (using pre-computed count)
+                                // Add prerequisite status (using pre-computed count, empty string if disabled)
                                 questCompleteString += MoreCheckmarksMod.GetPrerequisiteStatusString(questWithPrereq.PrereqCount);
 
                                 if (index != count - 1)
