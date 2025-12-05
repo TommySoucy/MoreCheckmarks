@@ -1,82 +1,153 @@
-# More Checkmarks
+# MoreCheckmarks v1.6.0 - SPT 4.0 Update
 
-A mod for SPT-AKI that shows a colored checkmark on items needed to upgrade hideout modules and items that are on the player's wish list.
-Also shows a tooltip with the list of modules the item is needed for when cursor hovers over the checkmark.
-If the item is also needed for a quest or is found in raid (so should already have a checkmark) it will have the different color but will still show found in raid or the quest in the tooltip.
+> ⚠️ **Note:** This is a complete port to SPT 4.0. As with any major update, there may be bugs or unexpected behavior. Please be patient while we iron out any kinks, and don't hesitate to report any issues you encounter!
 
-- A **_RED_** checkmark means the item is needed in hideout but more is needed to fulfill the requirement of at least one of the modules you need it for.
-- A **_GREEN_** checkmark means the item is needed in hideout and fulfills the required amount of all the modules that need it. Note that this does not mean you have enough to upgrade all of the modules that need it. Say if you need 2 wires to upgrade a module and 3 wires to upgrade another, and you have 3 wires in total inside your stash, the checkmark will be blue but if you upgrade one of the modules, you wont have enough to upgrade the other and the checkmark will go back to red. This though, can now be changed in the config using the fulfilledAnyCanBeUpgraded setting. See config section below.
-- A **_BLUE_** checkmark means the item is on the wish list.
-- A **_MAGENTA_** checkmark means the item is needed for a trade/barter.
-- The tooltip will show individual color for each module, green, red, or blue, depending on whether you have enough of the item for the specific module or if it's on the wish list.
-- The tooltip will first show "found in raid cound"/"total count in stash"
-- The tooltip will also show the counts for specific hideout area requirements: (current count of the item in the stash / total count needed by all modules)
-- If the "Take" option is available when trying to pick up loose loot, it will be color coded as well.
-- The colors can be changed in the config. The ones above are default.
+---
 
-![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example0.png "Example")
-![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example1.png "Example")
-![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example2.png "Example")
-![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example3.png "Example")
-![alt text](https://github.com/TommySoucy/MoreCheckmarks/blob/main/hub/example4.png "Example")
+## Overview
+
+A mod for SPT that shows colored checkmarks on items needed for hideout upgrades, quests, wishlist, barters, and crafting recipes.
+
+The tooltip displays detailed information about what each item is needed for, including counts and specific module/quest/recipe names.
+
+---
+
+## Features
+
+### Checkmark Colors
+
+- **RED** - Item is needed for hideout but you need **more** to fulfill the requirement of at least one module
+- **GREEN** - Item is needed for hideout and you have **enough** to fulfill the requirements (behavior configurable - see `Fulfilled Any Can Be Upgraded` setting)
+- **YELLOW** - Item is needed for a quest/task
+- **BLUE** - Item is on your wishlist
+- **MAGENTA** - Item is needed for a trade/barter
+- **CYAN** - Item is needed for a crafting recipe
+
+All colors are fully customizable in the config.
+
+### Tooltip Information
+
+- Shows "found in raid count" / "total count in stash"
+- Individual color coding for each module (green, red, or blue) based on whether you have enough for that specific module
+- Shows counts: (current count in stash / total count needed by all modules)
+- Lists all quests, hideout modules, barters, and crafts the item is needed for
+
+### "Take" Action Color Coding
+
+If the "Take" option is available when picking up loose loot, it will be color coded to match the checkmark system.
+
+### Quest Item Handling
+
+If an item is needed for a quest or is found in raid (so would already have a checkmark), it will show the appropriate color but still display the quest information in the tooltip.
+
+---
+
+## What's New in v2.0.0
+
+### 🎮 F12 In-Game Configuration Menu
+
+All settings are now accessible through BepInEx's F12 configuration menu! No more editing config files manually.
+
+- **Live color pickers** with RGB sliders
+- **Organized categories**: Hideout, Quests, Barter & Craft, Priority, Colors
+- **Hoverable descriptions** explaining each setting
+- Changes apply after switching menus (e.g., leave stash → main menu → return)
+
+### 🎯 Quest Prerequisite Display
+
+When enabled, the tooltip now shows how many prerequisite quests you need to complete before each quest becomes available:
+
+- **Color-coded status**:
+  - 🟢 **Green** `(0 prereqs)` - Quest is available now
+  - 🟡 **Yellow** `(1-9 prereqs)` - Quest is close to being unlocked
+  - ⚪ **Gray** `(10+ prereqs)` - Quest is far away (e.g., Collector)
+- **Smart sorting** - Quests are sorted by prerequisite count, so items needed for soon-to-be-available quests appear first
+- Can be disabled in settings if you prefer the classic view
+
+---
 
 ## Installation
 
-1. Download latest from [releases](https://github.com/TommySoucy/MoreCheckmarks/releases)
-2. Download and install the latest (**_not pre-release_**) version of [BepinEx](https://github.com/BepInEx/BepInEx/releases)
-3. Extract zip file into the game folder (Inside you game folder you should end up with /BepinEx/plugins/MoreCheckmarks and /user/mods/MoreCheckmarksBackend)
+1. Download and extract the zip file into your SPT game folder
+2. You should end up with:
+   - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarks.dll`
+   - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarksAssets`
+   - `SPT/user/mods/MoreCheckmarksBackend/MoreCheckmarksBackend.dll`
 
-## Config
+---
 
-All settings are accessible via the **BepInEx F12 in-game menu**. Press F12 while in-game to open the configuration manager and find "MoreCheckmarks" in the list.
+## Configuration
 
-**Note:** Changes apply after switching menus (e.g., go to main menu, then back to stash).
+Press **F12** in-game to access all settings. Below are the available options:
 
 ### Hideout Settings
 
-- **_Fulfilled Any Can Be Upgraded_**: When **true**, shows fulfilled checkmark when AT LEAST ONE hideout module can be upgraded. When **false**, shows fulfilled only when ALL modules can be upgraded.
-
-- **_Show Future Modules Levels_**: Show requirements for future hideout module levels instead of only the next one.
+| Setting                           | Description                                                                                                                                                                   |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fulfilled Any Can Be Upgraded** | When TRUE, shows fulfilled checkmark when AT LEAST ONE hideout module can be upgraded. When FALSE, shows fulfilled only when ALL modules requiring this item can be upgraded. |
+| **Show Future Module Levels**     | Show requirements for future hideout module levels instead of only the next one.                                                                                              |
 
 ### Quest Settings
 
-- **_Include Future Quests_**: Consider future quests when checking which quests an item is required for. If false, behaves like vanilla.
-
-- **_Show Prerequisite Count_**: Show the number of prerequisite quests needed before each quest becomes available. Quests are sorted by prerequisite count with color coding:
-  - **Green** `(0 prereqs)` - Quest is available now
-  - **Yellow** `(1-9 prereqs)` - Quest is close to being available
-  - **Gray** `(10+ prereqs)` - Quest is far away
-    Set to **false** to disable and show only quest names.
+| Setting                     | Description                                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Include Future Quests**   | Consider future quests when checking which quests an item is required for. If false, behaves like vanilla.        |
+| **Show Prerequisite Count** | Show the number of prerequisite quests needed before each quest becomes available, with color coding and sorting. |
 
 ### Barter & Craft Settings
 
-- **_Show Barter_**: Show checkmark and tooltip for barters/trades this item is needed for.
-
-- **_Show Craft_**: Show checkmark and tooltip for crafting recipes this item is needed for.
-
-- **_Show Future Craft_**: Show crafting recipes that are not yet unlocked.
+| Setting               | Description                                                              |
+| --------------------- | ------------------------------------------------------------------------ |
+| **Show Barter**       | Show checkmark and tooltip for barter/trades this item is needed for.    |
+| **Show Craft**        | Show checkmark and tooltip for crafting recipes this item is needed for. |
+| **Show Future Craft** | Show crafting recipes for hideout areas of higher level than current.    |
 
 ### Priority Settings
 
-These determine which checkmark color takes precedence when an item is needed for multiple things. Higher number = higher priority (range 0-10).
+These settings decide which checkmark color to display when an item is needed for multiple things. Higher number = higher priority.
 
-- **_Quest Priority_** (default: 4)
-- **_Hideout Priority_** (default: 3)
-- **_Wishlist Priority_** (default: 2)
-- **_Barter Priority_** (default: 1)
-- **_Craft Priority_** (default: 0)
+| Setting               | Description                      |
+| --------------------- | -------------------------------- |
+| **Quest Priority**    | Priority for quest checkmarks    |
+| **Hideout Priority**  | Priority for hideout checkmarks  |
+| **Wishlist Priority** | Priority for wishlist checkmarks |
+| **Barter Priority**   | Priority for barter checkmarks   |
+| **Craft Priority**    | Priority for craft checkmarks    |
 
 ### Color Settings
 
-All colors can be customized using RGB sliders in the F12 menu:
+All colors can be customized using RGB sliders. Default colors:
 
-- **_Need More Color_** - Light red by default, appears when you need more of an item
-- **_Fulfilled Color_** - Light green by default, appears when requirements are fulfilled
-- **_Wishlist Color_** - Light blue by default, for wishlist items
-- **_Barter Color_** - Magenta by default, for barter items
-- **_Craft Color_** - Cyan by default, for craft items
+| Setting             | Default     |
+| ------------------- | ----------- |
+| **Need More Color** | Light Red   |
+| **Fulfilled Color** | Light Green |
+| **Wishlist Color**  | Light Blue  |
+| **Barter Color**    | Magenta     |
+| **Craft Color**     | Cyan        |
 
-## Used libraries
+---
 
-- Harmony
-- Bepinex
+## Compatibility
+
+- **SPT Version**: 4.0.x
+- **Required**: BepInEx (included with SPT)
+
+---
+
+## Credits
+
+Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Bewa.
+
+---
+
+## Changelog
+
+### v2.0.0
+
+- Full port to SPT 4.0
+- Added F12 in-game configuration menu (replaces Config.json)
+- Added quest prerequisite count display with color coding
+- Added smart sorting of quests by prerequisite count
+- Fixed quest filtering to properly include future quests
+- Various bug fixes and improvements

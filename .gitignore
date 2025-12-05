@@ -31,6 +31,8 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+dist/
+dist_example/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -388,3 +390,7 @@ FodyWeavers.xsd
 *.sln.iml
 hub/CheckmarkThumb.png
 hub/Untitled-1.png
+
+
+reference_*
+SESSION_SUMMARY.md

@@ -5,26 +5,44 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <OutputType>Library</OutputType>
-        <Version>0.0.1</Version>
-        <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
+        <Version>2.0.0</Version>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <PlatformTarget>x64</PlatformTarget>
+        <!-- Don't generate PDB or other extra files -->
+        <DebugType>none</DebugType>
+        <DebugSymbols>false</DebugSymbols>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <!-- Don't copy dependencies to output -->
+        <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     </PropertyGroup>
+    
+    <!-- Build output goes to dist folder, matching SPT structure -->
     <PropertyGroup>
-    <SPTPath>E:\Games\SPT</SPTPath>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
+        <OutputPath>..\dist\SPT\user\mods\MoreCheckmarksBackend\</OutputPath>
+    </PropertyGroup>
+    
+    <!-- Optional: Also copy to local SPT installation for testing -->
+    <PropertyGroup>
+        <SPTPath>C:\SPT</SPTPath>
+    </PropertyGroup>
+    
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-      <WarningLevel>8</WarningLevel>
+        <WarningLevel>8</WarningLevel>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-      <WarningLevel>8</WarningLevel>
+        <WarningLevel>8</WarningLevel>
     </PropertyGroup>
+    
     <ItemGroup>
-        <PackageReference Include="SPTarkov.Common" Version="4.0.0" />
-        <PackageReference Include="SPTarkov.DI" Version="4.0.0" />
-        <PackageReference Include="SPTarkov.Server.Core" Version="4.0.0" />
+        <PackageReference Include="SPTarkov.Common" Version="4.0.0" PrivateAssets="all" />
+        <PackageReference Include="SPTarkov.DI" Version="4.0.0" PrivateAssets="all" />
+        <PackageReference Include="SPTarkov.Server.Core" Version="4.0.0" PrivateAssets="all" />
     </ItemGroup>
-    <Target Name="AfterBuild">
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SPTPath)\BepInEx\plugins\MoreCheckmarks" />
+    
+    <!-- Copy to local SPT installation after build (optional, for testing) -->
+    <Target Name="CopyToSPT" AfterTargets="Build" Condition="Exists('$(SPTPath)')">
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SPTPath)\SPT\user\mods\MoreCheckmarksBackend" />
     </Target>
 </Project>

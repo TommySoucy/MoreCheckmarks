@@ -13,76 +13,125 @@
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <LangVersion>7.3</LangVersion>
+    <!-- Don't generate PDB files -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <!-- Don't copy app.config or runtime assemblies -->
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
+    <!-- Prevent copying .NET Framework facade assemblies -->
+    <ExcludeDeploymentUrl>true</ExcludeDeploymentUrl>
   </PropertyGroup>
+  
+  <!-- Build output goes to dist folder, matching SPT/BepInEx structure -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\dist\BepInEx\plugins\MoreCheckmarks\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\dist\BepInEx\plugins\MoreCheckmarks\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  
+  <!-- Local SPT path - update this to match your SPT installation -->
   <PropertyGroup>
-    <SPTPath>E:\Games\SPT</SPTPath>
+    <SPTPath>C:\SPT</SPTPath>
   </PropertyGroup>
+  
   <ItemGroup>
     <Compile Include="MoreCheckmarks.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  
+  <!-- Assets to copy alongside the DLL (Config.json no longer needed - using BepInEx config) -->
+  <ItemGroup>
+    <Content Include="Assets\MoreCheckmarksAssets">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>MoreCheckmarksAssets</Link>
+    </Content>
+  </ItemGroup>
+  
+  <!-- Reference assemblies - Private=false prevents copying to output -->
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\..\..\SPT\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>$(SPTPath)\BepInEx\core\0Harmony.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\SPT\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>..\..\..\..\SPT\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>$(SPTPath)\BepInEx\core\BepInEx.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Comfort">
-      <HintPath>..\..\..\..\SPT\EscapeFromTarkov_Data\Managed\Comfort.dll</HintPath>
+      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Comfort.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\SPT\EscapeFromTarkov_Data\Managed\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Sirenix.Serialization">
-      <HintPath>..\..\..\..\SPT\EscapeFromTarkov_Data\Managed\Sirenix.Serialization.dll</HintPath>
+      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Sirenix.Serialization.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="spt-common">
-      <HintPath>..\..\..\..\SPT\BepInEx\plugins\spt\spt-common.dll</HintPath>
+      <HintPath>$(SPTPath)\BepInEx\plugins\spt\spt-common.dll</HintPath>
+      <Private>false</Private>
     </Reference>
-    <Reference Include="System" />
+    <Reference Include="System">
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>..\..\..\..\SPT\EscapeFromTarkov_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\..\..\SPT\EscapeFromTarkov_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>..\..\..\..\SPT\EscapeFromTarkov_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\..\SPT\EscapeFromTarkov_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>..\..\..\..\SPT\EscapeFromTarkov_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="AfterBuild">
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SPTPath)\BepInEx\plugins\MoreCheckmarks" />
+  
+  <!-- Clean up unwanted files from output (System.*.dll facade assemblies) -->
+  <Target Name="CleanupOutput" AfterTargets="Build">
+    <ItemGroup>
+      <FilesToDelete Include="$(OutputPath)System.*.dll" />
+      <FilesToDelete Include="$(OutputPath)*.pdb" />
+      <FilesToDelete Include="$(OutputPath)*.config" />
+      <FilesToDelete Include="$(OutputPath)Config.json" />
+    </ItemGroup>
+    <Delete Files="@(FilesToDelete)" ContinueOnError="true" />
+    <Message Text="Cleaned up $(OutputPath)" Importance="high" />
+  </Target>
+  
+  <!-- Optional: Copy to local SPT installation for testing -->
+  <Target Name="CopyToSPT" AfterTargets="CleanupOutput" Condition="Exists('$(SPTPath)')">
+    <Copy SourceFiles="$(OutputPath)MoreCheckmarks.dll" DestinationFolder="$(SPTPath)\BepInEx\plugins\MoreCheckmarks" />
+    <Copy SourceFiles="$(OutputPath)MoreCheckmarksAssets" DestinationFolder="$(SPTPath)\BepInEx\plugins\MoreCheckmarks" />
   </Target>
 </Project>
