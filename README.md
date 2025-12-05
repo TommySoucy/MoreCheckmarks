@@ -6,7 +6,7 @@
 
 ## Known Issues
 
-- On brand new profiles, quest-related checkmarks may not appear until you accept a quest; a game restart after accepting can also be required.
+- On brand new profiles, checkmarks may not appear until you accept a quest; a game restart after accepting can also be required.
 
 ---
 
