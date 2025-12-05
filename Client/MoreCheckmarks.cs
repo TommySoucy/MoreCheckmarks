@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using Comfort.Common;
 using EFT;
 using EFT.Hideout;
@@ -38,27 +39,47 @@ namespace MoreCheckmarks
         public const string pluginName = "MoreCheckmarks";
         public const string pluginVersion = "1.6.0";
 
-        // Config settings
-        public static bool fulfilledAnyCanBeUpgraded;
-        public static int questPriority = 2;
-        public static int hideoutPriority = 3;
-        public static int wishlistPriority = 4;
-        public static int barterPriority;
-        public static int craftPriority = 1;
-        public static bool showFutureModulesLevels;
-        public static bool showBarter = true;
-        public static bool showCraft = true;
-        public static bool showFutureCraft = true;
+        // Config Entries (BepInEx F12 menu)
+        public static ConfigEntry<bool> configFulfilledAnyCanBeUpgraded;
+        public static ConfigEntry<int> configQuestPriority;
+        public static ConfigEntry<int> configHideoutPriority;
+        public static ConfigEntry<int> configWishlistPriority;
+        public static ConfigEntry<int> configBarterPriority;
+        public static ConfigEntry<int> configCraftPriority;
+        public static ConfigEntry<bool> configShowFutureModulesLevels;
+        public static ConfigEntry<bool> configShowBarter;
+        public static ConfigEntry<bool> configShowCraft;
+        public static ConfigEntry<bool> configShowFutureCraft;
+        public static ConfigEntry<Color> configNeedMoreColor;
+        public static ConfigEntry<Color> configFulfilledColor;
+        public static ConfigEntry<Color> configWishlistColor;
+        public static ConfigEntry<Color> configBarterColor;
+        public static ConfigEntry<Color> configCraftColor;
+        public static ConfigEntry<bool> configIncludeFutureQuests;
+        public static ConfigEntry<bool> configShowPrerequisiteQuests;
+
+        // Config settings (derived from ConfigEntry values)
+        public static bool fulfilledAnyCanBeUpgraded => configFulfilledAnyCanBeUpgraded.Value;
+        public static int questPriority => configQuestPriority.Value;
+        public static int hideoutPriority => configHideoutPriority.Value;
+        public static int wishlistPriority => configWishlistPriority.Value;
+        public static int barterPriority => configBarterPriority.Value;
+        public static int craftPriority => configCraftPriority.Value;
+        public static bool showFutureModulesLevels => configShowFutureModulesLevels.Value;
+        public static bool showBarter => configShowBarter.Value;
+        public static bool showCraft => configShowCraft.Value;
+        public static bool showFutureCraft => configShowFutureCraft.Value;
+        public static bool includeFutureQuests => configIncludeFutureQuests.Value;
+        public static bool showPrerequisiteQuests => configShowPrerequisiteQuests.Value;
+
+        // Parsed colors (updated when config changes)
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
         public static Color fulfilledColor = new Color(0.30588f, 1, 0.27843f);
         public static Color wishlistColor = new Color(0, 0, 1);
         public static Color barterColor = new Color(1, 0, 1);
         public static Color craftColor = new Color(0, 1, 1);
-        public static bool includeFutureQuests = true;
-        public static bool showPrerequisiteQuests = true;
 
         // Assets
-        public static JObject config;
         public static Sprite whiteCheckmark;
         private static TMP_FontAsset benderBold;
         public static string modPath;
@@ -130,7 +151,7 @@ namespace MoreCheckmarks
 
             modPath = modPath.Replace('\\', '/');
 
-            LoadConfig();
+            BindConfig();
 
             LoadAssets();
 
@@ -831,120 +852,172 @@ namespace MoreCheckmarks
             return false;
         }
 
-        private void LoadConfig()
+        private void BindConfig()
         {
-            try
-            {
-                config = JObject.Parse(File.ReadAllText(modPath + "/Config.json"));
+            // Note about changes requiring menu refresh
+            Config.Bind(
+                "0. Important Note",
+                "Refresh Required",
+                "Switch menus to apply changes",
+                new ConfigDescription("Changes don't apply immediately. To see updates: leave your current menu (e.g. stash), go to main menu, then return.", null, new ConfigurationManagerAttributes { ReadOnly = true, HideDefaultButton = true }));
 
-                if (config["fulfilledAnyCanBeUpgraded"] != null)
-                {
-                    fulfilledAnyCanBeUpgraded = (bool)config["fulfilledAnyCanBeUpgraded"];
-                }
+            // Hideout Settings
+            configFulfilledAnyCanBeUpgraded = Config.Bind(
+                "Hideout",
+                "Fulfilled Any Can Be Upgraded",
+                true,
+                "When TRUE, shows fulfilled checkmark when AT LEAST ONE hideout module can be upgraded. When FALSE, shows fulfilled only when ALL modules can be upgraded.");
 
-                if (config["questPriority"] != null)
-                {
-                    questPriority = (int)config["questPriority"];
-                    priorities[0] = questPriority;
-                }
+            configShowFutureModulesLevels = Config.Bind(
+                "Hideout",
+                "Show Future Module Levels",
+                true,
+                "Show requirements for future hideout module levels instead of only the next one.");
 
-                if (config["hideoutPriority"] != null)
-                {
-                    hideoutPriority = (int)config["hideoutPriority"];
-                    priorities[1] = hideoutPriority;
-                }
+            // Quest Settings
+            configIncludeFutureQuests = Config.Bind(
+                "Quests",
+                "Include Future Quests",
+                true,
+                "Consider future quests when checking which quests an item is required for. If false, behaves like vanilla.");
 
-                if (config["wishlistPriority"] != null)
-                {
-                    wishlistPriority = (int)config["wishlistPriority"];
-                    priorities[2] = wishlistPriority;
-                }
+            configShowPrerequisiteQuests = Config.Bind(
+                "Quests",
+                "Show Prerequisite Count",
+                true,
+                "Show the number of prerequisite quests needed before each quest becomes available. Quests are sorted by prerequisite count with color coding: Green (0 prereqs), Yellow (1-9), Gray (10+).");
 
-                if (config["barterPriority"] != null)
-                {
-                    barterPriority = (int)config["barterPriority"];
-                    priorities[3] = barterPriority;
-                }
+            // Barter & Craft Settings
+            configShowBarter = Config.Bind(
+                "Barter & Craft",
+                "Show Barter",
+                true,
+                "Show checkmark and tooltip for barters/trades this item is needed for.");
 
-                if (config["craftPriority"] != null)
-                {
-                    craftPriority = (int)config["craftPriority"];
-                    priorities[4] = craftPriority;
-                }
+            configShowCraft = Config.Bind(
+                "Barter & Craft",
+                "Show Craft",
+                true,
+                "Show checkmark and tooltip for crafting recipes this item is needed for.");
 
-                if (config["showFutureModulesLevels"] != null)
-                {
-                    showFutureModulesLevels = (bool)config["showFutureModulesLevels"];
-                }
+            configShowFutureCraft = Config.Bind(
+                "Barter & Craft",
+                "Show Future Craft",
+                true,
+                "Show crafting recipes that are not yet unlocked.");
 
-                if (config["showBarter"] != null)
-                {
-                    showBarter = (bool)config["showBarter"];
-                }
+            // Priority Settings (higher = takes precedence, ordered by default priority)
+            configQuestPriority = Config.Bind(
+                "Priority",
+                "Quest Priority",
+                4,
+                new ConfigDescription("Priority for quest checkmarks. Higher number = higher priority when item is needed for multiple things.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 5 }));
 
-                if (config["needMoreColor"] != null)
-                {
-                    needMoreColor = new Color((float)config["needMoreColor"][0], (float)config["needMoreColor"][1],
-                        (float)config["needMoreColor"][2]);
-                }
+            configHideoutPriority = Config.Bind(
+                "Priority",
+                "Hideout Priority",
+                3,
+                new ConfigDescription("Priority for hideout checkmarks. Higher number = higher priority.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 4 }));
 
-                if (config["fulfilledColor"] != null)
-                {
-                    fulfilledColor = new Color((float)config["fulfilledColor"][0], (float)config["fulfilledColor"][1],
-                        (float)config["fulfilledColor"][2]);
-                }
+            configWishlistPriority = Config.Bind(
+                "Priority",
+                "Wishlist Priority",
+                2,
+                new ConfigDescription("Priority for wishlist checkmarks. Higher number = higher priority.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 3 }));
 
-                if (config["wishlistColor"] != null)
-                {
-                    wishlistColor = new Color((float)config["wishlistColor"][0], (float)config["wishlistColor"][1],
-                        (float)config["wishlistColor"][2]);
-                    colors[2] = wishlistColor;
-                }
+            configBarterPriority = Config.Bind(
+                "Priority",
+                "Barter Priority",
+                1,
+                new ConfigDescription("Priority for barter checkmarks. Higher number = higher priority.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 2 }));
 
-                if (config["barterColor"] != null)
-                {
-                    barterColor = new Color((float)config["barterColor"][0], (float)config["barterColor"][1],
-                        (float)config["barterColor"][2]);
-                    colors[3] = barterColor;
-                }
+            configCraftPriority = Config.Bind(
+                "Priority",
+                "Craft Priority",
+                0,
+                new ConfigDescription("Priority for craft checkmarks. Higher number = higher priority.", 
+                    new AcceptableValueRange<int>(0, 10), 
+                    new ConfigurationManagerAttributes { Order = 1 }));
 
-                if (config["craftColor"] != null)
-                {
-                    craftColor = new Color((float)config["craftColor"][0], (float)config["craftColor"][1],
-                        (float)config["craftColor"][2]);
-                    colors[4] = craftColor;
-                }
+            // Color Settings (RGB sliders in F12 menu)
+            configNeedMoreColor = Config.Bind(
+                "Colors",
+                "Need More Color",
+                new Color(1f, 0.37255f, 0.37255f),
+                "Color for items where you need more (default: light red)");
 
-                if (config["includeFutureQuests"] != null)
-                {
-                    includeFutureQuests = (bool)config["includeFutureQuests"];
-                }
+            configFulfilledColor = Config.Bind(
+                "Colors",
+                "Fulfilled Color",
+                new Color(0.30588f, 1f, 0.27843f),
+                "Color for items where requirement is fulfilled (default: light green)");
 
-                if (config["showPrerequisiteQuests"] != null)
-                {
-                    showPrerequisiteQuests = (bool)config["showPrerequisiteQuests"];
-                }
+            configWishlistColor = Config.Bind(
+                "Colors",
+                "Wishlist Color",
+                new Color(0.23137f, 0.93725f, 1f),
+                "Color for wishlist items (default: light blue)");
 
-                if (config["showCraft"] != null)
-                {
-                    showCraft = (bool)config["showCraft"];
-                }
+            configBarterColor = Config.Bind(
+                "Colors",
+                "Barter Color",
+                new Color(1f, 0f, 1f),
+                "Color for barter items (default: magenta)");
 
-                if (config["showFutureCraft"] != null)
-                {
-                    showFutureCraft = (bool)config["showFutureCraft"];
-                }
+            configCraftColor = Config.Bind(
+                "Colors",
+                "Craft Color",
+                new Color(0f, 1f, 1f),
+                "Color for craft items (default: cyan)");
 
-                Logger.LogInfo("Configs loaded");
-            }
-            catch (FileNotFoundException)
-            {
-                /* In case of file not found, we don't want to do anything, user prob deleted it for a reason */
-            }
-            catch (Exception ex)
-            {
-                LogError("Couldn't read MoreCheckmarksConfig.txt, using default settings instead. Error: " + ex.Message);
-            }
+            // Subscribe to config changes
+            configNeedMoreColor.SettingChanged += (s, e) => UpdateColors();
+            configFulfilledColor.SettingChanged += (s, e) => UpdateColors();
+            configWishlistColor.SettingChanged += (s, e) => UpdateColors();
+            configBarterColor.SettingChanged += (s, e) => UpdateColors();
+            configCraftColor.SettingChanged += (s, e) => UpdateColors();
+            configQuestPriority.SettingChanged += (s, e) => UpdatePriorities();
+            configHideoutPriority.SettingChanged += (s, e) => UpdatePriorities();
+            configWishlistPriority.SettingChanged += (s, e) => UpdatePriorities();
+            configBarterPriority.SettingChanged += (s, e) => UpdatePriorities();
+            configCraftPriority.SettingChanged += (s, e) => UpdatePriorities();
+
+            // Initialize colors and priorities
+            UpdateColors();
+            UpdatePriorities();
+
+            Logger.LogInfo("Configs loaded");
+        }
+
+        private static void UpdateColors()
+        {
+            needMoreColor = configNeedMoreColor.Value;
+            fulfilledColor = configFulfilledColor.Value;
+            wishlistColor = configWishlistColor.Value;
+            barterColor = configBarterColor.Value;
+            craftColor = configCraftColor.Value;
+            
+            // Update the colors array
+            colors[2] = wishlistColor;
+            colors[3] = barterColor;
+            colors[4] = craftColor;
+        }
+
+        private static void UpdatePriorities()
+        {
+            priorities[0] = questPriority;
+            priorities[1] = hideoutPriority;
+            priorities[2] = wishlistPriority;
+            priorities[3] = barterPriority;
+            priorities[4] = craftPriority;
         }
 
         private void LoadAssets()
@@ -2133,5 +2206,22 @@ namespace MoreCheckmarks
         {
             MoreCheckmarksMod.modInstance.LoadData();
         }
+    }
+
+    /// <summary>
+    /// Class to pass settings to the ConfigurationManager.
+    /// Used by BepInEx.ConfigurationManager to control how settings appear in the F12 menu.
+    /// </summary>
+    internal sealed class ConfigurationManagerAttributes
+    {
+        public bool? ReadOnly;
+        public bool? HideDefaultButton;
+        public bool? HideSettingName;
+        public string Category;
+        public int? Order;
+        public bool? Browsable;
+        public string Description;
+        public object DefaultValue;
+        public bool? IsAdvanced;
     }
 }

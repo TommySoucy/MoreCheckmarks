@@ -28,30 +28,53 @@ If the item is also needed for a quest or is found in raid (so should already ha
 
 ## Config
 
-There are some settings available in the provided config file described below:
+All settings are accessible via the **BepInEx F12 in-game menu**. Press F12 while in-game to open the configuration manager and find "MoreCheckmarks" in the list.
 
-- **_fulfilledAnyCanBeUpgraded_**: This setting will decide when to display a fulfilled checkmark for a hideout required item. 
-      **true** means to display fulfilled when AT LEAST ONE of the hideout modules requiring this item can be upgraded with the amount of the item there is in stash
-      **false** means to display fulfilled when ALL of the hideout modules requiring this item can be upgraded
-      
-- **_questPrioriry_**, **_hideoutPriority_**, **_wishlistPriority_**, and **_barterPriority_**: These settings will decide which checkmark to give priority to. If the item is needed for a quest, needed for a hideout module, and is on the wishlist, the one with the highest priority will be displayed. These are integers, and the greater the number, the higher the priority.
-      
-- **_showLockedModules_**: This setting will decide whether to show a hideout checkmark on an item required for a hideout module that is still locked for construction. This is an option because some modules like the bitcoin farm require a lot of items but are locked for a long time and maybe you just don't want to have hideout checkmark on a bunch of random stuff you won't need for a while.
+**Note:** Changes apply after switching menus (e.g., go to main menu, then back to stash).
 
-- **_showFutureModulesLevels_**: This setting will decide whether to show requirements for future hideout module levels instead of only the next one.
+### Hideout Settings
 
-- **_showBarter_**: This setting will decide whether to show checkmark and tooltip for barters/trades this item is needed for.
+- **_Fulfilled Any Can Be Upgraded_**: When **true**, shows fulfilled checkmark when AT LEAST ONE hideout module can be upgraded. When **false**, shows fulfilled only when ALL modules can be upgraded.
 
-- **_needMoreColor_**, **_fulfilledColor_**, **_wishlistColor_**, and **_barterColor_**: These settings are used to changed the colors of the different checkmarks. needMoreColor is a light red by default, appears when you still need more of that item. fulfilledColor is a light green by default, appears when you fulfilled the requirements of all modules that require it depending on fulfilledAnyCanBeUpgraded setting. Please keep the format (value,value,value) (note the lack of spaces) since that is the one that the values will be parsed in. Otherwise the settings won't work. The values should always be in RGB in range [0 - 1]
+- **_Show Future Modules Levels_**: Show requirements for future hideout module levels instead of only the next one.
 
-- **_includeFutureQuests_**: This setting will decide whether to consider future quests when checking which quests an item is required for. If false, will just be as vanilla.
+### Quest Settings
 
-- **_showPrerequisiteQuests_**: This setting will decide whether to show the number of prerequisite quests needed before each quest becomes available in the tooltip. When enabled, quests are sorted by prerequisite count (closest to available first) and display color-coded status:
-    - **Green** `(0 prereqs)` - Quest is available now
-    - **Yellow** `(1-9 prereqs)` - Quest is close to being available
-    - **Gray** `(10+ prereqs)` - Quest is far away
-    
-    Set to **false** to disable this feature and show only quest names without prerequisite information.
+- **_Include Future Quests_**: Consider future quests when checking which quests an item is required for. If false, behaves like vanilla.
+
+- **_Show Prerequisite Count_**: Show the number of prerequisite quests needed before each quest becomes available. Quests are sorted by prerequisite count with color coding:
+  - **Green** `(0 prereqs)` - Quest is available now
+  - **Yellow** `(1-9 prereqs)` - Quest is close to being available
+  - **Gray** `(10+ prereqs)` - Quest is far away
+    Set to **false** to disable and show only quest names.
+
+### Barter & Craft Settings
+
+- **_Show Barter_**: Show checkmark and tooltip for barters/trades this item is needed for.
+
+- **_Show Craft_**: Show checkmark and tooltip for crafting recipes this item is needed for.
+
+- **_Show Future Craft_**: Show crafting recipes that are not yet unlocked.
+
+### Priority Settings
+
+These determine which checkmark color takes precedence when an item is needed for multiple things. Higher number = higher priority (range 0-10).
+
+- **_Quest Priority_** (default: 4)
+- **_Hideout Priority_** (default: 3)
+- **_Wishlist Priority_** (default: 2)
+- **_Barter Priority_** (default: 1)
+- **_Craft Priority_** (default: 0)
+
+### Color Settings
+
+All colors can be customized using RGB sliders in the F12 menu:
+
+- **_Need More Color_** - Light red by default, appears when you need more of an item
+- **_Fulfilled Color_** - Light green by default, appears when requirements are fulfilled
+- **_Wishlist Color_** - Light blue by default, for wishlist items
+- **_Barter Color_** - Magenta by default, for barter items
+- **_Craft Color_** - Cyan by default, for craft items
 
 ## Used libraries
 
