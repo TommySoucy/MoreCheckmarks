@@ -1,6 +1,12 @@
-# MoreCheckmarks v1.6.0 - SPT 4.0 Update
+# MoreCheckmarks v2.0.0 - SPT 4.0 Update
 
 > ⚠️ **Note:** This is a complete port to SPT 4.0. As with any major update, there may be bugs or unexpected behavior. Please be patient while we iron out any kinks, and don't hesitate to report any issues you encounter!
+
+---
+
+## Known Issues
+
+- On brand new profiles, quest-related checkmarks may not appear until you accept a quest; a game restart after accepting can also be required.
 
 ---
 
