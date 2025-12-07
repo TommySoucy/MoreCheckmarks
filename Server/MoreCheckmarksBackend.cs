@@ -63,7 +63,7 @@ public class MoreCheckmarksServer(
         return Task.CompletedTask;
     }
 
-    public Quest[]? HandleQuests(MongoId sessionId) 
+    public Quest[] HandleQuests(MongoId sessionId) 
     {
         logger.Info("MoreCheckmarks making quest data request");
         var quests = new List<Quest>();
@@ -72,33 +72,44 @@ public class MoreCheckmarksServer(
 
         if (profile == null)
         {
-            logger.Error("Unable to fetch quests for MoreCheckmarks: Profile is null.");
-            return null;
+            logger.Warning("MoreCheckmarks: Profile is null (not loaded yet?). Returning empty quest list.");
+            return [];
         }
-        var profileQuests = profile.Quests;
-        if (profileQuests == null)
-        {
-            logger.Error("Unable to fetch quests for MoreCheckmarks: Profile quests are null.");
-            return null;
-        }
-        if (profileQuests.Count == 0)
-        {
-            logger.Error("Unable to fetch quests for MoreCheckmarks: No quests available.");
-            return null;
-        }
+        
         var profileInfo = profile.Info;
         if (profileInfo == null)
         {
-            logger.Error("Unable to fetch quests for MoreCheckmarks: Profile Info is null.");
-            return null;
+            logger.Warning("MoreCheckmarks: Profile Info is null. Returning empty quest list.");
+            return [];
         }
         var profileSide = profileInfo.Side;
         if (profileSide == null)
         {
-            logger.Error("Unable to fetch quests for MoreCheckmarks: Profile Side is null.");
-            return null;
+            logger.Warning("MoreCheckmarks: Profile Side is null. Returning empty quest list.");
+            return [];
+        }
+        
+        // Check if profile has quest data (new profiles may not have any yet)
+        var profileQuests = profile.Quests;
+        bool hasQuestData = profileQuests != null && profileQuests.Count > 0;
+        
+        if (!hasQuestData)
+        {
+            // New profile with no quest data - return ALL quests for their side
+            // (since they haven't completed any, all quests should show checkmarks)
+            logger.Info("MoreCheckmarks: No quest data (new profile). Returning all quests as incomplete.");
+            foreach (var quest in allQuests)
+            {
+                if (!QuestIsForOtherSide(profileSide, quest.Id))
+                {
+                    quests.Add(quest);
+                }
+            }
+            logger.Info($"Got {quests.Count} quests for MoreCheckmarks (all quests for new profile)");
+            return quests.ToArray();
         }
 
+        // Profile has quest data - filter by completion status
         foreach (var quest in allQuests)
         {
             if (QuestIsForOtherSide(profileSide, quest.Id))

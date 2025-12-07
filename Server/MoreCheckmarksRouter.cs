@@ -91,12 +91,14 @@ public class CustomStaticRouter : StaticRouter
         try
         {
             var quests = server!.HandleQuests(sessionId);
-            return new ValueTask<string>(jsonUtil!.Serialize(quests!)!);
+            // Always returns array (empty or with quests), never null
+            return new ValueTask<string>(jsonUtil!.Serialize(quests)!);
         }
-        catch
+        catch (Exception ex)
         {
-            logger?.Error("Exception when handling QuestsRoute!");
-            return new ValueTask<string>(httpResponseUtil!.NullResponse());
+            logger?.Error($"Exception when handling QuestsRoute: {ex.Message}");
+            // Return empty array instead of null to prevent client-side parsing errors
+            return new ValueTask<string>("[]");
         }
     }
 

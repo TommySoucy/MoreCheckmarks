@@ -111,6 +111,9 @@ namespace MoreCheckmarks
         public static Dictionary<string, HashSet<string>> questPrerequisites = new Dictionary<string, HashSet<string>>();
         public static Dictionary<string, HashSet<string>> prereqCache = new Dictionary<string, HashSet<string>>();
         public static HashSet<string> completedQuestIds = new HashSet<string>();
+        
+        // Flag to track if quest data needs to be reloaded (e.g., profile data wasn't available on first load)
+        public static bool questDataNeedsReload = false;
 
         public static JObject itemData;
         public static JObject locales;
@@ -164,8 +167,8 @@ namespace MoreCheckmarks
         {
             LogInfo("Loading data");
             LogInfo("\tQuests");
-            var questData = JArray.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/quests"));
-            LogInfo(questData.ToString());
+            
+            // Clear all quest data first - this ensures we start fresh even if loading fails
             questDataStartByItemTemplateID.Clear();
             neededStartItemsByQuest.Clear();
             questDataCompleteByItemTemplateID.Clear();
@@ -173,6 +176,36 @@ namespace MoreCheckmarks
             questPrerequisites.Clear();
             prereqCache.Clear();
             completedQuestIds.Clear();
+            
+            JArray questData;
+            try
+            {
+                var questResponse = RequestHandler.GetJson("/MoreCheckmarksRoutes/quests");
+                if (string.IsNullOrEmpty(questResponse) || questResponse == "null")
+                {
+                    LogInfo("Quest data response was empty or null (new profile?). Quest checkmarks will be unavailable until data is loaded.");
+                    questData = new JArray();
+                }
+                else
+                {
+                    questData = JArray.Parse(questResponse);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError($"Failed to parse quest data: {ex.Message}. Quest checkmarks will be unavailable.");
+                questData = new JArray();
+            }
+            
+            LogInfo($"Loaded {questData.Count} quests");
+            
+            // If quest data is empty, flag for reload on next item view (handles new profile case)
+            // Track if quest data is empty (profile may not be fully ready yet)
+            questDataNeedsReload = questData.Count == 0;
+            if (questDataNeedsReload)
+            {
+                LogInfo("Quest data empty - will reload when a quest is accepted");
+            }
 
             foreach (var t in questData)
             {
@@ -2149,17 +2182,37 @@ namespace MoreCheckmarks
                                         if (MoreCheckmarksMod.questDataStartByItemTemplateID.TryGetValue(itemEntry.Key,
                                                 out MoreCheckmarksMod.QuestPair questList))
                                         {
-                                            questList.questData.Remove(__instance.Template.Id);
-                                            questList.count -= itemEntry.Value;
-                                            if (questList.questData.Count == 0)
+                                            // Find the key that matches this quest ID (key is locale name, value contains questId)
+                                            string keyToRemove = null;
+                                            foreach (var kvp in questList.questData)
                                             {
-                                                MoreCheckmarksMod.questDataStartByItemTemplateID.Remove(itemEntry.Key);
+                                                if (kvp.Value.questId == __instance.Template.Id)
+                                                {
+                                                    keyToRemove = kvp.Key;
+                                                    break;
+                                                }
+                                            }
+                                            if (keyToRemove != null)
+                                            {
+                                                questList.questData.Remove(keyToRemove);
+                                                questList.count -= itemEntry.Value;
+                                                if (questList.questData.Count == 0)
+                                                {
+                                                    MoreCheckmarksMod.questDataStartByItemTemplateID.Remove(itemEntry.Key);
+                                                }
                                             }
                                         }
                                     }
 
                                     MoreCheckmarksMod.neededStartItemsByQuest.Remove(__instance.Template.Id);
                                 }
+                            }
+                            
+                            // If quest data was incomplete (profile wasn't ready), reload now that a quest has been accepted
+                            if (MoreCheckmarksMod.questDataNeedsReload)
+                            {
+                                MoreCheckmarksMod.LogInfo("Quest accepted - reloading quest data");
+                                MoreCheckmarksMod.modInstance.LoadData();
                             }
 
                             break;
@@ -2174,17 +2227,33 @@ namespace MoreCheckmarks
                                     if (MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(itemEntry.Key,
                                             out MoreCheckmarksMod.QuestPair questList))
                                     {
-                                        questList.questData.Remove(__instance.Template.Id);
-                                        questList.count -= itemEntry.Value;
-                                        if (questList.questData.Count == 0)
+                                        // Find the key that matches this quest ID (key is locale name, value contains questId)
+                                        string keyToRemove = null;
+                                        foreach (var kvp in questList.questData)
                                         {
-                                            MoreCheckmarksMod.questDataCompleteByItemTemplateID.Remove(itemEntry.Key);
+                                            if (kvp.Value.questId == __instance.Template.Id)
+                                            {
+                                                keyToRemove = kvp.Key;
+                                                break;
+                                            }
+                                        }
+                                        if (keyToRemove != null)
+                                        {
+                                            questList.questData.Remove(keyToRemove);
+                                            questList.count -= itemEntry.Value;
+                                            if (questList.questData.Count == 0)
+                                            {
+                                                MoreCheckmarksMod.questDataCompleteByItemTemplateID.Remove(itemEntry.Key);
+                                            }
                                         }
                                     }
                                 }
 
                                 MoreCheckmarksMod.neededCompleteItemsByQuest.Remove(__instance.Template.Id);
                             }
+
+                            // Also add to completed quests cache for immediate filtering
+                            MoreCheckmarksMod.completedQuestIds.Add(__instance.Template.Id);
 
                             break;
                     }
@@ -2201,7 +2270,7 @@ namespace MoreCheckmarks
 
     class ProfileSelectionPatch
     {
-        // This prefix will run right after a profile has been selected
+        // This postfix will run right after a profile has been selected
         static void Postfix()
         {
             MoreCheckmarksMod.modInstance.LoadData();
