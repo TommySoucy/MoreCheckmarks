@@ -1,0 +1,6 @@
+<Project>
+    <!-- All properites, items, etc. created here are available in all projects -->
+    <PropertyGroup>
+         <Version>2.0.1</Version>
+     </PropertyGroup>
+</Project>

@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36414.22 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{94B399CD-B16C-47B3-B0E7-59A6ECD49491}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoreCheckmarks", "Client\MoreCheckmarks.csproj", "{1C987E9F-C3DF-456E-A956-CE3A11E960A7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoreCheckmarksBackend", "Server\MoreCheckmarksBackend.csproj", "{A4FDCD39-7106-49E8-C948-2EC324205497}"
@@ -27,5 +32,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E277BA25-59F8-4AA7-BCCB-6E47923522FB}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1C987E9F-C3DF-456E-A956-CE3A11E960A7} = {94B399CD-B16C-47B3-B0E7-59A6ECD49491}
+		{A4FDCD39-7106-49E8-C948-2EC324205497} = {94B399CD-B16C-47B3-B0E7-59A6ECD49491}
 	EndGlobalSection
 EndGlobal
