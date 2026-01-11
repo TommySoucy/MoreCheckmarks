@@ -2,11 +2,14 @@
 
 > ⚠️ **Note:** This is a complete port to SPT 4.0. As with any major update, there may be bugs or unexpected behavior. Please be patient while we iron out any kinks, and don't hesitate to report any issues you encounter!
 
+> **⚠️ Important:** Version 2.1.0 is tested with SPT version 4.0.11. It may not work with other 4.0 versions. It will **definitely not** work with SPT versions prior to 4.0.0.
+
 ---
 
 ## Known Issues
 
-- On brand new profiles, checkmarks may not appear until you accept a quest; a game restart after accepting can also be required.
+- ~~On brand new profiles, checkmarks may not appear until you accept a quest; a game restart after accepting can also be required.~~ - Should be fixed in version 2.0.1 !
+- ~~Barters are not being shown in checkmarks/tooltips~~ - Should be fixed in version 2.1.0 !
 
 ---
 
