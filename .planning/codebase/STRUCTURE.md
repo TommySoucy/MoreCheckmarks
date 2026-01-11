@@ -1,140 +1,141 @@
 # Codebase Structure
 
-**Analysis Date:** 2025-01-11
+**Analysis Date:** 2026-01-11
 
 ## Directory Layout
 
 ```
 MoreCheckmarks/
-├── .planning/              # Project planning documents
-│   └── codebase/          # Codebase analysis documents
-├── Client/                 # Client-side BepInEx plugin
-│   ├── Assets/            # Unity asset bundles
-│   ├── Properties/        # Assembly metadata
-│   ├── bin/               # Build output (gitignored)
-│   ├── obj/               # Build intermediates (gitignored)
-│   └── MoreCheckmarks.cs  # Main plugin source
-├── Server/                 # Server-side SPT mod
-│   ├── Properties/        # Assembly metadata
-│   ├── bin/               # Build output (gitignored)
-│   ├── obj/               # Build intermediates (gitignored)
-│   ├── MoreCheckmarksBackend.cs   # Server entry point
-│   └── MoreCheckmarksRouter.cs    # HTTP route handlers
-├── dist/                   # Distribution output
-│   ├── BepInEx/           # Client plugin output
-│   └── SPT/               # Server mod output
-├── MoreCheckmarks.sln      # Visual Studio solution
-└── README.md              # User documentation
+├── .planning/          # Project planning documentation
+│   └── codebase/      # Codebase analysis documents
+├── Client/            # BepInEx client plugin
+│   ├── Assets/        # Unity assets (sprites, bundles)
+│   ├── Properties/    # Assembly metadata
+│   ├── bin/           # Build output (gitignored)
+│   ├── obj/           # Intermediate build files (gitignored)
+│   └── MoreCheckmarks.cs    # Main plugin source
+├── Server/            # SPT server mod
+│   ├── Properties/    # Assembly metadata
+│   ├── bin/           # Build output (gitignored)
+│   ├── obj/           # Intermediate build files (gitignored)
+│   ├── MoreCheckmarksBackend.cs   # Server mod main class
+│   └── MoreCheckmarksRouter.cs    # HTTP route definitions
+├── dist/              # Build distribution output
+│   ├── BepInEx/       # Client files for distribution
+│   └── SPT/           # Server files for distribution
+├── MoreCheckmarks.sln # Visual Studio solution
+├── README.md          # User documentation
+└── CLAUDE.md          # Claude Code instructions
 ```
 
 ## Directory Purposes
 
 **Client/**
-- Purpose: Client-side BepInEx plugin for game UI modification
-- Contains: Main C# source file, Unity assets, project configuration
-- Key files:
-  - `MoreCheckmarks.cs` - All plugin logic (~2300 lines)
-  - `MoreCheckmarks.csproj` - Project file with SPT path configuration
-  - `Assets/MoreCheckmarksAssets` - Unity asset bundle with checkmark sprite
-- Subdirectories: Properties (AssemblyInfo), bin/obj (build artifacts)
+- Purpose: BepInEx plugin that modifies game UI
+- Contains: Single C# source file, assets, project config
+- Key files: `MoreCheckmarks.cs` (all plugin logic, ~118KB)
+- Subdirectories: `Assets/` (sprites), `Properties/` (AssemblyInfo)
+
+**Client/Assets/**
+- Purpose: Unity assets loaded at runtime
+- Contains: `MoreCheckmarksAssets` (AssetBundle), `WhiteCheckmark.png/psd`
+- Key files: `MoreCheckmarksAssets` - Unity AssetBundle with white checkmark sprite
 
 **Server/**
-- Purpose: Server-side SPT mod providing data endpoints
-- Contains: C# source files for HTTP routing and data handlers
-- Key files:
-  - `MoreCheckmarksBackend.cs` - Main server class, data handlers, mod metadata
-  - `MoreCheckmarksRouter.cs` - HTTP route registration
-  - `MoreCheckmarksBackend.csproj` - Project file with NuGet references
-- Subdirectories: Properties, bin/obj (build artifacts)
+- Purpose: SPT server mod providing data API endpoints
+- Contains: Two C# source files, project config
+- Key files: `MoreCheckmarksBackend.cs` (data handlers), `MoreCheckmarksRouter.cs` (routes)
+- Subdirectories: `Properties/` (AssemblyInfo)
 
 **dist/**
-- Purpose: Build output for distribution
-- Contains: Compiled DLLs in SPT-compatible folder structure
+- Purpose: Build output matching SPT installation structure
+- Contains: Compiled DLLs and assets ready for distribution
 - Key files:
-  - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarks.dll` - Client plugin
-  - `SPT/user/mods/MoreCheckmarksBackend/MoreCheckmarksBackend.dll` - Server mod
-  - `MoreCheckmarks-v2.0.1.7z` - Distribution archive
+  - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarks.dll`
+  - `SPT/user/mods/MoreCheckmarksBackend/MoreCheckmarksBackend.dll`
+- Subdirectories: Mirrors SPT folder structure
 
-**.planning/codebase/**
-- Purpose: Codebase documentation for Claude/planning
-- Contains: Analysis documents (STACK, ARCHITECTURE, etc.)
+**.planning/**
+- Purpose: Project planning and documentation
+- Contains: Codebase analysis, project context
+- Key files: `codebase/STACK.md`, `codebase/ARCHITECTURE.md`, etc.
 
 ## Key File Locations
 
 **Entry Points:**
-- `Client/MoreCheckmarks.cs` - Plugin entry point (`MoreCheckmarksMod.Start()`)
-- `Server/MoreCheckmarksBackend.cs` - Server entry point (`OnLoad()`)
+- `Client/MoreCheckmarks.cs` - BepInEx plugin entry (Start() method)
+- `Server/MoreCheckmarksBackend.cs` - Server mod entry (OnLoad() method)
 
 **Configuration:**
-- `Client/MoreCheckmarks.csproj` - Client build config, SPT path
+- `Client/MoreCheckmarks.csproj` - Client build config, SPT path, references
 - `Server/MoreCheckmarksBackend.csproj` - Server build config, NuGet packages
 - `MoreCheckmarks.sln` - Visual Studio solution
 
 **Core Logic:**
-- `Client/MoreCheckmarks.cs` - All client logic: patches, UI, data caching
-- `Server/MoreCheckmarksBackend.cs` - Data handlers for quests, items, assorts
+- `Client/MoreCheckmarks.cs` - All client logic (config, data loading, UI patches)
+- `Server/MoreCheckmarksBackend.cs` - Data handlers (quests, assorts, items)
 - `Server/MoreCheckmarksRouter.cs` - HTTP route definitions
 
-**Assets:**
-- `Client/Assets/MoreCheckmarksAssets` - Unity asset bundle
-- `Client/Assets/WhiteCheckmark.png` - Source checkmark sprite
+**Testing:**
+- None (no test files present)
 
 **Documentation:**
-- `README.md` - User-facing installation and usage guide
-- `.planning/codebase/*.md` - Developer documentation
+- `README.md` - User installation and configuration guide
+- `CLAUDE.md` - Development instructions for Claude Code
 
 ## Naming Conventions
 
 **Files:**
 - PascalCase.cs for C# source files
-- PascalCase.csproj for project files
-- UPPERCASE.md for important project files (README)
+- PascalCase for Visual Studio projects (.csproj, .sln)
+- UPPERCASE.md for important documentation files
 
 **Directories:**
 - PascalCase for main directories (Client, Server)
-- lowercase for standard directories (bin, obj, dist)
+- lowercase for build/output directories (dist, bin, obj)
+- .lowercase for hidden directories (.planning, .git)
 
 **Special Patterns:**
-- Single .cs file per project (monolithic approach)
-- No index files or barrel exports (C# namespaces handle this)
+- Single file per component (all client logic in one file)
+- Matching names between DLL and directory (MoreCheckmarks.dll in MoreCheckmarks/)
 
 ## Where to Add New Code
 
 **New Client Feature:**
-- Primary code: `Client/MoreCheckmarks.cs` (add to existing file)
-- New Harmony patch: Add nested class in `Client/MoreCheckmarks.cs`
-- New config option: Add ConfigEntry in `BindConfig()` method
+- Primary code: Add to `Client/MoreCheckmarks.cs`
+- Assets: Add to `Client/Assets/`
+- Config: Add ConfigEntry in BindConfig() method
 
 **New Server Endpoint:**
-- Route handler: `Server/MoreCheckmarksRouter.cs` (add RouteAction)
-- Data handler: `Server/MoreCheckmarksBackend.cs` (add Handle* method)
+- Route: Add RouteAction in `Server/MoreCheckmarksRouter.cs`
+- Handler: Add method in `Server/MoreCheckmarksBackend.cs`
 
-**New Asset:**
-- Source file: `Client/Assets/`
-- Must be bundled into `MoreCheckmarksAssets` Unity asset bundle
+**New Data Type:**
+- Client struct/class: Add to `Client/MoreCheckmarks.cs`
+- Server data access: Add handler method in `MoreCheckmarksServer`
 
-**New Project:**
-- Add to `MoreCheckmarks.sln`
-- Follow existing project structure
+**Documentation:**
+- User docs: Update `README.md`
+- Planning docs: Add to `.planning/`
 
 ## Special Directories
 
 **dist/**
-- Purpose: Build output matching SPT installation structure
-- Source: Generated by MSBuild via OutputPath in .csproj
-- Committed: Yes (contains release archive)
+- Purpose: Build output for distribution
+- Source: Generated by MSBuild via .csproj OutputPath
+- Committed: Partially (gitignore may exclude some files)
 
 **bin/, obj/**
-- Purpose: Build artifacts and intermediates
-- Source: Generated by MSBuild
+- Purpose: Build artifacts and intermediate files
+- Source: MSBuild compilation
 - Committed: No (in .gitignore)
 
-**Client/hub/**
-- Purpose: Unknown/unused (possibly legacy)
-- Source: Original project template
-- Committed: Yes but appears unused
+**.planning/**
+- Purpose: Development planning and codebase documentation
+- Source: Created manually for project context
+- Committed: Yes
 
 ---
 
-*Structure analysis: 2025-01-11*
+*Structure analysis: 2026-01-11*
 *Update when directory structure changes*

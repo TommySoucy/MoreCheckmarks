@@ -1,119 +1,90 @@
 # External Integrations
 
-**Analysis Date:** 2025-01-11
+**Analysis Date:** 2026-01-11
 
 ## APIs & External Services
 
-**SPT Server HTTP API:**
-- Custom routes registered by server mod for client data access
-  - Endpoint: `/MoreCheckmarksRoutes/quests` - Quest data for current profile
-  - Endpoint: `/MoreCheckmarksRoutes/assorts` - Trader assortment data
-  - Endpoint: `/MoreCheckmarksRoutes/items` - Item template database
-  - Endpoint: `/MoreCheckmarksRoutes/locales` - Localization strings
-  - Endpoint: `/MoreCheckmarksRoutes/productions` - Hideout production recipes
-- Client: `SPT.Common.Http.RequestHandler.GetJson()` - `Client/MoreCheckmarks.cs`
-- Server: `CustomStaticRouter` routes - `Server/MoreCheckmarksRouter.cs`
-- Auth: Session ID passed automatically by SPT client
+**SPT Server API:**
+- Custom HTTP routes for client-server communication
+  - Client: `SPT.Common.Http.RequestHandler` for HTTP requests
+  - Server: `CustomStaticRouter` extends `StaticRouter` for route handling
+  - Routes defined in `Server/MoreCheckmarksRouter.cs`
+
+**Custom Endpoints:**
+- `/MoreCheckmarksRoutes/quests` - Get incomplete quests for player
+- `/MoreCheckmarksRoutes/assorts` - Get trader barter assortments
+- `/MoreCheckmarksRoutes/items` - Get item template data
+- `/MoreCheckmarksRoutes/locales` - Get localization strings
+- `/MoreCheckmarksRoutes/productions` - Get hideout crafting recipes
 
 ## Data Storage
 
 **Databases:**
-- SPT DatabaseServer - Accessed via `databaseServer.GetTables()`
-  - Items: `Templates.Items` dictionary
-  - Traders: `Traders` dictionary with assorts
-  - Hideout: `Hideout.Production` for craft recipes
-  - Locales: `Locales` for text translations
-- No direct database connection - all through SPT abstractions
+- SPT Server Database - Accessed via `DatabaseServer.GetTables()`
+  - Quest data: `databaseServer.GetTables().Templates.Items`
+  - Trader data: `databaseServer.GetTables().Traders`
+  - Hideout data: `databaseServer.GetTables().Hideout.Production`
+  - Locales: `databaseServer.GetTables().Locales`
 
 **File Storage:**
-- Unity AssetBundle: `Client/Assets/MoreCheckmarksAssets`
-  - Contains: WhiteCheckmark sprite, BenderBold font
-  - Loaded at: Plugin initialization via `AssetBundle.LoadFromFile()`
+- Unity AssetBundle for custom sprites
+  - Location: `Client/Assets/MoreCheckmarksAssets`
+  - Contains: White checkmark sprite for colored overlays
 
 **Caching:**
-- Client-side in-memory caching via static dictionaries
-  - `questDataStartByItemTemplateID` - Quest requirements by item
-  - `questDataCompleteByItemTemplateID` - Quest completion items
-  - `bartersByItemByTrader` - Barter requirements
-  - `productionEndProductByID` - Craft outputs
-  - `prereqCache` - Computed prerequisite chains
-  - `completedQuestIds` - Completed quest tracking
+- In-memory dictionaries in client for quest/item lookups
+  - `questDataStartByItemTemplateID`, `questDataCompleteByItemTemplateID`
+  - `bartersByItemByTrader`, `productionEndProductByID`
+  - Rebuilt on data reload
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- SPT session management (automatic)
-- Session ID passed with HTTP requests
-- Profile loaded via `ProfileHelper.GetPmcProfile(sessionId)`
+- SPT session system
+  - Session ID passed automatically via `RequestHandler`
+  - Profile access via `ProfileHelper.GetPmcProfile(sessionId)`
 
-**No external auth integrations.**
+**OAuth Integrations:**
+- None
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- BepInEx Logger (client) - Logs to `BepInEx/LogOutput.log`
-- SPT ISptLogger (server) - Logs to SPT server console/logs
+- BepInEx Logger for client-side logging
+  - `Logger.LogInfo()`, `Logger.LogError()`
+- SPTarkov ISptLogger for server-side logging
+  - `logger.Info()`, `logger.Error()`, `logger.Success()`
 
 **Analytics:**
 - None
 
 **Logs:**
-- Client: BepInEx file logging
-- Server: SPT console output
-- Log levels: Info, Warning, Error, Success
+- Client: BepInEx log output (console/file)
+- Server: SPT server log output
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Local installation only (SPT is single-player)
+- Local installation only (game mod)
 - No cloud deployment
 
 **CI Pipeline:**
-- Not detected
+- None configured
 - Manual build via Visual Studio
-
-**Distribution:**
-- 7z archive in `dist/` directory
-- Manual upload to mod hosting sites
 
 ## Environment Configuration
 
 **Development:**
-- Required: SPT installation at configured path
-- SPT path set in .csproj files: `<SPTPath>C:\SPT</SPTPath>`
-- Build automatically copies to SPT installation if path exists
+- SPT path in .csproj: `<SPTPath>C:\SPT</SPTPath>`
+- Reference assemblies from local SPT installation
+- Build output to `dist/` folder
+
+**Staging:**
+- Not applicable (local mod)
 
 **Production:**
-- Same as development (local SPT installation)
-- User extracts mod files to SPT directories
-
-## Game Integration Points
-
-**BepInEx Plugin System:**
-- Location: `Client/MoreCheckmarks.cs`
-- Plugin GUID: `VIP.TommySoucy.MoreCheckmarks`
-- Loaded by BepInEx on game start
-- Provides F12 configuration menu
-
-**Harmony Patching:**
-- Patches game methods at runtime
-- Target classes (version-specific):
-  - `QuestItemViewPanel.Show()` - Main checkmark display
-  - `ItemSpecificationPanel.method_2()` - Inspect window
-  - `GetActionsClass.smethod_8()` - "Take" action coloring
-  - `QuestClass.SetStatus()` - Quest status change handling
-  - Profile selector (dynamic class names)
-
-**SPT Server Mod System:**
-- Location: `Server/MoreCheckmarksBackend.cs`
-- Mod GUID: `custom-static-MoreCheckmarksRoutes`
-- Registered via SPT dependency injection
-- Implements `IOnLoad` interface
-
-**Game Singletons Accessed:**
-- `Singleton<HideoutClass>.Instance` - Hideout data
-- `ItemUiContext.Instance.WishlistManager` - Wishlist checking
-- Profile via `profileHelper.GetPmcProfile()` (server)
+- Users extract mod files to their SPT installation
+- No secrets or environment variables required
 
 ## Webhooks & Callbacks
 
@@ -123,7 +94,23 @@
 **Outgoing:**
 - None
 
+## Game Integration Points
+
+**BepInEx Plugin System:**
+- Plugin metadata: `[BepInPlugin(pluginGuid, pluginName, pluginVersion)]`
+- Configuration: BepInEx ConfigEntry system
+- Entry point: `Start()` method in `MoreCheckmarksMod`
+
+**Harmony Patches:**
+- UI modification patches in `Client/MoreCheckmarks.cs`
+- Patches game methods to add colored checkmarks and tooltips
+
+**Unity Integration:**
+- AssetBundle loading for custom sprites
+- TextMeshPro for tooltip text
+- UnityEngine.UI for checkmark images
+
 ---
 
-*Integration audit: 2025-01-11*
+*Integration audit: 2026-01-11*
 *Update when adding/removing external services*

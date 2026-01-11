@@ -1,86 +1,86 @@
 # Technology Stack
 
-**Analysis Date:** 2025-01-11
+**Analysis Date:** 2026-01-11
 
 ## Languages
 
 **Primary:**
-- C# 7.3 / C# 12 - All application code
+- C# 7.3 - Client plugin (`Client/MoreCheckmarks.cs`)
+- C# 12 (.NET 9) - Server mod (`Server/MoreCheckmarksBackend.cs`, `Server/MoreCheckmarksRouter.cs`)
 
 **Secondary:**
-- None - no build scripts or additional tooling languages
+- None
 
 ## Runtime
 
 **Environment:**
-- .NET Framework 4.7.1 - Client-side BepInEx plugin
-- .NET 9.0 (Windows) - Server-side SPT mod
+- Client: .NET Framework 4.7.1 (BepInEx plugin running in Unity game)
+- Server: .NET 9.0 Windows x64 (SPT server mod)
 
-**Build System:**
-- MSBuild via Visual Studio 2022 (v17.14)
-- Solution file: `MoreCheckmarks.sln`
+**Package Manager:**
+- NuGet (via .csproj PackageReference for server)
+- NuGet packages.config (for client)
 
 ## Frameworks
 
 **Core:**
-- BepInEx - Client-side Unity mod framework for game patching
-- SPTarkov.Server.Core - Server-side SPT modding framework
-- Harmony - Runtime method patching library for game modifications
+- BepInEx 5.x - Unity mod framework for client plugin
+- Harmony - Runtime patching library for modifying game behavior
+- SPTarkov.Server.Core 4.0.0 - SPT server mod framework
 
-**UI:**
-- Unity UI - Game's built-in UI system
-- TextMeshPro - Advanced text rendering in Unity
+**Testing:**
+- None detected - no test framework configured
 
 **Build/Dev:**
-- Visual Studio 2022 - Primary IDE
-- NuGet - Package management for server project
+- MSBuild - Build system via Visual Studio solution
+- Visual Studio - IDE (solution file: `MoreCheckmarks.sln`)
 
 ## Key Dependencies
 
-**Client (`Client/MoreCheckmarks.csproj`):**
-- 0Harmony - Runtime patching for intercepting game methods
-- BepInEx - Plugin framework, configuration system (F12 menu)
-- Newtonsoft.Json - JSON parsing for server communication
-- Assembly-CSharp - Game assemblies (referenced from SPT installation)
-- UnityEngine - Core Unity functionality
+**Critical (Client):**
+- 0Harmony - Runtime method patching for game modifications
+- Newtonsoft.Json - JSON parsing for server data
+- spt-common - SPT client utilities and HTTP communication
+- Unity.TextMeshPro - Text rendering for custom UI elements
+- BepInEx.Configuration - F12 in-game configuration menu
 
-**Server (`Server/MoreCheckmarksBackend.csproj`):**
-- SPTarkov.Common v4.0.0 - Common SPT types and utilities
-- SPTarkov.DI v4.0.0 - Dependency injection framework
-- SPTarkov.Server.Core v4.0.0 - Server core functionality (routing, database access)
+**Critical (Server):**
+- SPTarkov.Common 4.0.0 - Core SPT utilities
+- SPTarkov.DI 4.0.0 - Dependency injection framework
+- SPTarkov.Server.Core 4.0.0 - Server routing and data access
+
+**Infrastructure:**
+- UnityEngine assemblies - Core Unity APIs for UI manipulation
 
 ## Configuration
 
 **Environment:**
-- `SPTPath` property in .csproj files - Points to local SPT installation (default: `C:\SPT`)
-- No .env files - configuration is build-time only
-
-**Runtime Config:**
-- BepInEx ConfigurationManager - F12 in-game menu for client settings
-- All settings stored via BepInEx Config.Bind() API
+- Client uses BepInEx ConfigEntry system (F12 menu)
+- Server mod metadata defined via `AbstractModMetadata` record
+- SPT path configured in .csproj: `<SPTPath>C:\SPT</SPTPath>`
 
 **Build:**
-- `Client/MoreCheckmarks.csproj` - Client plugin build configuration
-- `Server/MoreCheckmarksBackend.csproj` - Server mod build configuration
-- `MoreCheckmarks.sln` - Solution combining both projects
+- `Client/MoreCheckmarks.csproj` - Client build configuration
+- `Server/MoreCheckmarksBackend.csproj` - Server build configuration
+- `MoreCheckmarks.sln` - Visual Studio solution file
+- Output goes to `dist/` folder matching SPT structure
 
 ## Platform Requirements
 
 **Development:**
-- Windows (required for .NET Framework 4.7.1 client, net9.0-windows server)
-- Visual Studio 2022 or compatible MSBuild toolchain
-- Local SPT installation at configurable path for assembly references
+- Windows (Windows-specific .NET target)
+- Visual Studio with .NET Framework 4.7.1 and .NET 9.0 SDK
+- Local SPT installation for reference assemblies (C:\SPT default)
 
 **Production:**
-- SPT (Single Player Tarkov) 4.0.x installation
+- SPT 4.0.x installation
 - BepInEx (included with SPT)
-- Windows OS (game requirement)
-
-**Output Locations:**
-- Client: `dist/BepInEx/plugins/MoreCheckmarks/MoreCheckmarks.dll`
-- Server: `dist/SPT/user/mods/MoreCheckmarksBackend/MoreCheckmarksBackend.dll`
+- Distributed as:
+  - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarks.dll`
+  - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarksAssets`
+  - `SPT/user/mods/MoreCheckmarksBackend/MoreCheckmarksBackend.dll`
 
 ---
 
-*Stack analysis: 2025-01-11*
+*Stack analysis: 2026-01-11*
 *Update after major dependency changes*

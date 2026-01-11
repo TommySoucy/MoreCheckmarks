@@ -1,18 +1,18 @@
 # Testing Patterns
 
-**Analysis Date:** 2025-01-11
+**Analysis Date:** 2026-01-11
 
 ## Test Framework
 
 **Runner:**
-- Not detected - no automated test framework in use
+- None configured
 
 **Assertion Library:**
-- Not detected
+- Not applicable
 
 **Run Commands:**
 ```bash
-# No test commands configured
+# No test commands available
 # Manual testing via SPT game client
 ```
 
@@ -26,7 +26,7 @@
 
 **Structure:**
 ```
-(No test directory structure)
+# No test directory structure exists
 ```
 
 ## Test Structure
@@ -35,8 +35,8 @@
 - Not applicable - no automated tests
 
 **Patterns:**
-- Manual testing approach
-- Test by running SPT game and verifying UI behavior
+- Manual testing only
+- Test in local SPT installation
 
 ## Mocking
 
@@ -44,8 +44,13 @@
 - Not applicable
 
 **Patterns:**
-- Game must be running for any testing
-- No mock infrastructure for game assemblies
+- Not applicable
+
+**What to Mock:**
+- Not applicable
+
+**What NOT to Mock:**
+- Not applicable
 
 ## Fixtures and Factories
 
@@ -58,66 +63,83 @@
 ## Coverage
 
 **Requirements:**
-- No enforced coverage target
-- No coverage tooling configured
+- No coverage requirements
+- No automated testing
 
 **Configuration:**
 - Not applicable
+
+**View Coverage:**
+```bash
+# No coverage tooling configured
+```
 
 ## Test Types
 
 **Unit Tests:**
 - Not present
-- Would require mocking game assemblies (complex)
 
 **Integration Tests:**
 - Not present
-- Would require running SPT server + game client
 
 **E2E Tests:**
-- Manual testing only
-- Run game, check items, verify checkmarks display correctly
+- Manual testing in SPT game
+- Build → Install to SPT → Launch game → Verify UI changes
+
+## Manual Testing Process
+
+**Build & Deploy:**
+1. Build solution in Visual Studio
+2. Files output to `dist/` folder
+3. Copy to SPT installation (automated via .csproj targets if SPTPath exists)
+
+**Verification:**
+1. Launch SPT server
+2. Launch game client
+3. Open inventory/stash
+4. Verify checkmarks appear on needed items
+5. Verify tooltips show correct information
+6. Test F12 config menu changes
+
+**Test Scenarios:**
+- New profile (no quest data)
+- Profile with completed quests
+- Items needed for hideout only
+- Items needed for quests only
+- Items needed for multiple purposes
+- Barter items
+- Craft ingredients
+- Wishlist items
+- Color customization
+- Priority settings
 
 ## Common Patterns
 
-**Current Testing Approach:**
+**Async Testing:**
+- Not applicable
 
-1. Build solution in Visual Studio
-2. DLLs automatically copied to `dist/` and optionally to local SPT installation
-3. Launch SPT game
-4. Navigate to stash/inventory
-5. Verify checkmark colors and tooltips display correctly
-6. Check F12 config menu works
+**Error Testing:**
+- Not applicable
 
-**Testing Scenarios:**
-- Items needed for quests (yellow checkmark)
-- Items needed for hideout (red/green based on quantity)
-- Items on wishlist (blue checkmark)
-- Items for barters (magenta checkmark)
-- Items for crafts (cyan checkmark)
-- Priority system when item needed for multiple purposes
-- Tooltip information accuracy
-- New profile handling (empty quest data)
+**Snapshot Testing:**
+- Not applicable
 
-## Recommendations for Future Testing
+## Recommendations
 
-**Unit Testing Challenges:**
-- Heavy dependency on game assemblies (EFT.*, Assembly-CSharp)
-- Harmony patches require runtime injection
-- Unity types not easily mockable
+**Future Testing Improvements:**
+- Consider xUnit or NUnit for .NET testing
+- Mock SPT server responses for client testing
+- Unit test data parsing logic
+- Unit test priority/color selection logic
+- Integration test HTTP routes
 
-**Potential Approaches:**
-- Extract pure logic (color calculations, priority sorting) into testable classes
-- Create integration test project that runs against live SPT server
-- Use test profiles with known quest/hideout state
-
-**Priority Areas for Tests:**
-- `GetNeeded()` - hideout requirement logic
-- `GetRemainingPrerequisiteCount()` - prerequisite calculation
-- Priority sorting logic
-- Color selection based on fulfillment state
+**Testing Gaps:**
+- All logic paths untested
+- No regression testing
+- No CI/CD validation
+- Relies entirely on manual QA
 
 ---
 
-*Testing analysis: 2025-01-11*
-*Update when test infrastructure is added*
+*Testing analysis: 2026-01-11*
+*Update when test patterns change*
