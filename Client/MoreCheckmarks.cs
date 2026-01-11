@@ -37,7 +37,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "2.0.0";
+        public const string pluginVersion = "2.1.0";
 
         // Config Entries (BepInEx F12 menu)
         public static ConfigEntry<bool> configFulfilledAnyCanBeUpgraded;
@@ -57,6 +57,7 @@ namespace MoreCheckmarks
         public static ConfigEntry<Color> configCraftColor;
         public static ConfigEntry<bool> configIncludeFutureQuests;
         public static ConfigEntry<bool> configShowPrerequisiteQuests;
+        public static ConfigEntry<bool> configShowQuestCheckmarksNonFIR;
 
         // Config settings (derived from ConfigEntry values)
         public static bool fulfilledAnyCanBeUpgraded => configFulfilledAnyCanBeUpgraded.Value;
@@ -71,6 +72,7 @@ namespace MoreCheckmarks
         public static bool showFutureCraft => configShowFutureCraft.Value;
         public static bool includeFutureQuests => configIncludeFutureQuests.Value;
         public static bool showPrerequisiteQuests => configShowPrerequisiteQuests.Value;
+        public static bool showQuestCheckmarksNonFIR => configShowQuestCheckmarksNonFIR.Value;
 
         // Parsed colors (updated when config changes)
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
@@ -111,7 +113,7 @@ namespace MoreCheckmarks
         public static Dictionary<string, HashSet<string>> questPrerequisites = new Dictionary<string, HashSet<string>>();
         public static Dictionary<string, HashSet<string>> prereqCache = new Dictionary<string, HashSet<string>>();
         public static HashSet<string> completedQuestIds = new HashSet<string>();
-        
+
         // Flag to track if quest data needs to be reloaded (e.g., profile data wasn't available on first load)
         public static bool questDataNeedsReload = false;
 
@@ -167,7 +169,7 @@ namespace MoreCheckmarks
         {
             LogInfo("Loading data");
             LogInfo("\tQuests");
-            
+
             // Clear all quest data first - this ensures we start fresh even if loading fails
             questDataStartByItemTemplateID.Clear();
             neededStartItemsByQuest.Clear();
@@ -176,7 +178,7 @@ namespace MoreCheckmarks
             questPrerequisites.Clear();
             prereqCache.Clear();
             completedQuestIds.Clear();
-            
+
             JArray questData;
             try
             {
@@ -196,9 +198,9 @@ namespace MoreCheckmarks
                 LogError($"Failed to parse quest data: {ex.Message}. Quest checkmarks will be unavailable.");
                 questData = new JArray();
             }
-            
+
             LogInfo($"Loaded {questData.Count} quests");
-            
+
             // If quest data is empty, flag for reload on next item view (handles new profile case)
             // Track if quest data is empty (profile may not be fully ready yet)
             questDataNeedsReload = questData.Count == 0;
@@ -920,6 +922,12 @@ namespace MoreCheckmarks
                 true,
                 "Show the number of prerequisite quests needed before each quest becomes available. Quests are sorted by prerequisite count with color coding: Green (0 prereqs), Yellow (1-9), Gray (10+).");
 
+            configShowQuestCheckmarksNonFIR = Config.Bind(
+                "Quests",
+                "Show Quest Checkmarks for Non-FIR Items",
+                false,
+                "When enabled, quest checkmarks will appear on items even if they aren't found in raid. Useful if your SPT is configured to accept non-FIR items for quest turn-ins.");
+
             // Barter & Craft Settings
             configShowBarter = Config.Bind(
                 "Barter & Craft",
@@ -944,40 +952,40 @@ namespace MoreCheckmarks
                 "Priority",
                 "Quest Priority",
                 4,
-                new ConfigDescription("Priority for quest checkmarks. Higher number = higher priority when item is needed for multiple things.", 
-                    new AcceptableValueRange<int>(0, 10), 
+                new ConfigDescription("Priority for quest checkmarks. Higher number = higher priority when item is needed for multiple things.",
+                    new AcceptableValueRange<int>(0, 10),
                     new ConfigurationManagerAttributes { Order = 5 }));
 
             configHideoutPriority = Config.Bind(
                 "Priority",
                 "Hideout Priority",
                 3,
-                new ConfigDescription("Priority for hideout checkmarks. Higher number = higher priority.", 
-                    new AcceptableValueRange<int>(0, 10), 
+                new ConfigDescription("Priority for hideout checkmarks. Higher number = higher priority.",
+                    new AcceptableValueRange<int>(0, 10),
                     new ConfigurationManagerAttributes { Order = 4 }));
 
             configWishlistPriority = Config.Bind(
                 "Priority",
                 "Wishlist Priority",
                 2,
-                new ConfigDescription("Priority for wishlist checkmarks. Higher number = higher priority.", 
-                    new AcceptableValueRange<int>(0, 10), 
+                new ConfigDescription("Priority for wishlist checkmarks. Higher number = higher priority.",
+                    new AcceptableValueRange<int>(0, 10),
                     new ConfigurationManagerAttributes { Order = 3 }));
 
             configBarterPriority = Config.Bind(
                 "Priority",
                 "Barter Priority",
                 1,
-                new ConfigDescription("Priority for barter checkmarks. Higher number = higher priority.", 
-                    new AcceptableValueRange<int>(0, 10), 
+                new ConfigDescription("Priority for barter checkmarks. Higher number = higher priority.",
+                    new AcceptableValueRange<int>(0, 10),
                     new ConfigurationManagerAttributes { Order = 2 }));
 
             configCraftPriority = Config.Bind(
                 "Priority",
                 "Craft Priority",
                 0,
-                new ConfigDescription("Priority for craft checkmarks. Higher number = higher priority.", 
-                    new AcceptableValueRange<int>(0, 10), 
+                new ConfigDescription("Priority for craft checkmarks. Higher number = higher priority.",
+                    new AcceptableValueRange<int>(0, 10),
                     new ConfigurationManagerAttributes { Order = 1 }));
 
             // Color Settings (RGB sliders in F12 menu)
@@ -1037,7 +1045,7 @@ namespace MoreCheckmarks
             wishlistColor = configWishlistColor.Value;
             barterColor = configBarterColor.Value;
             craftColor = configCraftColor.Value;
-            
+
             // Update the colors array
             colors[2] = wishlistColor;
             colors[3] = barterColor;
@@ -1542,7 +1550,7 @@ namespace MoreCheckmarks
                 var craftRequired = MoreCheckmarksMod.showCraft &&
                                      MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
 
-                var questItem = item.MarkedAsSpawnedInSession &&
+                var questItem = (item.MarkedAsSpawnedInSession || MoreCheckmarksMod.showQuestCheckmarksNonFIR) &&
                                 ((item.QuestItem || MoreCheckmarksMod.includeFutureQuests)
                                     ? (startQuests != null && startQuests.questData.Count > 0) ||
                                       (completeQuests != null && completeQuests.questData.Count > 0)
@@ -1683,7 +1691,7 @@ namespace MoreCheckmarks
 
                 // Add quests
                 var gotQuest = false;
-                if (item.MarkedAsSpawnedInSession)
+                if (item.MarkedAsSpawnedInSession || MoreCheckmarksMod.showQuestCheckmarksNonFIR)
                 {
                     if (MoreCheckmarksMod.includeFutureQuests)
                     {
@@ -2035,7 +2043,7 @@ namespace MoreCheckmarks
                             out MoreCheckmarksMod.QuestPair startQuests);
                         MoreCheckmarksMod.questDataCompleteByItemTemplateID.TryGetValue(lootItem.TemplateId,
                             out MoreCheckmarksMod.QuestPair completeQuests);
-                        bool questItem = lootItem.Item.MarkedAsSpawnedInSession && (lootItem.Item.QuestItem ||
+                        bool questItem = (lootItem.Item.MarkedAsSpawnedInSession || MoreCheckmarksMod.showQuestCheckmarksNonFIR) && (lootItem.Item.QuestItem ||
                             (MoreCheckmarksMod.includeFutureQuests &&
                              (startQuests != null && startQuests.questData.Count > 0) ||
                              (completeQuests != null && completeQuests.questData.Count > 0)));
@@ -2140,14 +2148,14 @@ namespace MoreCheckmarks
     {
         private static EQuestStatus preStatus;
 
-        // This prefix will run before a quest's status has been set 
+        // This prefix will run before a quest's status has been set
         [HarmonyPatch(typeof(QuestClass), "SetStatus")]
         static void Prefix(QuestClass __instance)
         {
             preStatus = __instance.QuestStatus;
         }
 
-        // This postfix will run after a quest's status has been set 
+        // This postfix will run after a quest's status has been set
         [HarmonyPatch(typeof(QuestClass), "SetStatus")]
         static void Postfix(QuestClass __instance)
         {
@@ -2207,7 +2215,7 @@ namespace MoreCheckmarks
                                     MoreCheckmarksMod.neededStartItemsByQuest.Remove(__instance.Template.Id);
                                 }
                             }
-                            
+
                             // If quest data was incomplete (profile wasn't ready), reload now that a quest has been accepted
                             if (MoreCheckmarksMod.questDataNeedsReload)
                             {

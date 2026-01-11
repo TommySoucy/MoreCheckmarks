@@ -1,4 +1,4 @@
-# MoreCheckmarks v2.0.0 - SPT 4.0 Update
+# MoreCheckmarks v2.1.0 - SPT 4.0 Update
 
 > ⚠️ **Note:** This is a complete port to SPT 4.0. As with any major update, there may be bugs or unexpected behavior. Please be patient while we iron out any kinks, and don't hesitate to report any issues you encounter!
 
@@ -148,6 +148,11 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 ---
 
 ## Changelog
+
+### v2.1.0
+
+- Fixed barter checkmarks not displaying (server was returning empty data)
+- Added "Show Quest Checkmarks for Non-FIR Items" option in F12 menu (Quests section) - enables quest checkmarks on items that aren't found in raid, useful for SPT configurations that accept non-FIR items for quest turn-ins
 
 ### v2.0.0
 

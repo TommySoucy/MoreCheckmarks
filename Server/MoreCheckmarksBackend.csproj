@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <OutputType>Library</OutputType>
-        <Version>2.0.0</Version>
+        <Version>2.1.0</Version>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
         <PlatformTarget>x64</PlatformTarget>
@@ -17,30 +17,30 @@
         <!-- Don't copy dependencies to output -->
         <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     </PropertyGroup>
-    
+
     <!-- Build output goes to dist folder, matching SPT structure -->
     <PropertyGroup>
         <OutputPath>..\dist\SPT\user\mods\MoreCheckmarksBackend\</OutputPath>
     </PropertyGroup>
-    
+
     <!-- Optional: Also copy to local SPT installation for testing -->
     <PropertyGroup>
         <SPTPath>C:\SPT</SPTPath>
     </PropertyGroup>
-    
+
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
         <WarningLevel>8</WarningLevel>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
         <WarningLevel>8</WarningLevel>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <PackageReference Include="SPTarkov.Common" Version="4.0.0" PrivateAssets="all" />
         <PackageReference Include="SPTarkov.DI" Version="4.0.0" PrivateAssets="all" />
         <PackageReference Include="SPTarkov.Server.Core" Version="4.0.0" PrivateAssets="all" />
     </ItemGroup>
-    
+
     <!-- Copy to local SPT installation after build (optional, for testing) -->
     <Target Name="CopyToSPT" AfterTargets="Build" Condition="Exists('$(SPTPath)')">
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SPTPath)\SPT\user\mods\MoreCheckmarksBackend" />

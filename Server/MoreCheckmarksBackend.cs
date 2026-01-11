@@ -30,7 +30,7 @@ public record ModMetadata : AbstractModMetadata
     public override string Name { get; init; } = "MoreCheckmarksBackend";
     public override string Author { get; init; } = "VIP";
     public override List<string>? Contributors { get; init; }
-    public override SemanticVersioning.Version Version { get; init; } = new("2.0.0");
+    public override SemanticVersioning.Version Version { get; init; } = new("2.1.0");
     public override SemanticVersioning.Range SptVersion { get; init; } = new("~4.0.0");
 
     public override List<string>? Incompatibilities { get; init; }
@@ -63,7 +63,7 @@ public class MoreCheckmarksServer(
         return Task.CompletedTask;
     }
 
-    public Quest[] HandleQuests(MongoId sessionId) 
+    public Quest[] HandleQuests(MongoId sessionId)
     {
         logger.Info("MoreCheckmarks making quest data request");
         var quests = new List<Quest>();
@@ -75,7 +75,7 @@ public class MoreCheckmarksServer(
             logger.Warning("MoreCheckmarks: Profile is null (not loaded yet?). Returning empty quest list.");
             return [];
         }
-        
+
         var profileInfo = profile.Info;
         if (profileInfo == null)
         {
@@ -88,11 +88,11 @@ public class MoreCheckmarksServer(
             logger.Warning("MoreCheckmarks: Profile Side is null. Returning empty quest list.");
             return [];
         }
-        
+
         // Check if profile has quest data (new profiles may not have any yet)
         var profileQuests = profile.Quests;
         bool hasQuestData = profileQuests != null && profileQuests.Count > 0;
-        
+
         if (!hasQuestData)
         {
             // New profile with no quest data - return ALL quests for their side
@@ -117,7 +117,7 @@ public class MoreCheckmarksServer(
                 continue;
             }
             var questStatus = profile.GetQuestStatus(quest.Id);
-            
+
             // Include ALL quests the player hasn't completed yet (for "includeFutureQuests" feature)
             // This includes Locked quests (future quests where prerequisites aren't met yet)
             // Only exclude quests that are done: Success, Fail, FailRestartable, MarkedAsFailed, Expired
@@ -137,7 +137,7 @@ public class MoreCheckmarksServer(
     public TraderAssort[]? HandleAssorts()
     {
         logger.Info("MoreCheckmarks making trader assort data request");
-        TraderAssort[] assorts = [];
+        var assortsList = new List<TraderAssort>();
         try
         {
             var fenceAssorts = fenceService.GetRawFenceAssorts();
@@ -148,24 +148,24 @@ public class MoreCheckmarksServer(
                 var traderValue = traderField.GetValue(null) as MongoId?;
                 if (traderValue!.Value == Traders.FENCE && fenceAssorts != null)
                 {
-                    _ = assorts.Append(fenceAssorts);
+                    assortsList.Add(fenceAssorts);
                     continue;
                 }
                 var traderDBEntry = databaseServer.GetTables().Traders[traderValue!.Value];
                 if (traderDBEntry != null && traderDBEntry.Assort != null)
                 {
-                    _ = assorts.Append(traderDBEntry.Assort);
+                    assortsList.Add(traderDBEntry.Assort);
                 }
             }
         }
         catch
-        { 
+        {
             logger.Error("Exception caught when trying to generate assorts.");
             return null;
         }
 
-        logger.Info("Finished fetching assorts for MoreCheckmarks");
-        return assorts;
+        logger.Info($"Finished fetching {assortsList.Count} assorts for MoreCheckmarks");
+        return assortsList.ToArray();
     }
 
     public Dictionary<MongoId, TemplateItem>? HandleItems()
@@ -202,7 +202,7 @@ public class MoreCheckmarksServer(
         try {
             return databaseServer.GetTables().Hideout.Production;
         }
-        catch 
+        catch
         {
             logger.Error("Could not get tables from database when trying to access hideout and production.");
             return null;
