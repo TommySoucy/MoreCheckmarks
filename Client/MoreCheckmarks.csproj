@@ -46,7 +46,11 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <Compile Include="Config.cs" />
+    <Compile Include="DataLoader.cs" />
+    <Compile Include="Models.cs" />
     <Compile Include="MoreCheckmarks.cs" />
+    <Compile Include="Patches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

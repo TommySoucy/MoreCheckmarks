@@ -152,6 +152,9 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 
 ## Changelog
 
+### V2.1.1
+- Refactor codebase to improve maintainability.
+
 ### v2.1.0
 
 - Fixed barter checkmarks not displaying (server was returning empty data)
