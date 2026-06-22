@@ -57,15 +57,6 @@ public class CustomStaticRouter : StaticRouter
                 ) => await HandleAssortsRoute()
             ),
             new RouteAction(
-                 "/MoreCheckmarksRoutes/items",
-                 static async (
-                    url,
-                    info,
-                    sessionId,
-                    output
-                ) => await HandleItemsRoute()
-            ),
-            new RouteAction(
                 "/MoreCheckmarksRoutes/productions",
                 static async (
                     url,
@@ -103,20 +94,6 @@ public class CustomStaticRouter : StaticRouter
         catch
         {
             logger?.Error("Exception when handling AssortsRoute!");
-            return new ValueTask<string>(httpResponseUtil!.NullResponse());
-        }
-    }
-
-    private static ValueTask<string> HandleItemsRoute()
-    {
-        try
-        {
-            var items = server!.HandleItems();
-            return new ValueTask<string>(jsonUtil!.Serialize(items!)!);
-        }
-        catch
-        {
-            logger?.Error("Exception when handling ItemsRoute!");
             return new ValueTask<string>(httpResponseUtil!.NullResponse());
         }
     }

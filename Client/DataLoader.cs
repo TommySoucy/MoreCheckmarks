@@ -29,8 +29,6 @@ namespace MoreCheckmarks
         // Flag to track if quest data needs to be reloaded (e.g., profile data wasn't available on first load)
         public static bool questDataNeedsReload = false;
 
-        public static JObject itemData;
-
         public static Dictionary<string, string> productionEndProductByID = new Dictionary<string, string>();
 
         // Barter item name and amount of price by items in price
@@ -180,14 +178,9 @@ namespace MoreCheckmarks
             }
             MoreCheckmarksMod.LogInfo($"\tBuilt prerequisite map for {questPrerequisites.Count} quests");
 
-            MoreCheckmarksMod.LogInfo("\tItems");
             var euro = "569668774bdc2da2298b4568";
             var rouble = "5449016a4bdc2d6f028b456f";
             var dollar = "5696686a4bdc2da3298b456a";
-            if (itemData == null)
-            {
-                itemData = JObject.Parse(RequestHandler.GetJson("/MoreCheckmarksRoutes/items"));
-            }
 
             MoreCheckmarksMod.LogInfo("\tAssorts");
             bartersByItemByTrader.Clear();

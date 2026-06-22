@@ -166,20 +166,6 @@ public class MoreCheckmarksServer(
         return assortsList.ToArray();
     }
 
-    public Dictionary<MongoId, TemplateItem>? HandleItems()
-    {
-        logger.Info("MoreCheckmarks making item data request");
-        try
-        {
-            return databaseServer.GetTables().Templates.Items;
-        }
-        catch
-        {
-            logger.Error("Could not get tables from database when trying to do the item data request.");
-            return null;
-        }
-    }
-
     public HideoutProductionData? HandleProductions()
     {
         logger.Info("MoreCheckmarks making productions request");
