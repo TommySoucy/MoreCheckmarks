@@ -43,12 +43,10 @@ public record ModMetadata : AbstractModMetadata
 [Injectable(InjectionType = InjectionType.Singleton, TypePriority = OnLoadOrder.PostDBModLoader + 90000)]
 public class MoreCheckmarksServer(
     ISptLogger<MoreCheckmarksServer> logger,
-    // DynamicRouter dynamicRouter,
     CustomStaticRouter customStaticRouter,
     ProfileHelper profileHelper,
     QuestHelper questHelper,
     ConfigServer configServer,
-    // TraderHelper traderHelper,
     DatabaseServer databaseServer,
     FenceService fenceService
     ) : IOnLoad
@@ -178,20 +176,6 @@ public class MoreCheckmarksServer(
         catch
         {
             logger.Error("Could not get tables from database when trying to do the item data request.");
-            return null;
-        }
-    }
-
-    public LocaleBase? HandleLocales()
-    {
-        logger.Info("MoreCheckmarks making locale request");
-        try
-        {
-            return databaseServer.GetTables().Locales;
-        }
-        catch
-        {
-            logger.Error("Could not get tables from database when trying to get locales.");
             return null;
         }
     }

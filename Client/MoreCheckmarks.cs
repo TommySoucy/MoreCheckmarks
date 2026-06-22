@@ -272,32 +272,19 @@ namespace MoreCheckmarks
                     Stage currentStage = ad.CurrentStage;
                     if (currentStage == null)
                     {
-                        int level = 0;
-                        const int maxLevel = 100; // Safety limit
-                        while (currentStage == null && level < maxLevel)
-                        {
-                            currentStage = ad.StageAt(level++);
-                        }
-                    }
-
-                    if (currentStage != null)
-                    {
-                        Stage newStage = ad.StageAt(currentStage.Level + 1);
-                        while (newStage != null && newStage.Level != 0)
-                        {
-                            if (newStage.Level > ad.CurrentLevel && !MoreCheckmarksConfig.showFutureCraft)
-                            {
-                                break;
-                            }
-
-                            currentStage = newStage;
-                            newStage = ad.StageAt(currentStage.Level + 1);
-                        }
-                    }
-
-                    if (currentStage == null)
-                    {
                         continue;
+                    }
+
+                    Stage newStage = ad.StageAt(currentStage.Level + 1);
+                    while (newStage != null && newStage.Level != 0)
+                    {
+                        if (newStage.Level > ad.CurrentLevel && !MoreCheckmarksConfig.showFutureCraft)
+                        {
+                            break;
+                        }
+
+                        currentStage = newStage;
+                        newStage = ad.StageAt(currentStage.Level + 1);
                     }
 
                     // UPDATE: Class here is class used in AreaData.Stage.Production.Data array
@@ -378,6 +365,65 @@ namespace MoreCheckmarks
             }
 
             return bartersByTrader;
+        }
+
+        /// <summary>
+        /// Resolves which checkmark color an item should get based on what it's needed for and
+        /// the configured priorities. Returns false if the item isn't needed for anything.
+        /// </summary>
+        public static bool TryGetCheckmarkColor(bool questItem, NeededStruct neededStruct, bool wishlist,
+            bool gotBarters, bool craftRequired, out Color color)
+        {
+            color = Color.white;
+
+            var neededFor = new[]
+            {
+                questItem,
+                neededStruct.foundNeeded || neededStruct.foundFulfilled,
+                wishlist,
+                gotBarters,
+                craftRequired
+            };
+
+            var currentNeeded = -1;
+            var currentHighest = -1;
+            for (var i = 0; i < 5; ++i)
+            {
+                if (!neededFor[i] || MoreCheckmarksConfig.priorities[i] <= currentHighest) continue;
+                currentNeeded = i;
+                currentHighest = MoreCheckmarksConfig.priorities[i];
+            }
+
+            if (currentNeeded == -1)
+            {
+                return false;
+            }
+
+            // Handle special case of hideout areas
+            if (currentNeeded == 1)
+            {
+                if (neededStruct.foundNeeded) // Need more
+                {
+                    color = MoreCheckmarksConfig.needMoreColor;
+                }
+                // We have enough for at least one upgrade. Show fulfilled if we either only care
+                // about a single upgrade being possible, or we truly have enough across the board.
+                else if (MoreCheckmarksConfig.fulfilledAnyCanBeUpgraded ||
+                         neededStruct.possessedCount >= neededStruct.requiredCount)
+                {
+                    color = MoreCheckmarksConfig.fulfilledColor;
+                }
+                else // Still need more
+                {
+                    color = MoreCheckmarksConfig.needMoreColor;
+                }
+            }
+            else // Not area, just use its color
+            {
+                color = MoreCheckmarksConfig.colors[currentNeeded];
+            }
+
+            return true;
         }
 
         /// <summary>

@@ -66,15 +66,6 @@ public class CustomStaticRouter : StaticRouter
                 ) => await HandleItemsRoute()
             ),
             new RouteAction(
-                 "/MoreCheckmarksRoutes/locales",
-                 static async (
-                    url,
-                    info,
-                    sessionId,
-                    output
-                ) => await HandleLocalesRoute()
-            ),
-            new RouteAction(
                 "/MoreCheckmarksRoutes/productions",
                 static async (
                     url,
@@ -126,20 +117,6 @@ public class CustomStaticRouter : StaticRouter
         catch
         {
             logger?.Error("Exception when handling ItemsRoute!");
-            return new ValueTask<string>(httpResponseUtil!.NullResponse());
-        }
-    }
-
-    private static ValueTask<string> HandleLocalesRoute()
-    {
-        try
-        {
-            var locales = server!.HandleLocales();
-            return new ValueTask<string>(jsonUtil!.Serialize(locales!)!);
-        }
-        catch
-        {
-            logger?.Error("Exception when handling LocalesRoute!");
             return new ValueTask<string>(httpResponseUtil!.NullResponse());
         }
     }

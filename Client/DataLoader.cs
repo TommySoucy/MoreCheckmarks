@@ -2,6 +2,7 @@ using Newtonsoft.Json.Linq;
 using SPT.Common.Http;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MoreCheckmarks
 {
@@ -29,7 +30,6 @@ namespace MoreCheckmarks
         public static bool questDataNeedsReload = false;
 
         public static JObject itemData;
-        public static JObject locales;
 
         public static Dictionary<string, string> productionEndProductByID = new Dictionary<string, string>();
 
@@ -304,7 +304,7 @@ namespace MoreCheckmarks
                         if (allConditions[l]["conditionType"]?.ToString() == "HandoverItem")
                         {
                             if (allConditions[l]["target"] is JArray handInTargets &&
-                                StringJArrayContainsString(handInTargets, targetId) &&
+                                handInTargets.Any(t => t.ToString().Equals(targetId)) &&
                                 (!int.TryParse(allConditions[l]["value"]?.ToString(), out var handoverValue) ||
                                  !int.TryParse(condition["value"]?.ToString(), out var findValue) ||
                                  handoverValue == findValue))
@@ -357,19 +357,6 @@ namespace MoreCheckmarks
                     neededItemsByQuest.Add(questId, newDict);
                 }
             }
-        }
-
-        private static bool StringJArrayContainsString(JArray arr, string s)
-        {
-            for (var i = 0; i < arr.Count; ++i)
-            {
-                if (arr[i].ToString().Equals(s))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }

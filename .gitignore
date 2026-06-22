@@ -393,3 +393,6 @@ hub/Untitled-1.png
 
 reference_*
 .planning/
+plans/*
+.claude
+*.cursorrules

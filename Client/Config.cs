@@ -49,7 +49,6 @@ namespace MoreCheckmarks
 
         // Priority and color arrays
         public static int[] priorities = { 0, 1, 2, 3, 4 };
-        public static bool[] neededFor = new bool[5];
         public static Color[] colors = { Color.yellow, needMoreColor, wishlistColor, barterColor, craftColor };
 
         public static void Bind(ConfigFile config)
@@ -236,13 +235,7 @@ namespace MoreCheckmarks
     {
         public bool? ReadOnly;
         public bool? HideDefaultButton;
-        public bool? HideSettingName;
-        public string Category;
         public int? Order;
-        public bool? Browsable;
-        public string Description;
-        public object DefaultValue;
-        public bool? IsAdvanced;
     }
 #pragma warning restore CS0649
 }

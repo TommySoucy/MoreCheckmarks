@@ -99,60 +99,10 @@ namespace MoreCheckmarks
                     }
                 }
 
-                MoreCheckmarksConfig.neededFor[0] = questItem;
-                MoreCheckmarksConfig.neededFor[1] = neededStruct.foundNeeded || neededStruct.foundFulfilled;
-                MoreCheckmarksConfig.neededFor[2] = wishlist;
-                MoreCheckmarksConfig.neededFor[3] = gotBarters;
-                MoreCheckmarksConfig.neededFor[4] = craftRequired;
-
-                var currentNeeded = -1;
-                var currentHighest = -1;
-
-                for (var i = 0; i < 5; ++i)
+                if (MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
+                        craftRequired, out var checkmarkColor))
                 {
-                    if (!MoreCheckmarksConfig.neededFor[i] || MoreCheckmarksConfig.priorities[i] <= currentHighest) continue;
-                    currentNeeded = i;
-                    currentHighest = MoreCheckmarksConfig.priorities[i];
-                }
-
-                if (currentNeeded > -1)
-                {
-                    // Handle special case of areas
-                    if (currentNeeded == 1)
-                    {
-                        if (neededStruct.foundNeeded) // Need more
-                        {
-                            SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-                                MoreCheckmarksConfig.needMoreColor);
-                        }
-                        else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
-                        {
-                            if (MoreCheckmarksConfig.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
-                            {
-                                SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-                                    MoreCheckmarksConfig.fulfilledColor);
-                            }
-                            else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
-                            {
-                                // Check if we truly do not need more of this item for now
-                                if (neededStruct.possessedCount >= neededStruct.requiredCount)
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-                                        MoreCheckmarksConfig.fulfilledColor);
-                                }
-                                else // Still need more
-                                {
-                                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-                                        MoreCheckmarksConfig.needMoreColor);
-                                }
-                            }
-                        }
-                    }
-                    else // Not area, just set color
-                    {
-                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite,
-                            MoreCheckmarksConfig.colors[currentNeeded]);
-                    }
+                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, checkmarkColor);
                 }
                 else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
                 {
@@ -582,64 +532,11 @@ namespace MoreCheckmarks
                             }
                         }
 
-                        bool[] currentNeededFor =
+                        if (MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
+                                craftRequired, out Color checkmarkColor))
                         {
-                            questItem, neededStruct.foundNeeded || neededStruct.foundFulfilled, wishlist, gotBarters,
-                            craftRequired
-                        };
-                        // Find needed with highest priority
-                        int currentNeeded = -1;
-                        int currentHighest = -1;
-                        for (int i = 0; i < 5; ++i)
-                        {
-                            if (currentNeededFor[i] && MoreCheckmarksConfig.priorities[i] > currentHighest)
-                            {
-                                currentNeeded = i;
-                                currentHighest = MoreCheckmarksConfig.priorities[i];
-                            }
-                        }
-
-                        if (currentNeeded != -1)
-                        {
-                            // Handle special case of areas
-                            if (currentNeeded == 1)
-                            {
-                                if (neededStruct.foundNeeded) // Need more
-                                {
-                                    action.Name = "<font=\"BenderBold\"><color=#" +
-                                                  ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.needMoreColor) +
-                                                  ">Take</color></font>";
-                                }
-                                else if (neededStruct.foundFulfilled) // We have enough for at least one upgrade
-                                {
-                                    if (MoreCheckmarksConfig.fulfilledAnyCanBeUpgraded) // We want to know when have enough for at least one upgrade
-                                    {
-                                        action.Name = "<font=\"BenderBold\"><color=#" +
-                                                      ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.fulfilledColor) +
-                                                      ">Take</color></font>";
-                                    }
-                                    else // We only want fulfilled checkmark when ALL requiring this item can be upgraded
-                                    {
-                                        // Check if we trully do not need more of this item for now
-                                        if (neededStruct.possessedCount >= neededStruct.requiredCount)
-                                        {
-                                            action.Name = "<font=\"BenderBold\"><color=#" +
-                                                          ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.fulfilledColor) + ">Take</color></font>";
-                                        }
-                                        else // Still need more
-                                        {
-                                            action.Name = "<font=\"BenderBold\"><color=#" +
-                                                          ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.needMoreColor) + ">Take</color></font>";
-                                        }
-                                    }
-                                }
-                            }
-                            else // Not area, just set color
-                            {
-                                action.Name = "<font=\"BenderBold\"><color=#" +
-                                              ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.colors[currentNeeded]) +
-                                              ">Take</color></font>";
-                            }
+                            action.Name = "<font=\"BenderBold\"><color=#" +
+                                          ColorUtility.ToHtmlStringRGB(checkmarkColor) + ">Take</color></font>";
                         }
                         //else leave it as it is
 
