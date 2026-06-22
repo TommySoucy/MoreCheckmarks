@@ -86,6 +86,8 @@ namespace MoreCheckmarks
             // Process all quests
             foreach (var quest in questData)
             {
+                try
+                {
                 // Process finish conditions
                 if (quest["conditions"] != null && quest["conditions"]["AvailableForFinish"] != null)
                 {
@@ -148,6 +150,11 @@ namespace MoreCheckmarks
                 else
                 {
                     MoreCheckmarksMod.LogError($"Quest {quest["_id"]} missing start conditions");
+                }
+                }
+                catch (Exception ex)
+                {
+                    MoreCheckmarksMod.LogError($"Failed to process quest {quest?["_id"]}: {ex.Message}");
                 }
             }
 
@@ -283,6 +290,15 @@ namespace MoreCheckmarks
                 return;
             }
 
+            var questNameKey = quest["name"]?.ToString();
+            var questDisplayName = quest["QuestName"]?.ToString() ?? "";
+            var questIdStr = quest["_id"]?.ToString();
+            if (string.IsNullOrEmpty(questNameKey) || string.IsNullOrEmpty(questIdStr))
+            {
+                MoreCheckmarksMod.LogError($"Quest missing name or _id; skipping {conditionPhase} condition {conditionIndex}");
+                return;
+            }
+
             var targets = condition["target"] as JArray;
             for (var k = 0; k < targets.Count; ++k)
             {
@@ -313,10 +329,10 @@ namespace MoreCheckmarks
                 // Update questDataByItem dictionary
                 if (questDataByItem.TryGetValue(targetId, out var quests))
                 {
-                    if (!quests.questData.ContainsKey(quest["name"].ToString()))
+                    if (!quests.questData.ContainsKey(questNameKey))
                     {
-                        quests.questData.Add(quest["name"].ToString(),
-                            (quest["QuestName"].ToString(), quest["_id"].ToString()));
+                        quests.questData.Add(questNameKey,
+                            (questDisplayName, questIdStr));
                     }
                     int.TryParse(condition["value"]?.ToString(), out var parsedValue);
                     quests.count += parsedValue;
@@ -324,15 +340,15 @@ namespace MoreCheckmarks
                 else
                 {
                     var newPair = new QuestPair();
-                    newPair.questData.Add(quest["name"].ToString(),
-                        (quest["QuestName"].ToString(), quest["_id"].ToString()));
+                    newPair.questData.Add(questNameKey,
+                        (questDisplayName, questIdStr));
                     int.TryParse(condition["value"]?.ToString(), out var parsedValue);
                     newPair.count = parsedValue;
                     questDataByItem.Add(targetId, newPair);
                 }
 
                 // Update neededItemsByQuest dictionary
-                var questId = quest["_id"].ToString();
+                var questId = questIdStr;
                 if (neededItemsByQuest.TryGetValue(questId, out var items))
                 {
                     if (!items.ContainsKey(targetId))
