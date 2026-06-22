@@ -165,159 +165,18 @@ namespace MoreCheckmarks
                 {
                     if (MoreCheckmarksConfig.includeFutureQuests)
                     {
-                        var questStartString = "<color=#dd831a>";
-                        var gotStartQuests = false;
-                        var gotMoreThanOneStartQuest = false;
-                        var totalItemCount = 0;
-                        if (startQuests != null)
-                        {
-                            // Filter out completed quests
-                            var filteredStartQuests = startQuests.questData
-                                .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile));
-
-                            // Only compute and sort by prereq counts if feature is enabled
-                            var startQuestsWithPrereqs = MoreCheckmarksConfig.showPrerequisiteQuests
-                                ? filteredStartQuests
-                                    .Select(q => new { Entry = q, PrereqCount = MoreCheckmarksMod.GetRemainingPrerequisiteCount(q.Value.questId, profile) })
-                                    .OrderBy(q => q.PrereqCount)
-                                    .ToList()
-                                : filteredStartQuests
-                                    .Select(q => new { Entry = q, PrereqCount = 0 })
-                                    .ToList();
-                            var count = startQuestsWithPrereqs.Count;
-
-                            if (count > 0)
-                            {
-                                gotStartQuests = true;
-                                totalItemCount = startQuests.count;
-                            }
-
-                            if (count > 1)
-                            {
-                                gotMoreThanOneStartQuest = true;
-                            }
-
-                            var index = 0;
-                            foreach (var questWithPrereq in startQuestsWithPrereqs)
-                            {
-                                var questEntry = questWithPrereq.Entry;
-                                var localizedName = questEntry.Key.Localized(null);
-                                if (questEntry.Key.Equals(localizedName))
-                                {
-                                    // Could not localize name, just use default name
-                                    if (string.IsNullOrEmpty(questEntry.Value.questName))
-                                    {
-                                        questStartString += "Unknown Quest";
-                                    }
-                                    else
-                                    {
-                                        questStartString += questEntry.Value.questName;
-                                    }
-                                }
-                                else
-                                {
-                                    questStartString += localizedName;
-                                }
-
-                                // Add prerequisite status (using pre-computed count, empty string if disabled)
-                                questStartString += MoreCheckmarksMod.GetPrerequisiteStatusString(questWithPrereq.PrereqCount);
-
-                                if (index != count - 1)
-                                {
-                                    questStartString += ",\n  ";
-                                }
-                                else
-                                {
-                                    questStartString += "</color>";
-                                }
-
-                                ++index;
-                            }
-                        }
-
-                        if (gotStartQuests)
+                        var startString = BuildQuestNeededString(startQuests, profile, possessedQuestCount, "start");
+                        if (!string.IsNullOrEmpty(startString))
                         {
                             gotQuest = true;
-                            ___string_5 = "\nNeeded (" + possessedQuestCount + "/" + totalItemCount +
-                                          ") to start quest" + (gotMoreThanOneStartQuest ? "s" : "") + ":\n  " +
-                                          questStartString;
+                            ___string_5 = startString;
                         }
 
-                        var questCompleteString = "<color=#dd831a>";
-                        var gotCompleteQuests = false;
-                        var gotMoreThanOneCompleteQuest = false;
-                        if (completeQuests != null)
-                        {
-                            // Filter out completed quests
-                            var filteredCompleteQuests = completeQuests.questData
-                                .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile));
-
-                            // Only compute and sort by prereq counts if feature is enabled
-                            var completeQuestsWithPrereqs = MoreCheckmarksConfig.showPrerequisiteQuests
-                                ? filteredCompleteQuests
-                                    .Select(q => new { Entry = q, PrereqCount = MoreCheckmarksMod.GetRemainingPrerequisiteCount(q.Value.questId, profile) })
-                                    .OrderBy(q => q.PrereqCount)
-                                    .ToList()
-                                : filteredCompleteQuests
-                                    .Select(q => new { Entry = q, PrereqCount = 0 })
-                                    .ToList();
-                            var count = completeQuestsWithPrereqs.Count;
-
-                            if (count > 0)
-                            {
-                                gotCompleteQuests = true;
-                                totalItemCount = completeQuests.count;
-                            }
-
-                            if (count > 1)
-                            {
-                                gotMoreThanOneCompleteQuest = true;
-                            }
-
-                            var index = 0;
-                            foreach (var questWithPrereq in completeQuestsWithPrereqs)
-                            {
-                                var questEntry = questWithPrereq.Entry;
-                                var localizedName = questEntry.Key.Localized(null);
-                                if (questEntry.Key.Equals(localizedName))
-                                {
-                                    // Could not localize name, just use default name
-                                    if (string.IsNullOrEmpty(questEntry.Value.questName))
-                                    {
-                                        questCompleteString += "Unknown Quest";
-                                    }
-                                    else
-                                    {
-                                        questCompleteString += questEntry.Value.questName;
-                                    }
-                                }
-                                else
-                                {
-                                    questCompleteString += localizedName;
-                                }
-
-                                // Add prerequisite status (using pre-computed count, empty string if disabled)
-                                questCompleteString += MoreCheckmarksMod.GetPrerequisiteStatusString(questWithPrereq.PrereqCount);
-
-                                if (index != count - 1)
-                                {
-                                    questCompleteString += ",\n  ";
-                                }
-                                else
-                                {
-                                    questCompleteString += "</color>";
-                                }
-
-                                ++index;
-                            }
-                        }
-
-                        if (gotCompleteQuests)
+                        var completeString = BuildQuestNeededString(completeQuests, profile, possessedQuestCount, "complete");
+                        if (!string.IsNullOrEmpty(completeString))
                         {
                             gotQuest = true;
-                            ___string_5 += "\nNeeded (" + possessedQuestCount + "/" + totalItemCount +
-                                           ") to complete quest" + (gotMoreThanOneCompleteQuest ? "s" : "") + ":\n  " +
-                                           questCompleteString;
+                            ___string_5 += completeString;
                         }
                     }
                     else // Don't include future quests, do as vanilla
@@ -452,6 +311,81 @@ namespace MoreCheckmarks
             {
                 MoreCheckmarksMod.LogError($"SetTooltip failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Builds the "Needed (x/total) to {verb} quest(s):" tooltip fragment for a set of quests,
+        /// filtering out completed quests and optionally sorting by prerequisite count.
+        /// Returns an empty string if there are no applicable quests.
+        /// </summary>
+        private static string BuildQuestNeededString(QuestPair quests, Profile profile,
+            int possessedQuestCount, string verb)
+        {
+            if (quests == null)
+            {
+                return "";
+            }
+
+            // Filter out completed quests
+            var filtered = quests.questData
+                .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile));
+
+            // Only compute and sort by prereq counts if feature is enabled
+            var withPrereqs = MoreCheckmarksConfig.showPrerequisiteQuests
+                ? filtered
+                    .Select(q => new { Entry = q, PrereqCount = MoreCheckmarksMod.GetRemainingPrerequisiteCount(q.Value.questId, profile) })
+                    .OrderBy(q => q.PrereqCount)
+                    .ToList()
+                : filtered
+                    .Select(q => new { Entry = q, PrereqCount = 0 })
+                    .ToList();
+
+            var count = withPrereqs.Count;
+            if (count == 0)
+            {
+                return "";
+            }
+
+            var questString = "<color=#dd831a>";
+            var index = 0;
+            foreach (var questWithPrereq in withPrereqs)
+            {
+                var questEntry = questWithPrereq.Entry;
+                var localizedName = questEntry.Key.Localized(null);
+                if (questEntry.Key.Equals(localizedName))
+                {
+                    // Could not localize name, just use default name
+                    if (string.IsNullOrEmpty(questEntry.Value.questName))
+                    {
+                        questString += "Unknown Quest";
+                    }
+                    else
+                    {
+                        questString += questEntry.Value.questName;
+                    }
+                }
+                else
+                {
+                    questString += localizedName;
+                }
+
+                // Add prerequisite status (using pre-computed count, empty string if disabled)
+                questString += MoreCheckmarksMod.GetPrerequisiteStatusString(questWithPrereq.PrereqCount);
+
+                if (index != count - 1)
+                {
+                    questString += ",\n  ";
+                }
+                else
+                {
+                    questString += "</color>";
+                }
+
+                ++index;
+            }
+
+            return "\nNeeded (" + possessedQuestCount + "/" + quests.count +
+                   ") to " + verb + " quest" + (count > 1 ? "s" : "") + ":\n  " + questString;
         }
     }
 
