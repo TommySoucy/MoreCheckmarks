@@ -515,8 +515,8 @@ namespace MoreCheckmarks
                             out QuestPair completeQuests);
                         bool questItem = (lootItem.Item.MarkedAsSpawnedInSession || MoreCheckmarksConfig.showQuestCheckmarksNonFIR) && (lootItem.Item.QuestItem ||
                             (MoreCheckmarksConfig.includeFutureQuests &&
-                             (startQuests != null && startQuests.questData.Count > 0) ||
-                             (completeQuests != null && completeQuests.questData.Count > 0)));
+                             ((startQuests != null && startQuests.questData.Count > 0) ||
+                              (completeQuests != null && completeQuests.questData.Count > 0))));
                         List<List<KeyValuePair<string, int>>> bartersByTrader =
                             MoreCheckmarksMod.GetBarters(lootItem.TemplateId);
                         bool gotBarters = false;
