@@ -169,7 +169,7 @@ namespace MoreCheckmarks
                         if (!string.IsNullOrEmpty(startString))
                         {
                             gotQuest = true;
-                            ___string_5 = startString;
+                            ___string_5 += startString;
                         }
 
                         var completeString = BuildQuestNeededString(completeQuests, profile, possessedQuestCount, "complete");
