@@ -435,33 +435,7 @@ namespace MoreCheckmarks
             if (DataLoader.prereqCache.TryGetValue(questId, out var cached))
                 return cached;
 
-            var result = new HashSet<string>();
-            var queue = new Queue<string>();
-
-            // Add direct prerequisites to queue
-            if (DataLoader.questPrerequisites.TryGetValue(questId, out var directPrereqs))
-            {
-                foreach (var prereq in directPrereqs)
-                    queue.Enqueue(prereq);
-            }
-
-            // BFS to find all prerequisites
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                if (result.Contains(current)) continue;
-
-                result.Add(current);
-
-                if (DataLoader.questPrerequisites.TryGetValue(current, out var prereqs))
-                {
-                    foreach (var prereq in prereqs)
-                    {
-                        if (!result.Contains(prereq))
-                            queue.Enqueue(prereq);
-                    }
-                }
-            }
+            var result = QuestPrerequisites.ComputeAll(questId, DataLoader.questPrerequisites);
 
             // Cache and return
             DataLoader.prereqCache[questId] = result;
