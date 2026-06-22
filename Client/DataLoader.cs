@@ -246,6 +246,24 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.LogError($"Failed to parse assort data: {ex.Message}. Barter checkmarks will be unavailable.");
             }
 
+            MoreCheckmarksMod.LogInfo("\tTrader names");
+            try
+            {
+                var traderNamesResponse = RequestHandler.GetJson("/MoreCheckmarksRoutes/traderNames");
+                if (!string.IsNullOrEmpty(traderNamesResponse) && traderNamesResponse != "null")
+                {
+                    var names = JArray.Parse(traderNamesResponse);
+                    if (names.Count > 0)
+                    {
+                        traders = names.Select(n => n.ToString()).ToArray();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MoreCheckmarksMod.LogError($"Failed to load trader names: {ex.Message}. Using default trader names.");
+            }
+
             MoreCheckmarksMod.LogInfo("\tProductions");
             productionEndProductByID.Clear();
             try

@@ -132,38 +132,57 @@ public class MoreCheckmarksServer(
         return quests.ToArray();
     }
 
+    private List<(string name, TraderAssort assort)> GetOrderedTraderAssorts()
+    {
+        var result = new List<(string name, TraderAssort assort)>();
+        var fenceAssorts = fenceService.GetRawFenceAssorts();
+        var traderFields = typeof(Traders).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+        foreach (var traderField in traderFields)
+        {
+            var traderValue = traderField.GetValue(null) as MongoId?;
+            if (traderValue!.Value == Traders.FENCE && fenceAssorts != null)
+            {
+                result.Add(("Fence", fenceAssorts));
+                continue;
+            }
+            var traderDBEntry = databaseServer.GetTables().Traders[traderValue!.Value];
+            if (traderDBEntry != null && traderDBEntry.Assort != null)
+            {
+                var name = traderDBEntry.Base?.Nickname ?? traderField.Name;
+                result.Add((name, traderDBEntry.Assort));
+            }
+        }
+        return result;
+    }
+
     public TraderAssort[]? HandleAssorts()
     {
         logger.Info("MoreCheckmarks making trader assort data request");
-        var assortsList = new List<TraderAssort>();
         try
         {
-            var fenceAssorts = fenceService.GetRawFenceAssorts();
-            Type traderType = typeof(Traders);
-            var traderFields = traderType.GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
-            foreach (var traderField in traderFields)
-            {
-                var traderValue = traderField.GetValue(null) as MongoId?;
-                if (traderValue!.Value == Traders.FENCE && fenceAssorts != null)
-                {
-                    assortsList.Add(fenceAssorts);
-                    continue;
-                }
-                var traderDBEntry = databaseServer.GetTables().Traders[traderValue!.Value];
-                if (traderDBEntry != null && traderDBEntry.Assort != null)
-                {
-                    assortsList.Add(traderDBEntry.Assort);
-                }
-            }
+            var ordered = GetOrderedTraderAssorts();
+            logger.Info($"Finished fetching {ordered.Count} assorts for MoreCheckmarks");
+            return ordered.Select(x => x.assort).ToArray();
         }
         catch
         {
             logger.Error("Exception caught when trying to generate assorts.");
             return null;
         }
+    }
 
-        logger.Info($"Finished fetching {assortsList.Count} assorts for MoreCheckmarks");
-        return assortsList.ToArray();
+    public string[]? HandleTraderNames()
+    {
+        logger.Info("MoreCheckmarks making trader names request");
+        try
+        {
+            return GetOrderedTraderAssorts().Select(x => x.name).ToArray();
+        }
+        catch
+        {
+            logger.Error("Exception caught when trying to generate trader names.");
+            return null;
+        }
     }
 
     public HideoutProductionData? HandleProductions()
