@@ -16,6 +16,8 @@
   <ItemGroup>
     <!-- Link the pure source under test; no game/Unity dependencies. -->
     <Compile Include="..\Client\QuestPrerequisites.cs" />
+    <Compile Include="..\Client\Models.cs" />
+    <Compile Include="..\Client\QuestFirFilter.cs" />
   </ItemGroup>
 
 </Project>
