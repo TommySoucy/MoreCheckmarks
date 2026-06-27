@@ -7,6 +7,7 @@ namespace MoreCheckmarks
     {
         // Config Entries (BepInEx F12 menu)
         public static ConfigEntry<bool> configFulfilledAnyCanBeUpgraded;
+        public static ConfigEntry<bool> configOnlyShowHideoutCheckmarkOnFIR;
         public static ConfigEntry<int> configQuestPriority;
         public static ConfigEntry<int> configHideoutPriority;
         public static ConfigEntry<int> configWishlistPriority;
@@ -29,6 +30,7 @@ namespace MoreCheckmarks
 
         // Config settings (derived from ConfigEntry values)
         public static bool fulfilledAnyCanBeUpgraded => configFulfilledAnyCanBeUpgraded.Value;
+        public static bool onlyShowHideoutCheckmarkOnFIR => configOnlyShowHideoutCheckmarkOnFIR.Value;
         public static int questPriority => configQuestPriority.Value;
         public static int hideoutPriority => configHideoutPriority.Value;
         public static int wishlistPriority => configWishlistPriority.Value;
@@ -83,6 +85,15 @@ namespace MoreCheckmarks
                 "Show Future Module Levels",
                 true,
                 "Show requirements for future hideout module levels instead of only the next one.");
+
+            configOnlyShowHideoutCheckmarkOnFIR = config.Bind(
+                "Hideout",
+                "Only Show Hideout Checkmark On FIR Items",
+                false,
+                "When enabled, hideout requirements only drive the checkmark for items that are Found In Raid (FIR). " +
+                "Non-FIR items will not get a checkmark from hideout needs (though quests, wishlist, barters, or crafts can still show one). " +
+                "This is hideout-specific and independent from the general 'Only Show Checkmarks On FIR Items' setting. " +
+                "The 'Needed for area' tooltip lines are still shown.");
 
             // Quest Settings
             configIncludeFutureQuests = config.Bind(

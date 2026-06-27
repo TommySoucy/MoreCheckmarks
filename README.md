@@ -101,6 +101,7 @@ Press **F12** in-game to access all settings. Below are the available options:
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Fulfilled Any Can Be Upgraded** | When TRUE, shows fulfilled checkmark when AT LEAST ONE hideout module can be upgraded. When FALSE, shows fulfilled only when ALL modules requiring this item can be upgraded. |
 | **Show Future Module Levels**     | Show requirements for future hideout module levels instead of only the next one.                                                                                              |
+| **Only Show Hideout Checkmark On FIR Items** | When enabled, hideout needs only drive the checkmark for Found In Raid (FIR) items. Non-FIR items get no hideout checkmark (quests, wishlist, barters, and crafts can still show one). Hideout-specific and independent from the General "Only Show Checkmarks On FIR Items" setting. The "Needed for area" tooltip lines are still shown. |
 
 ### Quest Settings
 
@@ -185,6 +186,7 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 ### v2.2.0
 
 - Added "Only Show Checkmarks On FIR Items" option (General section) to restrict ALL checkmarks (including hideout and barter) to Found In Raid items
+- Added "Only Show Hideout Checkmark On FIR Items" option (Hideout section) - hideout needs only drive the checkmark for Found In Raid items; non-FIR items get no hideout checkmark (other reasons still apply). Default off, and the "Needed for area" tooltip lines remain visible.
 - Added "Only Show FiR-Required Quests" option (Quests section) - hides quest checkmarks for items whose quest doesn't require Found In Raid (e.g. Ragman's Hot Delivery). Default off, so existing behavior is unchanged unless enabled.
 - Added server-side `config.json` with `hideInactiveEventQuests` (default on) to hide inactive seasonal/event quests, and `excludedQuestIds` to hide specific quests you never do.
 - A `quest-id-reference.txt` lookup file is generated on server start to help find quest IDs for the exclusion list.

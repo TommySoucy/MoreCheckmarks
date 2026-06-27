@@ -103,7 +103,7 @@ namespace MoreCheckmarks
                 if (!MoreCheckmarksConfig.onlyShowCheckmarksOnFIR || item.MarkedAsSpawnedInSession)
                 {
                     if (MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
-                            craftRequired, out var checkmarkColor))
+                            craftRequired, item.MarkedAsSpawnedInSession, out var checkmarkColor))
                     {
                         SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, checkmarkColor);
                     }
@@ -474,7 +474,7 @@ namespace MoreCheckmarks
                         // When restricted to FIR-only, non-FIR items get no colored "Take" action
                         if ((!MoreCheckmarksConfig.onlyShowCheckmarksOnFIR || lootItem.Item.MarkedAsSpawnedInSession) &&
                             MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
-                                craftRequired, out Color checkmarkColor))
+                                craftRequired, lootItem.Item.MarkedAsSpawnedInSession, out Color checkmarkColor))
                         {
                             action.Name = "<font=\"BenderBold\"><color=#" +
                                           ColorUtility.ToHtmlStringRGB(checkmarkColor) + ">Take</color></font>";

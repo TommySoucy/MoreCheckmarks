@@ -372,14 +372,17 @@ namespace MoreCheckmarks
         /// the configured priorities. Returns false if the item isn't needed for anything.
         /// </summary>
         public static bool TryGetCheckmarkColor(bool questItem, NeededStruct neededStruct, bool wishlist,
-            bool gotBarters, bool craftRequired, out Color color)
+            bool gotBarters, bool craftRequired, bool itemIsFir, out Color color)
         {
             color = Color.white;
+
+            var hideoutNeeded = (neededStruct.foundNeeded || neededStruct.foundFulfilled) &&
+                                (!MoreCheckmarksConfig.onlyShowHideoutCheckmarkOnFIR || itemIsFir);
 
             var neededFor = new[]
             {
                 questItem,
-                neededStruct.foundNeeded || neededStruct.foundFulfilled,
+                hideoutNeeded,
                 wishlist,
                 gotBarters,
                 craftRequired
