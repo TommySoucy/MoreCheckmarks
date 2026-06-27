@@ -376,7 +376,8 @@ namespace MoreCheckmarks
         {
             color = Color.white;
 
-            var hideoutNeeded = (neededStruct.foundNeeded || neededStruct.foundFulfilled) &&
+            var hideoutNeeded = MoreCheckmarksConfig.showHideoutCheckmarks &&
+                                (neededStruct.foundNeeded || neededStruct.foundFulfilled) &&
                                 (!MoreCheckmarksConfig.onlyShowHideoutCheckmarkOnFIR || itemIsFir);
 
             var neededFor = new[]

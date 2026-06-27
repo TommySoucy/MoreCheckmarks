@@ -71,7 +71,8 @@ namespace MoreCheckmarks
                 var craftRequired = MoreCheckmarksConfig.showCraft &&
                                      MoreCheckmarksMod.GetNeededCraft(item.TemplateId, ref craftTooltip);
 
-                var questItem = (item.MarkedAsSpawnedInSession || MoreCheckmarksConfig.showQuestCheckmarksNonFIR) &&
+                var questItem = MoreCheckmarksConfig.showQuestCheckmarks &&
+                                (item.MarkedAsSpawnedInSession || MoreCheckmarksConfig.showQuestCheckmarksNonFIR) &&
                                 ((item.QuestItem || MoreCheckmarksConfig.includeFutureQuests)
                                     ? QuestFirFilter.HasVisible(startQuests, MoreCheckmarksConfig.onlyFirRequiredQuests) ||
                                       QuestFirFilter.HasVisible(completeQuests, MoreCheckmarksConfig.onlyFirRequiredQuests)
@@ -150,8 +151,8 @@ namespace MoreCheckmarks
             try
             {
                 // Reset string
-                ___string_5 = "STASH".Localized(null) + ": <color=#dd831a>" + possessedQuestCount + "</color>/" +
-                              possessedCount;
+                ___string_5 = "STASH".Localized(null) + ": <color=#dd831a>" + possessedQuestCount +
+                              "</color> found in raid / " + possessedCount + " total";
 
                 // Show found in raid if found in raid
                 if (item.MarkedAsSpawnedInSession)
@@ -161,7 +162,7 @@ namespace MoreCheckmarks
 
                 // Add quests
                 var gotQuest = false;
-                if (item.MarkedAsSpawnedInSession || MoreCheckmarksConfig.showQuestCheckmarksNonFIR)
+                if (MoreCheckmarksConfig.showQuestCheckmarks && (item.MarkedAsSpawnedInSession || MoreCheckmarksConfig.showQuestCheckmarksNonFIR))
                 {
                     if (MoreCheckmarksConfig.includeFutureQuests)
                     {
@@ -240,18 +241,24 @@ namespace MoreCheckmarks
                 }
 
                 // Add areas
-                var gotAreas = areaNames.Count > 0;
-                var areaNamesString = "";
-                for (var i = 0; i < areaNames.Count; ++i)
+                var gotAreas = MoreCheckmarksConfig.showHideoutCheckmarks && areaNames.Count > 0;
+                if (gotAreas)
                 {
-                    areaNamesString += "\n  " + areaNames[i];
-                }
+                    var areaNamesString = "";
+                    for (var i = 0; i < areaNames.Count; ++i)
+                    {
+                        areaNamesString += "\n  " + areaNames[i];
+                    }
 
-                if (!areaNamesString.Equals(""))
-                {
-                    ___string_5 +=
-                        string.Format("\nNeeded ({1}/{2}) for area" + (areaNames.Count == 1 ? "" : "s") + ":{0}",
-                            areaNamesString, possessedCount, requiredCount);
+                    if (!areaNamesString.Equals(""))
+                    {
+                        var areaPossessedCount = MoreCheckmarksConfig.onlyShowHideoutCheckmarkOnFIR
+                            ? possessedQuestCount
+                            : possessedCount;
+                        ___string_5 +=
+                            string.Format("\nNeeded ({1}/{2}) for area" + (areaNames.Count == 1 ? "" : "s") + ":{0}",
+                                areaNamesString, areaPossessedCount, requiredCount);
+                    }
                 }
 
                 // Add wishlist
@@ -448,7 +455,7 @@ namespace MoreCheckmarks
                             out QuestPair startQuests);
                         DataLoader.questDataCompleteByItemTemplateID.TryGetValue(lootItem.TemplateId,
                             out QuestPair completeQuests);
-                        bool questItem = (lootItem.Item.MarkedAsSpawnedInSession || MoreCheckmarksConfig.showQuestCheckmarksNonFIR) && (lootItem.Item.QuestItem ||
+                        bool questItem = MoreCheckmarksConfig.showQuestCheckmarks && (lootItem.Item.MarkedAsSpawnedInSession || MoreCheckmarksConfig.showQuestCheckmarksNonFIR) && (lootItem.Item.QuestItem ||
                             (MoreCheckmarksConfig.includeFutureQuests &&
                              (QuestFirFilter.HasVisible(startQuests, MoreCheckmarksConfig.onlyFirRequiredQuests) ||
                               QuestFirFilter.HasVisible(completeQuests, MoreCheckmarksConfig.onlyFirRequiredQuests))));

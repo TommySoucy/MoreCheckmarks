@@ -93,6 +93,7 @@ Press **F12** in-game to access all settings. Below are the available options:
 
 | Setting                           | Description                                                                                                                                                                   |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Show Hideout Checkmarks**       | Show checkmark and tooltip for hideout areas this item is needed for. Default on. When disabled, no hideout checkmark or "Needed for area" tooltip section is shown.         |
 | **Fulfilled Any Can Be Upgraded** | When TRUE, shows fulfilled checkmark when AT LEAST ONE hideout module can be upgraded. When FALSE, shows fulfilled only when ALL modules requiring this item can be upgraded. |
 | **Show Future Module Levels**     | Show requirements for future hideout module levels instead of only the next one.                                                                                              |
 | **Only Show Hideout Checkmark On FIR Items** | When enabled, hideout needs only drive the checkmark for Found In Raid (FIR) items. Non-FIR items get no hideout checkmark (quests, wishlist, barters, and crafts can still show one). The "Needed for area" tooltip lines are still shown. |
@@ -101,6 +102,7 @@ Press **F12** in-game to access all settings. Below are the available options:
 
 | Setting                                  | Description                                                                                                                                                                                                                                                                                            |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Show Quest Checkmarks**                | Show checkmark and tooltip for quests this item is needed for. Default on. When disabled, no quest checkmark or quest tooltip section is shown.                                                                                                                                                          |
 | **Include Future Quests**                | Consider future quests when checking which quests an item is required for. If false, behaves like vanilla.                                                                                                                                                                                              |
 | **Show Prerequisite Count**              | Show the number of prerequisite quests needed before each quest becomes available, with color coding and sorting.                                                                                                                                                                                       |
 | **Show Quest Checkmarks for Non-FIR Items** | When enabled, quest checkmarks appear on items even if they aren't found in raid. Useful if your SPT is configured to accept non-FIR items for quest turn-ins. This is about whether *your stored item* is FIR.                                                                                       |
@@ -176,6 +178,13 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 ---
 
 ## Changelog
+
+### v2.3.0
+
+- The "Needed for area" tooltip count is now FIR-aware: when "Only Show Hideout Checkmark On FIR Items" is enabled, the possessed number reflects only your Found In Raid items instead of your total count.
+- Clearer STASH tooltip wording - now reads "X found in raid / Y total" instead of "X/Y".
+- Added "Show Quest Checkmarks" option (Quests section) - toggle quest checkmarks and the quest tooltip section on or off. Default on.
+- Added "Show Hideout Checkmarks" option (Hideout section) - toggle hideout checkmarks and the "Needed for area" tooltip section on or off. Default on.
 
 ### v2.2.0
 

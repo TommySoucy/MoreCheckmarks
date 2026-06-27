@@ -8,6 +8,8 @@ namespace MoreCheckmarks
         // Config Entries (BepInEx F12 menu)
         public static ConfigEntry<bool> configFulfilledAnyCanBeUpgraded;
         public static ConfigEntry<bool> configOnlyShowHideoutCheckmarkOnFIR;
+        public static ConfigEntry<bool> configShowHideoutCheckmarks;
+        public static ConfigEntry<bool> configShowQuestCheckmarks;
         public static ConfigEntry<int> configQuestPriority;
         public static ConfigEntry<int> configHideoutPriority;
         public static ConfigEntry<int> configWishlistPriority;
@@ -30,6 +32,8 @@ namespace MoreCheckmarks
         // Config settings (derived from ConfigEntry values)
         public static bool fulfilledAnyCanBeUpgraded => configFulfilledAnyCanBeUpgraded.Value;
         public static bool onlyShowHideoutCheckmarkOnFIR => configOnlyShowHideoutCheckmarkOnFIR.Value;
+        public static bool showHideoutCheckmarks => configShowHideoutCheckmarks.Value;
+        public static bool showQuestCheckmarks => configShowQuestCheckmarks.Value;
         public static int questPriority => configQuestPriority.Value;
         public static int hideoutPriority => configHideoutPriority.Value;
         public static int wishlistPriority => configWishlistPriority.Value;
@@ -65,6 +69,12 @@ namespace MoreCheckmarks
                 new ConfigDescription("Changes don't apply immediately. To see updates: leave your current menu (e.g. stash), go to main menu, then return.", null, new ConfigurationManagerAttributes { ReadOnly = true, HideDefaultButton = true }));
 
             // Hideout Settings
+            configShowHideoutCheckmarks = config.Bind(
+                "Hideout",
+                "Show Hideout Checkmarks",
+                true,
+                "Show checkmark and tooltip for hideout areas this item is needed for. When disabled, no hideout checkmark or 'Needed for area' tooltip section is shown.");
+
             configFulfilledAnyCanBeUpgraded = config.Bind(
                 "Hideout",
                 "Fulfilled Any Can Be Upgraded",
@@ -80,12 +90,18 @@ namespace MoreCheckmarks
             configOnlyShowHideoutCheckmarkOnFIR = config.Bind(
                 "Hideout",
                 "Only Show Hideout Checkmark On FIR Items",
-                false,
+                true,
                 "When enabled, hideout requirements only drive the checkmark for items that are Found In Raid (FIR). " +
                 "Non-FIR items will not get a checkmark from hideout needs (though quests, wishlist, barters, or crafts can still show one). " +
                 "The 'Needed for area' tooltip lines are still shown.");
 
             // Quest Settings
+            configShowQuestCheckmarks = config.Bind(
+                "Quests",
+                "Show Quest Checkmarks",
+                true,
+                "Show checkmark and tooltip for quests this item is needed for. When disabled, no quest checkmark or quest tooltip section is shown.");
+
             configIncludeFutureQuests = config.Bind(
                 "Quests",
                 "Include Future Quests",
