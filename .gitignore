@@ -391,6 +391,7 @@ FodyWeavers.xsd
 hub/CheckmarkThumb.png
 hub/Untitled-1.png
 
+docs/*
 references/
 .planning/
 plans/*

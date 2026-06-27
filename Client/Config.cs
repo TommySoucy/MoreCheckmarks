@@ -110,7 +110,7 @@ namespace MoreCheckmarks
                 "When enabled, quest checkmarks only appear for quests that REQUIRE the item to be Found-in-Raid. " +
                 "Quests that accept non-FiR items (e.g. Ragman's Hot Delivery) won't show a checkmark. " +
                 "This is about whether the QUEST requires FiR; it is separate from 'Show Quest Checkmarks for Non-FIR Items', " +
-                "which is about whether YOUR stored item is FiR. Hardcore players should leave this off.");
+                "which is about whether YOUR stored item is FiR.");
 
             // Barter & Craft Settings
             configShowBarter = config.Bind(

@@ -55,7 +55,7 @@ If an item is needed for a quest or is found in raid (so would already have a ch
 
 ### 🎮 F12 In-Game Configuration Menu
 
-All settings are now accessible through BepInEx's F12 configuration menu! No more editing config files manually.
+_Almost_ all settings are now accessible through BepInEx's F12 configuration menu! No more editing config files manually.
 
 - **Live color pickers** with RGB sliders
 - **Organized categories**: Hideout, Quests, Barter & Craft, Priority, Colors
@@ -184,6 +184,7 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 
 ### v2.2.0
 
+- Added "Only Show Checkmarks On FIR Items" option (General section) to restrict ALL checkmarks (including hideout and barter) to Found In Raid items
 - Added "Only Show FiR-Required Quests" option (Quests section) - hides quest checkmarks for items whose quest doesn't require Found In Raid (e.g. Ragman's Hot Delivery). Default off, so existing behavior is unchanged unless enabled.
 - Added server-side `config.json` with `hideInactiveEventQuests` (default on) to hide inactive seasonal/event quests, and `excludedQuestIds` to hide specific quests you never do.
 - A `quest-id-reference.txt` lookup file is generated on server start to help find quest IDs for the exclusion list.
