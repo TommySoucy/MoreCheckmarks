@@ -50,6 +50,7 @@
     <Compile Include="DataLoader.cs" />
     <Compile Include="Models.cs" />
     <Compile Include="MoreCheckmarks.cs" />
+    <Compile Include="QuestFirFilter.cs" />
     <Compile Include="QuestPrerequisites.cs" />
     <Compile Include="Patches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
