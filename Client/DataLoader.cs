@@ -318,6 +318,12 @@ namespace MoreCheckmarks
             }
 
             var targets = condition["target"] as JArray;
+            var firRequired = false;
+            var firToken = condition["onlyFoundInRaid"];
+            if (firToken != null && firToken.Type == JTokenType.Boolean)
+            {
+                firRequired = firToken.Value<bool>();
+            }
             for (var k = 0; k < targets.Count; ++k)
             {
                 var targetId = targets[k].ToString();
@@ -347,10 +353,16 @@ namespace MoreCheckmarks
                 // Update questDataByItem dictionary
                 if (questDataByItem.TryGetValue(targetId, out var quests))
                 {
-                    if (!quests.questData.ContainsKey(questNameKey))
+                    if (quests.questData.TryGetValue(questNameKey, out var existing))
+                    {
+                        // OR-combine: if any condition for this quest requires FiR, mark it FiR-required
+                        quests.questData[questNameKey] =
+                            (existing.questName, existing.questId, existing.firRequired || firRequired);
+                    }
+                    else
                     {
                         quests.questData.Add(questNameKey,
-                            (questDisplayName, questIdStr));
+                            (questDisplayName, questIdStr, firRequired));
                     }
                     int.TryParse(condition["value"]?.ToString(), out var parsedValue);
                     quests.count += parsedValue;
@@ -359,7 +371,7 @@ namespace MoreCheckmarks
                 {
                     var newPair = new QuestPair();
                     newPair.questData.Add(questNameKey,
-                        (questDisplayName, questIdStr));
+                        (questDisplayName, questIdStr, firRequired));
                     int.TryParse(condition["value"]?.ToString(), out var parsedValue);
                     newPair.count = parsedValue;
                     questDataByItem.Add(targetId, newPair);
