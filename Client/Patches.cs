@@ -73,8 +73,8 @@ namespace MoreCheckmarks
 
                 var questItem = (item.MarkedAsSpawnedInSession || MoreCheckmarksConfig.showQuestCheckmarksNonFIR) &&
                                 ((item.QuestItem || MoreCheckmarksConfig.includeFutureQuests)
-                                    ? (startQuests != null && startQuests.questData.Count > 0) ||
-                                      (completeQuests != null && completeQuests.questData.Count > 0)
+                                    ? QuestFirFilter.HasVisible(startQuests, MoreCheckmarksConfig.onlyFirRequiredQuests) ||
+                                      QuestFirFilter.HasVisible(completeQuests, MoreCheckmarksConfig.onlyFirRequiredQuests)
                                     : ___string_5 != null && ___string_5.Contains("quest"));
 
 
@@ -330,8 +330,9 @@ namespace MoreCheckmarks
                 return "";
             }
 
-            // Filter out completed quests
-            var filtered = quests.questData
+            // First apply the FiR-required filter, then filter out completed quests
+            var firVisible = QuestFirFilter.Visible(quests, MoreCheckmarksConfig.onlyFirRequiredQuests);
+            var filtered = firVisible
                 .Where(q => !MoreCheckmarksMod.IsQuestCompleted(q.Value.questId, profile));
 
             // Only compute and sort by prereq counts if feature is enabled
@@ -453,8 +454,8 @@ namespace MoreCheckmarks
                             out QuestPair completeQuests);
                         bool questItem = (lootItem.Item.MarkedAsSpawnedInSession || MoreCheckmarksConfig.showQuestCheckmarksNonFIR) && (lootItem.Item.QuestItem ||
                             (MoreCheckmarksConfig.includeFutureQuests &&
-                             ((startQuests != null && startQuests.questData.Count > 0) ||
-                              (completeQuests != null && completeQuests.questData.Count > 0))));
+                             (QuestFirFilter.HasVisible(startQuests, MoreCheckmarksConfig.onlyFirRequiredQuests) ||
+                              QuestFirFilter.HasVisible(completeQuests, MoreCheckmarksConfig.onlyFirRequiredQuests))));
                         List<List<KeyValuePair<string, int>>> bartersByTrader =
                             MoreCheckmarksMod.GetBarters(lootItem.TemplateId);
                         bool gotBarters = false;
