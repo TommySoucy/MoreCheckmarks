@@ -1,18 +1,5 @@
 # MoreCheckmarks v2.2.0 - SPT 4.0 Update
 
-> ⚠️ **Note:** This is a complete port to SPT 4.0. As with any major update, there may be bugs or unexpected behavior. Please be patient while we iron out any kinks, and don't hesitate to report any issues you encounter!
-
-> **⚠️ Important:** Version 2.1.0 is tested with SPT version 4.0.11. It may not work with other 4.0 versions. It will **definitely not** work with SPT versions prior to 4.0.0.
-
----
-
-## Known Issues
-
-- ~~On brand new profiles, checkmarks may not appear until you accept a quest; a game restart after accepting can also be required.~~ - Should be fixed in version 2.0.1 !
-- ~~Barters are not being shown in checkmarks/tooltips~~ - Should be fixed in version 2.1.0 !
-
----
-
 ## Overview
 
 A mod for SPT that shows colored checkmarks on items needed for hideout upgrades, quests, wishlist, barters, and crafting recipes.
@@ -179,19 +166,15 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 
 ## Changelog
 
-### v2.3.0
+### v2.2.0
 
 - The "Needed for area" tooltip count is now FIR-aware: when "Only Show Hideout Checkmark On FIR Items" is enabled, the possessed number reflects only your Found In Raid items instead of your total count.
 - Clearer STASH tooltip wording - now reads "X found in raid / Y total" instead of "X/Y".
 - Added "Show Quest Checkmarks" option (Quests section) - toggle quest checkmarks and the quest tooltip section on or off. Default on.
 - Added "Show Hideout Checkmarks" option (Hideout section) - toggle hideout checkmarks and the "Needed for area" tooltip section on or off. Default on.
-
-### v2.2.0
-
-- Added "Only Show Hideout Checkmark On FIR Items" option (Hideout section) - hideout needs only drive the checkmark for Found In Raid items; non-FIR items get no hideout checkmark (other reasons still apply). Default off, and the "Needed for area" tooltip lines remain visible.
+- Added "Only Show Hideout Checkmark On FIR Items" option (Hideout section) - hideout needs only drive the checkmark for Found In Raid items; non-FIR items get no hideout checkmark (other reasons still apply). Default on.
 - Added "Only Show FiR-Required Quests" option (Quests section) - hides quest checkmarks for items whose quest doesn't require Found In Raid (e.g. Ragman's Hot Delivery). Default off, so existing behavior is unchanged unless enabled.
-- Added server-side `config.json` with `hideInactiveEventQuests` (default on) to hide inactive seasonal/event quests, and `excludedQuestIds` to hide specific quests you never do.
-- A `quest-id-reference.txt` lookup file is generated on server start to help find quest IDs for the exclusion list.
+- Added server-side `config.json` with `hideInactiveEventQuests` (default on) to hide inactive seasonal/event quests, and `excludedQuestIds` to hide specific quests you never do. A `quest-id-reference.txt` lookup file is generated on server start to help find quest IDs for the exclusion list.
 
 ### V2.1.1
 - Refactor codebase to improve maintainability.
