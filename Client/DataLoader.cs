@@ -42,8 +42,8 @@ namespace MoreCheckmarks
 
         public static void LoadData()
         {
-            MoreCheckmarksMod.LogInfo("Loading data");
-            MoreCheckmarksMod.LogInfo("\tQuests");
+            MoreCheckmarksMod.LogDebug("Loading data");
+            MoreCheckmarksMod.LogDebug("\tQuests");
 
             // Clear all quest data first - this ensures we start fresh even if loading fails
             questDataStartByItemTemplateID.Clear();
@@ -60,7 +60,7 @@ namespace MoreCheckmarks
                 var questResponse = RequestHandler.GetJson("/MoreCheckmarksRoutes/quests");
                 if (string.IsNullOrEmpty(questResponse) || questResponse == "null")
                 {
-                    MoreCheckmarksMod.LogInfo("Quest data response was empty or null (new profile?). Quest checkmarks will be unavailable until data is loaded.");
+                    MoreCheckmarksMod.LogDebug("Quest data response was empty or null (new profile?). Quest checkmarks will be unavailable until data is loaded.");
                     questData = new JArray();
                 }
                 else
@@ -74,13 +74,13 @@ namespace MoreCheckmarks
                 questData = new JArray();
             }
 
-            MoreCheckmarksMod.LogInfo($"Loaded {questData.Count} quests");
+            MoreCheckmarksMod.LogDebug($"Loaded {questData.Count} quests");
 
             // If quest data is empty, flag for reload on next item view (handles new profile case)
             questDataNeedsReload = questData.Count == 0;
             if (questDataNeedsReload)
             {
-                MoreCheckmarksMod.LogInfo("Quest data empty - will reload when a quest is accepted");
+                MoreCheckmarksMod.LogDebug("Quest data empty - will reload when a quest is accepted");
             }
 
             // Process all quests
@@ -159,7 +159,7 @@ namespace MoreCheckmarks
             }
 
             // Build prerequisite map from quest conditions
-            MoreCheckmarksMod.LogInfo("\tBuilding prerequisite map");
+            MoreCheckmarksMod.LogDebug("\tBuilding prerequisite map");
             foreach (var quest in questData)
             {
                 var questId = quest["_id"]?.ToString();
@@ -183,13 +183,13 @@ namespace MoreCheckmarks
                 }
                 questPrerequisites[questId] = prereqs;
             }
-            MoreCheckmarksMod.LogInfo($"\tBuilt prerequisite map for {questPrerequisites.Count} quests");
+            MoreCheckmarksMod.LogDebug($"\tBuilt prerequisite map for {questPrerequisites.Count} quests");
 
             var euro = "569668774bdc2da2298b4568";
             var rouble = "5449016a4bdc2d6f028b456f";
             var dollar = "5696686a4bdc2da3298b456a";
 
-            MoreCheckmarksMod.LogInfo("\tAssorts");
+            MoreCheckmarksMod.LogDebug("\tAssorts");
             bartersByItemByTrader.Clear();
             try
             {
@@ -246,7 +246,7 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.LogError($"Failed to parse assort data: {ex.Message}. Barter checkmarks will be unavailable.");
             }
 
-            MoreCheckmarksMod.LogInfo("\tTrader names");
+            MoreCheckmarksMod.LogDebug("\tTrader names");
             try
             {
                 var traderNamesResponse = RequestHandler.GetJson("/MoreCheckmarksRoutes/traderNames");
@@ -264,7 +264,7 @@ namespace MoreCheckmarks
                 MoreCheckmarksMod.LogError($"Failed to load trader names: {ex.Message}. Using default trader names.");
             }
 
-            MoreCheckmarksMod.LogInfo("\tProductions");
+            MoreCheckmarksMod.LogDebug("\tProductions");
             productionEndProductByID.Clear();
             try
             {

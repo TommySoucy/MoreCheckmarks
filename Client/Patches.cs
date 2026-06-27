@@ -514,7 +514,7 @@ namespace MoreCheckmarks
                 return;
             }
 
-            MoreCheckmarksMod.LogInfo("Quest " + __instance.Template.Name + " queststatus set to " +
+            MoreCheckmarksMod.LogDebug("Quest " + __instance.Template.Name + " queststatus set to " +
                                       __instance.QuestStatus);
 
             try
@@ -563,7 +563,7 @@ namespace MoreCheckmarks
                             // If quest data was incomplete (profile wasn't ready), reload now that a quest has been accepted
                             if (DataLoader.questDataNeedsReload)
                             {
-                                MoreCheckmarksMod.LogInfo("Quest accepted - reloading quest data");
+                                MoreCheckmarksMod.LogDebug("Quest accepted - reloading quest data");
                                 DataLoader.LoadData();
                             }
 

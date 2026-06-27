@@ -391,8 +391,9 @@ FodyWeavers.xsd
 hub/CheckmarkThumb.png
 hub/Untitled-1.png
 
-reference_*
+references/
 .planning/
 plans/*
 .claude
 *.cursorrules
+VERSION-*.md

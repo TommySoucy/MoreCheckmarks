@@ -51,7 +51,7 @@ namespace MoreCheckmarks
             modPath = modPath.Replace('\\', '/');
 
             MoreCheckmarksConfig.Bind(Config);
-            Logger.LogInfo("Configs loaded");
+            Logger.LogDebug("Configs loaded");
 
             LoadAssets();
 
@@ -73,7 +73,7 @@ namespace MoreCheckmarks
                 whiteCheckmark = assetBundle.LoadAsset<Sprite>("WhiteCheckmark");
                 benderBold = assetBundle.LoadAsset<TMP_FontAsset>("BenderBold");
                 TMP_Text.OnFontAssetRequest += TMP_Text_onFontAssetRequest;
-                LogInfo("Assets loaded");
+                LogDebug("Assets loaded");
             }
         }
 
@@ -518,6 +518,11 @@ namespace MoreCheckmarks
         public static void LogInfo(string msg)
         {
             modInstance.Logger.LogInfo(msg);
+        }
+
+        public static void LogDebug(string msg)
+        {
+            modInstance.Logger.LogDebug(msg);
         }
 
         public static void LogError(string msg)

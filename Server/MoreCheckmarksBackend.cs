@@ -63,7 +63,7 @@ public class MoreCheckmarksServer(
 
     public Quest[] HandleQuests(MongoId sessionId)
     {
-        logger.Info("MoreCheckmarks making quest data request");
+        logger.Debug("MoreCheckmarks making quest data request");
         var quests = new List<Quest>();
         var allQuests = questHelper.GetQuestsFromDb();
         var profile = profileHelper.GetPmcProfile(sessionId);
@@ -95,7 +95,7 @@ public class MoreCheckmarksServer(
         {
             // New profile with no quest data - return ALL quests for their side
             // (since they haven't completed any, all quests should show checkmarks)
-            logger.Info("MoreCheckmarks: No quest data (new profile). Returning all quests as incomplete.");
+            logger.Debug("MoreCheckmarks: No quest data (new profile). Returning all quests as incomplete.");
             foreach (var quest in allQuests)
             {
                 if (!QuestIsForOtherSide(profileSide, quest.Id))
@@ -103,7 +103,7 @@ public class MoreCheckmarksServer(
                     quests.Add(quest);
                 }
             }
-            logger.Info($"Got {quests.Count} quests for MoreCheckmarks (all quests for new profile)");
+            logger.Debug($"Got {quests.Count} quests for MoreCheckmarks (all quests for new profile)");
             return quests.ToArray();
         }
 
@@ -128,7 +128,7 @@ public class MoreCheckmarksServer(
                 quests.Add(quest);
             }
         }
-        logger.Info($"Got {quests.Count} quests for MoreCheckmarks");
+        logger.Debug($"Got {quests.Count} quests for MoreCheckmarks");
         return quests.ToArray();
     }
 
@@ -157,11 +157,11 @@ public class MoreCheckmarksServer(
 
     public TraderAssort[]? HandleAssorts()
     {
-        logger.Info("MoreCheckmarks making trader assort data request");
+        logger.Debug("MoreCheckmarks making trader assort data request");
         try
         {
             var ordered = GetOrderedTraderAssorts();
-            logger.Info($"Finished fetching {ordered.Count} assorts for MoreCheckmarks");
+            logger.Debug($"Finished fetching {ordered.Count} assorts for MoreCheckmarks");
             return ordered.Select(x => x.assort).ToArray();
         }
         catch
@@ -173,7 +173,7 @@ public class MoreCheckmarksServer(
 
     public string[]? HandleTraderNames()
     {
-        logger.Info("MoreCheckmarks making trader names request");
+        logger.Debug("MoreCheckmarks making trader names request");
         try
         {
             return GetOrderedTraderAssorts().Select(x => x.name).ToArray();
@@ -187,7 +187,7 @@ public class MoreCheckmarksServer(
 
     public HideoutProductionData? HandleProductions()
     {
-        logger.Info("MoreCheckmarks making productions request");
+        logger.Debug("MoreCheckmarks making productions request");
         try {
             return databaseServer.GetTables().Hideout.Production;
         }
