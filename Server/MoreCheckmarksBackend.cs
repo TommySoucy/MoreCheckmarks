@@ -52,11 +52,15 @@ public class MoreCheckmarksServer(
     ) : IOnLoad
 {
     private readonly QuestConfig questConfig = configServer.GetConfig<QuestConfig>();
+    private MoreCheckmarksServerConfig modConfig = new();
+    private string modFolder = "";
 
     public Task OnLoad()
     {
         customStaticRouter.Set(this);
         customStaticRouter.Set(logger);
+        modFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "";
+        modConfig = MoreCheckmarksServerConfig.LoadOrCreate(modFolder, msg => logger.Error(msg));
         logger.Success("MoreCheckmarks data loaded.");
         return Task.CompletedTask;
     }
@@ -98,6 +102,10 @@ public class MoreCheckmarksServer(
             logger.Debug("MoreCheckmarks: No quest data (new profile). Returning all quests as incomplete.");
             foreach (var quest in allQuests)
             {
+                if (ShouldHideQuest(quest.Id))
+                {
+                    continue;
+                }
                 if (!QuestIsForOtherSide(profileSide, quest.Id))
                 {
                     quests.Add(quest);
@@ -111,6 +119,10 @@ public class MoreCheckmarksServer(
         foreach (var quest in allQuests)
         {
             if (QuestIsForOtherSide(profileSide, quest.Id))
+            {
+                continue;
+            }
+            if (ShouldHideQuest(quest.Id))
             {
                 continue;
             }
@@ -196,6 +208,19 @@ public class MoreCheckmarksServer(
             logger.Error("Could not get tables from database when trying to access hideout and production.");
             return null;
         }
+    }
+
+    private bool ShouldHideQuest(string questId)
+    {
+        if (modConfig.ExcludedQuestIds != null && modConfig.ExcludedQuestIds.Contains(questId))
+        {
+            return true;
+        }
+        if (modConfig.HideInactiveEventQuests && !questHelper.ShowEventQuestToPlayer(questId))
+        {
+            return true;
+        }
+        return false;
     }
 
     private bool QuestIsForOtherSide(string playerSide, string questId)
