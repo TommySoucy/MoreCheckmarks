@@ -20,7 +20,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "2.1.1";
+        public const string pluginVersion = "2.2.0";
 
         // Assets
         public static Sprite whiteCheckmark;
