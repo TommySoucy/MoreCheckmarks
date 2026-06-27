@@ -26,7 +26,6 @@ namespace MoreCheckmarks
         public static ConfigEntry<bool> configShowPrerequisiteQuests;
         public static ConfigEntry<bool> configShowQuestCheckmarksNonFIR;
         public static ConfigEntry<bool> configOnlyFirRequiredQuests;
-        public static ConfigEntry<bool> configOnlyShowCheckmarksOnFIR;
 
         // Config settings (derived from ConfigEntry values)
         public static bool fulfilledAnyCanBeUpgraded => configFulfilledAnyCanBeUpgraded.Value;
@@ -44,7 +43,6 @@ namespace MoreCheckmarks
         public static bool showPrerequisiteQuests => configShowPrerequisiteQuests.Value;
         public static bool showQuestCheckmarksNonFIR => configShowQuestCheckmarksNonFIR.Value;
         public static bool onlyFirRequiredQuests => configOnlyFirRequiredQuests.Value;
-        public static bool onlyShowCheckmarksOnFIR => configOnlyShowCheckmarksOnFIR.Value;
 
         // Parsed colors (updated when config changes)
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
@@ -66,13 +64,6 @@ namespace MoreCheckmarks
                 "Switch menus to apply changes",
                 new ConfigDescription("Changes don't apply immediately. To see updates: leave your current menu (e.g. stash), go to main menu, then return.", null, new ConfigurationManagerAttributes { ReadOnly = true, HideDefaultButton = true }));
 
-            // General Settings
-            configOnlyShowCheckmarksOnFIR = config.Bind(
-                "General",
-                "Only Show Checkmarks On FIR Items",
-                false,
-                "When enabled, checkmarks only appear on items that are Found In Raid (FIR). Items not found in raid will show no checkmark, even if they're needed for hideout, wishlist, barters, or crafts. Note: quest checkmarks are FIR-only by default already; the separate 'Show Quest Checkmarks for Non-FIR Items' setting only takes effect when this option is disabled.");
-
             // Hideout Settings
             configFulfilledAnyCanBeUpgraded = config.Bind(
                 "Hideout",
@@ -92,7 +83,6 @@ namespace MoreCheckmarks
                 false,
                 "When enabled, hideout requirements only drive the checkmark for items that are Found In Raid (FIR). " +
                 "Non-FIR items will not get a checkmark from hideout needs (though quests, wishlist, barters, or crafts can still show one). " +
-                "This is hideout-specific and independent from the general 'Only Show Checkmarks On FIR Items' setting. " +
                 "The 'Needed for area' tooltip lines are still shown.");
 
             // Quest Settings
