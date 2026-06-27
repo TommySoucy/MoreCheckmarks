@@ -24,6 +24,7 @@ namespace MoreCheckmarks
         public static ConfigEntry<bool> configIncludeFutureQuests;
         public static ConfigEntry<bool> configShowPrerequisiteQuests;
         public static ConfigEntry<bool> configShowQuestCheckmarksNonFIR;
+        public static ConfigEntry<bool> configOnlyShowCheckmarksOnFIR;
 
         // Config settings (derived from ConfigEntry values)
         public static bool fulfilledAnyCanBeUpgraded => configFulfilledAnyCanBeUpgraded.Value;
@@ -39,6 +40,7 @@ namespace MoreCheckmarks
         public static bool includeFutureQuests => configIncludeFutureQuests.Value;
         public static bool showPrerequisiteQuests => configShowPrerequisiteQuests.Value;
         public static bool showQuestCheckmarksNonFIR => configShowQuestCheckmarksNonFIR.Value;
+        public static bool onlyShowCheckmarksOnFIR => configOnlyShowCheckmarksOnFIR.Value;
 
         // Parsed colors (updated when config changes)
         public static Color needMoreColor = new Color(1, 0.37255f, 0.37255f);
@@ -59,6 +61,13 @@ namespace MoreCheckmarks
                 "Refresh Required",
                 "Switch menus to apply changes",
                 new ConfigDescription("Changes don't apply immediately. To see updates: leave your current menu (e.g. stash), go to main menu, then return.", null, new ConfigurationManagerAttributes { ReadOnly = true, HideDefaultButton = true }));
+
+            // General Settings
+            configOnlyShowCheckmarksOnFIR = config.Bind(
+                "General",
+                "Only Show Checkmarks On FIR Items",
+                false,
+                "When enabled, checkmarks only appear on items that are Found In Raid (FIR). Items not found in raid will show no checkmark, even if they're needed for hideout, wishlist, barters, or crafts. Note: quest checkmarks are FIR-only by default already; the separate 'Show Quest Checkmarks for Non-FIR Items' setting only takes effect when this option is disabled.");
 
             // Hideout Settings
             configFulfilledAnyCanBeUpgraded = config.Bind(

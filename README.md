@@ -89,6 +89,12 @@ When enabled, the tooltip now shows how many prerequisite quests you need to com
 
 Press **F12** in-game to access all settings. Below are the available options:
 
+### General Settings
+
+| Setting                              | Description                                                                                                                                                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Only Show Checkmarks On FIR Items** | When enabled, checkmarks only appear on Found In Raid (FIR) items. Non-FIR items show no checkmark even if needed for hideout, wishlist, barters, or crafts. (Quest checkmarks are FIR-only by default regardless of this setting.) |
+
 ### Hideout Settings
 
 | Setting                           | Description                                                                                                                                                                   |
@@ -154,6 +160,7 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 
 ### V2.1.1
 - Refactor codebase to improve maintainability.
+- Added "Only Show Checkmarks On FIR Items" option (General section) - restricts all checkmarks to Found In Raid items.
 
 ### v2.1.0
 

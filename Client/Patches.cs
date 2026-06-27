@@ -99,14 +99,18 @@ namespace MoreCheckmarks
                     }
                 }
 
-                if (MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
-                        craftRequired, out var checkmarkColor))
+                // When restricted to FIR-only, non-FIR items get no checkmark regardless of what they're needed for
+                if (!MoreCheckmarksConfig.onlyShowCheckmarksOnFIR || item.MarkedAsSpawnedInSession)
                 {
-                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, checkmarkColor);
-                }
-                else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
-                {
-                    SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                    if (MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
+                            craftRequired, out var checkmarkColor))
+                    {
+                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, checkmarkColor);
+                    }
+                    else if (item.MarkedAsSpawnedInSession) // Item not needed for anything but found in raid
+                    {
+                        SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
+                    }
                 }
 
                 SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests,
@@ -466,7 +470,9 @@ namespace MoreCheckmarks
                             }
                         }
 
-                        if (MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
+                        // When restricted to FIR-only, non-FIR items get no colored "Take" action
+                        if ((!MoreCheckmarksConfig.onlyShowCheckmarksOnFIR || lootItem.Item.MarkedAsSpawnedInSession) &&
+                            MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
                                 craftRequired, out Color checkmarkColor))
                         {
                             action.Name = "<font=\"BenderBold\"><color=#" +
