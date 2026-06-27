@@ -24,6 +24,7 @@ namespace MoreCheckmarks
         public static ConfigEntry<bool> configIncludeFutureQuests;
         public static ConfigEntry<bool> configShowPrerequisiteQuests;
         public static ConfigEntry<bool> configShowQuestCheckmarksNonFIR;
+        public static ConfigEntry<bool> configOnlyFirRequiredQuests;
         public static ConfigEntry<bool> configOnlyShowCheckmarksOnFIR;
 
         // Config settings (derived from ConfigEntry values)
@@ -40,6 +41,7 @@ namespace MoreCheckmarks
         public static bool includeFutureQuests => configIncludeFutureQuests.Value;
         public static bool showPrerequisiteQuests => configShowPrerequisiteQuests.Value;
         public static bool showQuestCheckmarksNonFIR => configShowQuestCheckmarksNonFIR.Value;
+        public static bool onlyFirRequiredQuests => configOnlyFirRequiredQuests.Value;
         public static bool onlyShowCheckmarksOnFIR => configOnlyShowCheckmarksOnFIR.Value;
 
         // Parsed colors (updated when config changes)
@@ -100,6 +102,15 @@ namespace MoreCheckmarks
                 "Show Quest Checkmarks for Non-FIR Items",
                 false,
                 "When enabled, quest checkmarks will appear on items even if they aren't found in raid. Useful if your SPT is configured to accept non-FIR items for quest turn-ins.");
+
+            configOnlyFirRequiredQuests = config.Bind(
+                "Quests",
+                "Only Show FiR-Required Quests",
+                false,
+                "When enabled, quest checkmarks only appear for quests that REQUIRE the item to be Found-in-Raid. " +
+                "Quests that accept non-FiR items (e.g. Ragman's Hot Delivery) won't show a checkmark. " +
+                "This is about whether the QUEST requires FiR; it is separate from 'Show Quest Checkmarks for Non-FIR Items', " +
+                "which is about whether YOUR stored item is FiR. Hardcore players should leave this off.");
 
             // Barter & Craft Settings
             configShowBarter = config.Bind(
