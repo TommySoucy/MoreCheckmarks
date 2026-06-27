@@ -61,6 +61,7 @@ public class MoreCheckmarksServer(
         customStaticRouter.Set(logger);
         modFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "";
         modConfig = MoreCheckmarksServerConfig.LoadOrCreate(modFolder, msg => logger.Error(msg));
+        WriteQuestReference();
         logger.Success("MoreCheckmarks data loaded.");
         return Task.CompletedTask;
     }
@@ -221,6 +222,64 @@ public class MoreCheckmarksServer(
             return true;
         }
         return false;
+    }
+
+    private void WriteQuestReference()
+    {
+        if (string.IsNullOrEmpty(modFolder))
+        {
+            return;
+        }
+        try
+        {
+            var traderNames = BuildTraderNameMap();
+            var lines = new List<string>
+            {
+                "# MoreCheckmarks quest reference - auto-generated on server start.",
+                "# Format: Quest Name [Trader] = questId",
+                "# Paste a questId into excludedQuestIds in config.json to hide it.",
+                ""
+            };
+
+            foreach (var quest in questHelper.GetQuestsFromDb())
+            {
+                var name = string.IsNullOrEmpty(quest.QuestName) ? quest.Name : quest.QuestName;
+                var trader = traderNames.TryGetValue(quest.TraderId, out var tn) ? tn : quest.TraderId.ToString();
+                lines.Add($"{name} [{trader}] = {quest.Id}");
+            }
+
+            lines.Sort(StringComparer.OrdinalIgnoreCase);
+            File.WriteAllLines(Path.Combine(modFolder, "quest-id-reference.txt"), lines);
+        }
+        catch (Exception ex)
+        {
+            logger.Error($"Failed to write quest-id-reference.txt: {ex.Message}");
+        }
+    }
+
+    private Dictionary<MongoId, string> BuildTraderNameMap()
+    {
+        var map = new Dictionary<MongoId, string>();
+        try
+        {
+            var traders = databaseServer.GetTables().Traders;
+            if (traders != null)
+            {
+                foreach (var kvp in traders)
+                {
+                    var nickname = kvp.Value?.Base?.Nickname;
+                    if (!string.IsNullOrEmpty(nickname))
+                    {
+                        map[kvp.Key] = nickname!;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.Error($"Failed to build trader name map: {ex.Message}");
+        }
+        return map;
     }
 
     private bool QuestIsForOtherSide(string playerSide, string questId)

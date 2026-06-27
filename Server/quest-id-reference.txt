@@ -1,0 +1,7 @@
+This file will be (re)generated automatically when you start your SPT server.
+After your first server start it will list every quest as:
+
+    Quest Name [Trader] = questId
+
+Copy the questId of any quest you want MoreCheckmarks to ignore into the
+"excludedQuestIds" array in config.json (in this same folder).

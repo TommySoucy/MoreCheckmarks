@@ -41,6 +41,10 @@
         <PackageReference Include="SPTarkov.Server.Core" Version="4.0.0" PrivateAssets="all" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="quest-id-reference.txt" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
     <!-- Copy to local SPT installation after build (optional, for testing) -->
     <Target Name="CopyToSPT" AfterTargets="Build" Condition="Exists('$(SPTPath)')">
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SPTPath)\SPT\user\mods\MoreCheckmarksBackend" />
