@@ -12,8 +12,9 @@ namespace MoreCheckmarks
 
     public class QuestPair
     {
-        // Key: quest name key, Value: (QuestName, QuestId)
-        public Dictionary<string, (string questName, string questId)> questData = new Dictionary<string, (string, string)>();
+        // Key: quest name key, Value: (QuestName, QuestId, FirRequired)
+        public Dictionary<string, (string questName, string questId, bool firRequired)> questData =
+            new Dictionary<string, (string, string, bool)>();
         public int count;
     }
 }
