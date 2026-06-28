@@ -49,6 +49,7 @@
     <Compile Include="Config.cs" />
     <Compile Include="DataLoader.cs" />
     <Compile Include="Models.cs" />
+    <Compile Include="InventoryCounts.cs" />
     <Compile Include="MoreCheckmarks.cs" />
     <Compile Include="QuestFirFilter.cs" />
     <Compile Include="QuestPrerequisites.cs" />

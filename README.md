@@ -1,4 +1,4 @@
-# MoreCheckmarks v2.2.0 - SPT 4.0 Update
+# MoreCheckmarks v2.3.0 - SPT 4.0 Update
 
 ## Overview
 
@@ -165,6 +165,12 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 ---
 
 ## Changelog
+
+### v2.3.0
+
+- Stash tooltip counts are now live - moving an item updates the count on the next hover instead of needing a menu switch. Previously the count read a cached snapshot.
+- Added an "ON YOU" tooltip line showing how many of an item you're carrying (equipment/pockets/secure container). Shown only when you have one or more on you; otherwise the tooltip is unchanged.
+- Known limitation: in-raid, already-displayed checkmarks/counts don't refresh until you reopen the inventory (the newly looted item shows the right count, existing ones update on reopen). Out of raid is unaffected.
 
 ### v2.2.0
 

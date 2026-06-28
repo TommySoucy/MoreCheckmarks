@@ -4,8 +4,10 @@ using Comfort.Common;
 using EFT;
 using EFT.Hideout;
 using EFT.Quests;
+using EFT.InventoryLogic;
 using HarmonyLib;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -20,7 +22,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "2.2.0";
+        public const string pluginVersion = "2.3.0";
 
         // Assets
         public static Sprite whiteCheckmark;
@@ -125,6 +127,49 @@ namespace MoreCheckmarks
             {
                 LogError("Failed to Patch Profile Selector - Missing profileSelector");
             }
+        }
+
+        /// <summary>
+        /// True when a raid is in progress. Out of raid the game singleton is absent.
+        /// </summary>
+        public static bool IsInRaid()
+        {
+            return Singleton<AbstractGame>.Instance?.InRaid ?? false;
+        }
+
+        /// <summary>
+        /// Live count of an item across the stash and the character ("on you").
+        /// Out of raid the stash is read live from the profile inventory (so moves are
+        /// reflected immediately). In raid the stash is taken from the frozen
+        /// AllStashItems snapshot (it cannot change mid-raid); only the small equipment
+        /// set is queried live.
+        /// </summary>
+        public static ItemCounts GetItemCounts(Profile profile, string templateId)
+        {
+            // On you: always live. Works in and out of raid.
+            var (equipFir, equipTotal) = InventoryCounts.SumStacks(
+                profile.Inventory.GetPlayerItems(EPlayerItems.Equipment)
+                    .Where(x => x.TemplateId == templateId)
+                    .Select(x => (x.StackObjectsCount, x.MarkedAsSpawnedInSession)));
+
+            // Stash: live out of raid; frozen snapshot in raid.
+            IEnumerable<Item> stashItems = IsInRaid()
+                ? Singleton<HideoutClass>.Instance?.AllStashItems ?? Enumerable.Empty<Item>()
+                : profile.Inventory.GetPlayerItems(
+                      EPlayerItems.Stash | EPlayerItems.HideoutStashes | EPlayerItems.SortingTable);
+
+            var (stashFir, stashTotal) = InventoryCounts.SumStacks(
+                stashItems
+                    .Where(x => x.TemplateId == templateId)
+                    .Select(x => (x.StackObjectsCount, x.MarkedAsSpawnedInSession)));
+
+            return new ItemCounts
+            {
+                stashFir = stashFir,
+                stashTotal = stashTotal,
+                equipmentFir = equipFir,
+                equipmentTotal = equipTotal,
+            };
         }
 
         public static NeededStruct GetNeeded(string itemTemplateID, ref List<string> areaNames)

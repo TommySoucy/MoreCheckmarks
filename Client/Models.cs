@@ -10,6 +10,14 @@ namespace MoreCheckmarks
         public int requiredCount;
     }
 
+    public struct ItemCounts
+    {
+        public int stashFir;
+        public int stashTotal;
+        public int equipmentFir;
+        public int equipmentTotal;
+    }
+
     public class QuestPair
     {
         // Key: quest name key, Value: (QuestName, QuestId, FirRequired)

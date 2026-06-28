@@ -35,23 +35,13 @@ namespace MoreCheckmarks
         {
             try
             {
-                var possessedCount = 0;
-                var possessedQuestCount = 0;
+                var counts = default(ItemCounts);
 
                 __instance.HideGameObject();
 
                 if (profile != null)
                 {
-                    var inventoryItems = Singleton<HideoutClass>.Instance.AllStashItems.Where(x => x.TemplateId == item.TemplateId);
-                    foreach (var currentItem in inventoryItems)
-                    {
-                        if (currentItem.MarkedAsSpawnedInSession)
-                        {
-                            possessedQuestCount += currentItem.StackObjectsCount;
-                        }
-
-                        possessedCount += currentItem.StackObjectsCount;
-                    }
+                    counts = MoreCheckmarksMod.GetItemCounts(profile, item.TemplateId);
                 }
                 else
                 {
@@ -111,7 +101,7 @@ namespace MoreCheckmarks
                 }
 
                 SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests,
-                    completeQuests, possessedCount, possessedQuestCount, neededStruct.requiredCount, wishlist,
+                    completeQuests, counts, neededStruct.requiredCount, wishlist,
                     bartersByTrader, gotBarters, craftRequired, craftTooltip);
 
                 return false;
@@ -144,15 +134,14 @@ namespace MoreCheckmarks
             ref SimpleTooltip ___simpleTooltip_0, ref SimpleTooltip tooltip,
             Item item, QuestPair startQuests,
             QuestPair completeQuests,
-            int possessedCount, int possessedQuestCount, int requiredCount, bool wishlist,
+            ItemCounts counts, int requiredCount, bool wishlist,
             List<List<KeyValuePair<string, int>>> bartersByTrader, bool gotBarters,
             bool craftRequired, string craftTooltip)
         {
             try
             {
                 // Reset string
-                ___string_5 = "STASH".Localized(null) + ": <color=#dd831a>" + possessedQuestCount +
-                              "</color> found in raid / " + possessedCount + " total";
+                ___string_5 = InventoryCounts.BuildCountLines(counts, "STASH".Localized(null), "ON YOU");
 
                 // Show found in raid if found in raid
                 if (item.MarkedAsSpawnedInSession)
@@ -166,14 +155,14 @@ namespace MoreCheckmarks
                 {
                     if (MoreCheckmarksConfig.includeFutureQuests)
                     {
-                        var startString = BuildQuestNeededString(startQuests, profile, possessedQuestCount, "start");
+                        var startString = BuildQuestNeededString(startQuests, profile, counts.stashFir, "start");
                         if (!string.IsNullOrEmpty(startString))
                         {
                             gotQuest = true;
                             ___string_5 += startString;
                         }
 
-                        var completeString = BuildQuestNeededString(completeQuests, profile, possessedQuestCount, "complete");
+                        var completeString = BuildQuestNeededString(completeQuests, profile, counts.stashFir, "complete");
                         if (!string.IsNullOrEmpty(completeString))
                         {
                             gotQuest = true;
@@ -253,8 +242,8 @@ namespace MoreCheckmarks
                     if (!areaNamesString.Equals(""))
                     {
                         var areaPossessedCount = MoreCheckmarksConfig.onlyShowHideoutCheckmarkOnFIR
-                            ? possessedQuestCount
-                            : possessedCount;
+                            ? counts.stashFir
+                            : counts.stashTotal;
                         ___string_5 +=
                             string.Format("\nNeeded ({1}/{2}) for area" + (areaNames.Count == 1 ? "" : "s") + ":{0}",
                                 areaNamesString, areaPossessedCount, requiredCount);
