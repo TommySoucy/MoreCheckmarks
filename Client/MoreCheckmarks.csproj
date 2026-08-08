@@ -42,7 +42,7 @@
   
   <!-- Local SPT path - update this to match your SPT installation -->
   <PropertyGroup>
-    <SPTPath>C:\SPT</SPTPath>
+    <SPTPath>D:\SPT</SPTPath>
   </PropertyGroup>
   
   <ItemGroup>
@@ -96,6 +96,10 @@
     </Reference>
     <Reference Include="spt-common">
       <HintPath>$(SPTPath)\BepInEx\plugins\spt\spt-common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="spt-reflection">
+      <HintPath>$(SPTPath)\BepInEx\plugins\spt\spt-reflection.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="System">

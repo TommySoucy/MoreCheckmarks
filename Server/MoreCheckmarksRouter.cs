@@ -1,9 +1,9 @@
+using SPTarkov.Common.Models.Logging;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Common;
-using SPTarkov.Server.Core.Models.Utils;
+using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Utils;
-using System.Text.Json;
 
 namespace MoreCheckmarks;
 
@@ -14,6 +14,7 @@ public class CustomStaticRouter : StaticRouter
     private static JsonUtil? jsonUtil;
     private static MoreCheckmarksServer? server;
     private static ISptLogger<MoreCheckmarksServer>? logger;
+
     public CustomStaticRouter(JsonUtil _jsonUtil, HttpResponseUtil _httpResponseUtil)
         : base(
             _jsonUtil,
@@ -38,40 +39,44 @@ public class CustomStaticRouter : StaticRouter
     {
         return
         [
-            new RouteAction(
+            new RouteAction<EmptyRequestData>(
                 "/MoreCheckmarksRoutes/quests",
                 static async (
                     url,
                     info,
                     sessionId,
-                    output
+                    output,
+                    cancellationToken
                 ) => await HandleQuestsRoute(sessionId)
             ),
-            new RouteAction(
+            new RouteAction<EmptyRequestData>(
                  "/MoreCheckmarksRoutes/assorts",
                  static async (
                     url,
                     info,
                     sessionId,
-                    output
+                    output,
+                    cancellationToken
                 ) => await HandleAssortsRoute()
             ),
-            new RouteAction(
+            new RouteAction<EmptyRequestData>(
                  "/MoreCheckmarksRoutes/traderNames",
                  static async (
                     url,
                     info,
                     sessionId,
-                    output
+                    output,
+                    cancellationToken
                 ) => await HandleTraderNamesRoute()
             ),
-            new RouteAction(
+            new RouteAction<EmptyRequestData>(
                 "/MoreCheckmarksRoutes/productions",
                 static async (
                     url,
                     info,
                     sessionId,
-                    output
+                    output,
+                    cancellationToken
                 ) => await HandleProductionsRoute()
             ),
         ];
@@ -134,6 +139,4 @@ public class CustomStaticRouter : StaticRouter
             return new ValueTask<string>(httpResponseUtil!.NullResponse());
         }
     }
-
-
 }
