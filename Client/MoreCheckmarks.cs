@@ -22,7 +22,7 @@ namespace MoreCheckmarks
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "2.3.0";
+        public const string pluginVersion = "2.4.0";
 
         // Assets
         public static Sprite whiteCheckmark;
@@ -93,21 +93,11 @@ namespace MoreCheckmarks
 
         private static void DoPatching()
         {
-            const string profileTypeString = "Class308"; // Class303
-            const string derivedTypeString = "Class1596"; // Class1470
-            // Get assemblies
-            Type profileSelector = null;
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            foreach (var t in assemblies)
-            {
-                if (t.GetName().Name.Equals("Assembly-CSharp"))
-                {
-                    // UPDATE: This is to know when a new profile is selected so we can load up to date data
-                    // We want to do this when client makes request "/client/game/profile/select"
-                    // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    profileSelector = t.GetType(profileTypeString).GetNestedType(derivedTypeString, BindingFlags.Public);
-                }
-            }
+            // Profile select callback lives on the nested CG_SetMainProfile type created by
+            // EftClientBackendSession.SetMainProfile (handles "/client/game/profile/select").
+            var profileSelector = typeof(EftClientBackendSession).GetNestedType(
+                "CG_SetMainProfile",
+                BindingFlags.Public | BindingFlags.NonPublic);
 
             var harmony = new Harmony("VIP.TommySoucy.MoreCheckmarks");
             harmony.PatchAll(); // Auto patch
@@ -125,7 +115,7 @@ namespace MoreCheckmarks
             }
             else
             {
-                LogError("Failed to Patch Profile Selector - Missing profileSelector");
+                LogError("Failed to Patch Profile Selector - Missing CG_SetMainProfile");
             }
         }
 
@@ -154,7 +144,7 @@ namespace MoreCheckmarks
 
             // Stash: live out of raid; frozen snapshot in raid.
             IEnumerable<Item> stashItems = IsInRaid()
-                ? Singleton<HideoutClass>.Instance?.AllStashItems ?? Enumerable.Empty<Item>()
+                ? Singleton<HideoutRepresentation>.Instance?.AllStashItems ?? Enumerable.Empty<Item>()
                 : profile.Inventory.GetPlayerItems(
                       EPlayerItems.Stash | EPlayerItems.HideoutStashes | EPlayerItems.SortingTable);
 
@@ -182,7 +172,7 @@ namespace MoreCheckmarks
 
             try
             {
-                var hideoutInstance = Singleton<HideoutClass>.Instance;
+                var hideoutInstance = Singleton<HideoutRepresentation>.Instance;
                 if (hideoutInstance?.AreaDatas == null)
                 {
                     return neededStruct;
@@ -298,7 +288,7 @@ namespace MoreCheckmarks
             bool gotTooltip = false;
             try
             {
-                HideoutClass hideoutInstance = Singleton<HideoutClass>.Instance;
+                HideoutRepresentation hideoutInstance = Singleton<HideoutRepresentation>.Instance;
                 if (hideoutInstance?.AreaDatas == null)
                 {
                     return false;
@@ -336,7 +326,7 @@ namespace MoreCheckmarks
                     if (currentStage.Production != null && currentStage.Production.Data != null)
                     {
                         bool areaNameAdded = false;
-                        foreach (ProductionBuildAbstractClass productionData in currentStage.Production.Data)
+                        foreach (BaseHideoutScheme productionData in currentStage.Production.Data)
                         {
                             Requirement[] requirements = productionData.requirements;
 

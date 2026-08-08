@@ -1,4 +1,4 @@
-# MoreCheckmarks v2.3.0 - SPT 4.0 Update
+# MoreCheckmarks v2.4.0 - SPT 4.1 Update
 
 ## Overview
 
@@ -38,37 +38,13 @@ If an item is needed for a quest or is found in raid (so would already have a ch
 
 ---
 
-## What's New in v2.0.0
-
-### 🎮 F12 In-Game Configuration Menu
-
-_Almost_ all settings are now accessible through BepInEx's F12 configuration menu! No more editing config files manually.
-
-- **Live color pickers** with RGB sliders
-- **Organized categories**: Hideout, Quests, Barter & Craft, Priority, Colors
-- **Hoverable descriptions** explaining each setting
-- Changes apply after switching menus (e.g., leave stash → main menu → return)
-
-### 🎯 Quest Prerequisite Display
-
-When enabled, the tooltip now shows how many prerequisite quests you need to complete before each quest becomes available:
-
-- **Color-coded status**:
-  - 🟢 **Green** `(0 prereqs)` - Quest is available now
-  - 🟡 **Yellow** `(1-9 prereqs)` - Quest is close to being unlocked
-  - ⚪ **Gray** `(10+ prereqs)` - Quest is far away (e.g., Collector)
-- **Smart sorting** - Quests are sorted by prerequisite count, so items needed for soon-to-be-available quests appear first
-- Can be disabled in settings if you prefer the classic view
-
----
-
 ## Installation
 
 1. Download and extract the zip file into your SPT game folder
 2. You should end up with:
    - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarks.dll`
    - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarksAssets`
-   - `SPT/user/mods/MoreCheckmarksBackend/MoreCheckmarksBackend.dll`
+   - `SPT_Runtime/user/mods/MoreCheckmarksBackend/MoreCheckmarksBackend.dll`
 
 ---
 
@@ -78,67 +54,67 @@ Press **F12** in-game to access all settings. Below are the available options:
 
 ### Hideout Settings
 
-| Setting                           | Description                                                                                                                                                                   |
+| Setting | Description |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Show Hideout Checkmarks**       | Show checkmark and tooltip for hideout areas this item is needed for. Default on. When disabled, no hideout checkmark or "Needed for area" tooltip section is shown.         |
+| **Show Hideout Checkmarks** | Show checkmark and tooltip for hideout areas this item is needed for. Default on. When disabled, no hideout checkmark or "Needed for area" tooltip section is shown. |
 | **Fulfilled Any Can Be Upgraded** | When TRUE, shows fulfilled checkmark when AT LEAST ONE hideout module can be upgraded. When FALSE, shows fulfilled only when ALL modules requiring this item can be upgraded. |
-| **Show Future Module Levels**     | Show requirements for future hideout module levels instead of only the next one.                                                                                              |
-| **Only Show Hideout Checkmark On FIR Items** | When enabled, hideout needs only drive the checkmark for Found In Raid (FIR) items. Non-FIR items get no hideout checkmark (quests, wishlist, barters, and crafts can still show one). The "Needed for area" tooltip lines are still shown. |
+| **Show Future Module Levels** | Show requirements for future hideout module levels instead of only the next one. |
+| **Only Show Hideout Checkmark On FIR Items** | When enabled, hideout needs only drive the checkmark for Found In Raid items. Non-FIR items get no hideout checkmark (quests, wishlist, barters, and crafts can still show one). The "Needed for area" tooltip lines are still shown. |
 
 ### Quest Settings
 
-| Setting                                  | Description                                                                                                                                                                                                                                                                                            |
+| Setting | Description |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Show Quest Checkmarks**                | Show checkmark and tooltip for quests this item is needed for. Default on. When disabled, no quest checkmark or quest tooltip section is shown.                                                                                                                                                          |
-| **Include Future Quests**                | Consider future quests when checking which quests an item is required for. If false, behaves like vanilla.                                                                                                                                                                                              |
-| **Show Prerequisite Count**              | Show the number of prerequisite quests needed before each quest becomes available, with color coding and sorting.                                                                                                                                                                                       |
-| **Show Quest Checkmarks for Non-FIR Items** | When enabled, quest checkmarks appear on items even if they aren't found in raid. Useful if your SPT is configured to accept non-FIR items for quest turn-ins. This is about whether *your stored item* is FIR.                                                                                       |
-| **Only Show FiR-Required Quests**        | When enabled, quest checkmarks only appear for quests that **require** the item to be Found In Raid. Quests that accept non-FIR items (e.g. Ragman's *Hot Delivery*) won't show a quest checkmark. This is about whether the **quest** requires FIR — separate from the option above. Default off; hardcore players should leave it off. |
+| **Show Quest Checkmarks** | Show checkmark and tooltip for quests this item is needed for. Default on. When disabled, no quest checkmark or quest tooltip section is shown. |
+| **Include Future Quests** | Consider future quests when checking which quests an item is required for. If false, behaves like vanilla. |
+| **Show Prerequisite Count** | Show the number of prerequisite quests needed before each quest becomes available, with color coding and sorting. |
+| **Show Quest Checkmarks for Non-FIR Items** | When enabled, quest checkmarks appear on items even if they aren't found in raid. Useful if your SPT is configured to accept non-FIR items for quest turn-ins. This is about whether *your stored item* is FIR. |
+| **Only Show FiR-Required Quests** | When enabled, quest checkmarks only appear for quests that **require** the item to be Found In Raid. Quests that accept non-FIR items (e.g. Ragman's *Hot Delivery*) won't show a quest checkmark. This is about whether the **quest** requires FIR — separate from the option above. Default off; hardcore players should leave it off. |
 
 ### Barter & Craft Settings
 
-| Setting               | Description                                                              |
+| Setting | Description |
 | --------------------- | ------------------------------------------------------------------------ |
-| **Show Barter**       | Show checkmark and tooltip for barter/trades this item is needed for.    |
-| **Show Craft**        | Show checkmark and tooltip for crafting recipes this item is needed for. |
-| **Show Future Craft** | Show crafting recipes for hideout areas of higher level than current.    |
+| **Show Barter** | Show checkmark and tooltip for barter/trades this item is needed for. |
+| **Show Craft** | Show checkmark and tooltip for crafting recipes this item is needed for. |
+| **Show Future Craft** | Show crafting recipes for hideout areas of higher level than current. |
 
 ### Priority Settings
 
 These settings decide which checkmark color to display when an item is needed for multiple things. Higher number = higher priority.
 
-| Setting               | Description                      |
+| Setting | Description |
 | --------------------- | -------------------------------- |
-| **Quest Priority**    | Priority for quest checkmarks    |
-| **Hideout Priority**  | Priority for hideout checkmarks  |
+| **Quest Priority** | Priority for quest checkmarks |
+| **Hideout Priority** | Priority for hideout checkmarks |
 | **Wishlist Priority** | Priority for wishlist checkmarks |
-| **Barter Priority**   | Priority for barter checkmarks   |
-| **Craft Priority**    | Priority for craft checkmarks    |
+| **Barter Priority** | Priority for barter checkmarks |
+| **Craft Priority** | Priority for craft checkmarks |
 
 ### Color Settings
 
 All colors can be customized using RGB sliders. Default colors:
 
-| Setting             | Default     |
+| Setting | Default |
 | ------------------- | ----------- |
-| **Need More Color** | Light Red   |
+| **Need More Color** | Light Red |
 | **Fulfilled Color** | Light Green |
-| **Wishlist Color**  | Light Blue  |
-| **Barter Color**    | Magenta     |
-| **Craft Color**     | Cyan        |
+| **Wishlist Color** | Light Blue |
+| **Barter Color** | Magenta |
+| **Craft Color** | Cyan |
 
 ### Server Configuration (`config.json`)
 
 Some quest-hiding options live in a server-side config file rather than the F12 menu, since they require server data. The file is created automatically with defaults on first server start at:
 
-`SPT/user/mods/MoreCheckmarksBackend/config.json`
+`SPT_Runtime/user/mods/MoreCheckmarksBackend/config.json`
 
-| Setting                    | Default | Description                                                                                                                                                                  |
+| Setting | Default | Description |
 | -------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`hideInactiveEventQuests`** | `true`  | Hide checkmarks for inactive seasonal/event quests (Christmas, Halloween, etc.) that aren't currently active. Set to `false` to show them like before.                       |
-| **`excludedQuestIds`**     | `[]`    | A list of quest IDs to completely ignore (no checkmarks). Useful for quests you never do (e.g. *Compensation For Damage*).                                                    |
+| **`hideInactiveEventQuests`** | `true` | Hide checkmarks for inactive seasonal/event quests (Christmas, Halloween, etc.) that aren't currently active. Set to `false` to show them like before. |
+| **`excludedQuestIds`** | `[]` | A list of quest IDs to completely ignore (no checkmarks). Useful for quests you never do (e.g. *Compensation For Damage*). |
 
-**Finding quest IDs:** On every server start, the mod writes a readable lookup file next to the config at `SPT/user/mods/MoreCheckmarksBackend/quest-id-reference.txt`, listing every quest as `Quest Name [Trader] = questId`. Copy the IDs you want to hide into `excludedQuestIds`, for example:
+**Finding quest IDs:** On every server start, the mod writes a readable lookup file next to the config at `SPT_Runtime/user/mods/MoreCheckmarksBackend/quest-id-reference.txt`, listing every quest as `Quest Name [Trader] = questId`. Copy the IDs you want to hide into `excludedQuestIds`, for example:
 
 ```json
 {
@@ -153,18 +129,24 @@ Changes to `config.json` take effect after a server restart.
 
 ## Compatibility
 
-- **SPT Version**: 4.0.x
+- **SPT Version**: 4.1.x
 - **Required**: BepInEx (included with SPT)
 
 ---
 
 ## Credits
 
-Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Bewa.
+Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Bewa. SPT 4.1 update by community contributors.
 
 ---
 
 ## Changelog
+
+### v2.4.0
+
+- Ported to SPT 4.1.x (server NuGet 4.1.2, `net10.0`, injected `TradersTable` / `HideoutTable` / `QuestConfig`)
+- Updated client patches for deobfuscated EFT type names (`Quest`, `InteractionContextHelper`, `HideoutRepresentation`, etc.)
+- Install path for the server mod is now `SPT_Runtime/user/mods/MoreCheckmarksBackend`
 
 ### v2.3.0
 

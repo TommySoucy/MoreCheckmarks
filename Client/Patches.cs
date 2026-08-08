@@ -29,8 +29,8 @@ namespace MoreCheckmarks
             QuestItemViewPanel __instance,
             ref Image ____questIconImage,
             ref Sprite ____foundInRaidSprite,
-            ref string ___string_5,
-            ref SimpleTooltip ___simpleTooltip_0,
+            ref string ____tooltipText,
+            ref SimpleTooltip ____tooltip,
             TextMeshProUGUI ____questItemLabel)
         {
             try
@@ -66,7 +66,7 @@ namespace MoreCheckmarks
                                 ((item.QuestItem || MoreCheckmarksConfig.includeFutureQuests)
                                     ? QuestFirFilter.HasVisible(startQuests, MoreCheckmarksConfig.onlyFirRequiredQuests) ||
                                       QuestFirFilter.HasVisible(completeQuests, MoreCheckmarksConfig.onlyFirRequiredQuests)
-                                    : ___string_5 != null && ___string_5.Contains("quest"));
+                                    : ____tooltipText != null && ____tooltipText.Contains("quest"));
 
 
                 if (____questItemLabel != null)
@@ -100,7 +100,7 @@ namespace MoreCheckmarks
                     SetCheckmark(__instance, ____questIconImage, ____foundInRaidSprite, Color.white);
                 }
 
-                SetTooltip(profile, areaNames, ref ___string_5, ref ___simpleTooltip_0, ref tooltip, item, startQuests,
+                SetTooltip(profile, areaNames, ref ____tooltipText, ref ____tooltip, ref tooltip, item, startQuests,
                     completeQuests, counts, neededStruct.requiredCount, wishlist,
                     bartersByTrader, gotBarters, craftRequired, craftTooltip);
 
@@ -130,8 +130,8 @@ namespace MoreCheckmarks
             }
         }
 
-        private static void SetTooltip(Profile profile, List<string> areaNames, ref string ___string_5,
-            ref SimpleTooltip ___simpleTooltip_0, ref SimpleTooltip tooltip,
+        private static void SetTooltip(Profile profile, List<string> areaNames, ref string ____tooltipText,
+            ref SimpleTooltip ____tooltip, ref SimpleTooltip tooltip,
             Item item, QuestPair startQuests,
             QuestPair completeQuests,
             ItemCounts counts, int requiredCount, bool wishlist,
@@ -141,12 +141,12 @@ namespace MoreCheckmarks
             try
             {
                 // Reset string
-                ___string_5 = InventoryCounts.BuildCountLines(counts, "STASH".Localized(null), "ON YOU");
+                ____tooltipText = InventoryCounts.BuildCountLines(counts, "STASH".Localized(null), "ON YOU");
 
                 // Show found in raid if found in raid
                 if (item.MarkedAsSpawnedInSession)
                 {
-                    ___string_5 += "\n" + "Item found in raid".Localized(null);
+                    ____tooltipText += "\n" + "Item found in raid".Localized(null);
                 }
 
                 // Add quests
@@ -159,36 +159,35 @@ namespace MoreCheckmarks
                         if (!string.IsNullOrEmpty(startString))
                         {
                             gotQuest = true;
-                            ___string_5 += startString;
+                            ____tooltipText += startString;
                         }
 
                         var completeString = BuildQuestNeededString(completeQuests, profile, counts.stashFir, "complete");
                         if (!string.IsNullOrEmpty(completeString))
                         {
                             gotQuest = true;
-                            ___string_5 += completeString;
+                            ____tooltipText += completeString;
                         }
                     }
                     else // Don't include future quests, do as vanilla
                     {
-                        RawQuestClass RawQuestClass = null;
+                        QuestTemplate questTemplate = null;
                         ConditionItem conditionItem = null;
                         foreach (QuestDataClass questDataClass in profile.QuestsData)
                         {
                             if (questDataClass.Status == EQuestStatus.Started && questDataClass.Template != null)
                             {
-                                // UPDATE: Look for the type used in QuestDataClass's Template var of type RawQuestClass with QuestConditionsList, for the value
-                                foreach (KeyValuePair<EQuestStatus, GClass1631> kvp in questDataClass.Template.Conditions)
+                                foreach (KeyValuePair<EQuestStatus, ConditionCollection> kvp in questDataClass.Template.Conditions)
                                 {
-                                    kvp.Deconstruct(out EQuestStatus equestStatus, out GClass1631 gclass);
-                                    foreach (Condition condition in gclass)
+                                    kvp.Deconstruct(out EQuestStatus equestStatus, out ConditionCollection conditions);
+                                    foreach (Condition condition in conditions)
                                     {
                                         ConditionItem conditionItem2;
                                         if (!questDataClass.CompletedConditions.Contains(condition.id) &&
                                             (conditionItem2 = (condition as ConditionItem)) != null &&
                                             conditionItem2.target.Contains(item.StringTemplateId))
                                         {
-                                            RawQuestClass = questDataClass.Template;
+                                            questTemplate = questDataClass.Template;
                                             conditionItem = conditionItem2;
                                             break;
                                         }
@@ -197,13 +196,13 @@ namespace MoreCheckmarks
                             }
                         }
 
-                        if (RawQuestClass != null)
+                        if (questTemplate != null)
                         {
-                            string arg = "<color=#dd831a>" + RawQuestClass.Name + "</color>";
+                            string arg = "<color=#dd831a>" + questTemplate.Name + "</color>";
                             if (item.QuestItem)
                             {
                                 gotQuest = true;
-                                ___string_5 += string.Format("\nItem is related to an active {0} quest".Localized(null),
+                                ____tooltipText += string.Format("\nItem is related to an active {0} quest".Localized(null),
                                     arg);
                             }
 
@@ -214,14 +213,14 @@ namespace MoreCheckmarks
                                 Inventory.IsWeaponFitsCondition(weapon, condition, false))
                             {
                                 gotQuest = true;
-                                ___string_5 +=
+                                ____tooltipText +=
                                     string.Format("\nItem fits the active {0} quest requirements".Localized(null), arg);
                             }
 
                             if (!gotQuest && item.MarkedAsSpawnedInSession)
                             {
                                 gotQuest = true;
-                                ___string_5 +=
+                                ____tooltipText +=
                                     string.Format(
                                         "\nItem that has been found in raid for the {0} quest".Localized(null), arg);
                             }
@@ -244,7 +243,7 @@ namespace MoreCheckmarks
                         var areaPossessedCount = MoreCheckmarksConfig.onlyShowHideoutCheckmarkOnFIR
                             ? counts.stashFir
                             : counts.stashTotal;
-                        ___string_5 +=
+                        ____tooltipText +=
                             string.Format("\nNeeded ({1}/{2}) for area" + (areaNames.Count == 1 ? "" : "s") + ":{0}",
                                 areaNamesString, areaPossessedCount, requiredCount);
                     }
@@ -253,7 +252,7 @@ namespace MoreCheckmarks
                 // Add wishlist
                 if (wishlist)
                 {
-                    ___string_5 += string.Format("\nOn {0}",
+                    ____tooltipText += string.Format("\nOn {0}",
                         "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.wishlistColor) +
                         ">Wish List</color>");
                 }
@@ -261,7 +260,7 @@ namespace MoreCheckmarks
                 // Add craft
                 if (craftRequired)
                 {
-                    ___string_5 += string.Format("\nNeeded for crafting:{0}", craftTooltip);
+                    ____tooltipText += string.Format("\nNeeded for crafting:{0}", craftTooltip);
                 }
 
                 // Add barters
@@ -276,7 +275,7 @@ namespace MoreCheckmarks
                             {
                                 if (!firstBarter)
                                 {
-                                    ___string_5 += "\n" + "Barter".Localized(null) + ":";
+                                    ____tooltipText += "\n" + "Barter".Localized(null) + ":";
                                     firstBarter = true;
                                 }
 
@@ -291,7 +290,7 @@ namespace MoreCheckmarks
                                                      bartersByTrader[i][j].Value + ")";
                                 }
 
-                                ___string_5 += bartersString;
+                                ____tooltipText += bartersString;
                             }
                         }
                     }
@@ -300,7 +299,7 @@ namespace MoreCheckmarks
                 if (gotQuest || gotAreas || wishlist || gotBarters || craftRequired || item.MarkedAsSpawnedInSession)
                 {
                     // If this is not a quest item or found in raid, the original returns and the tooltip never gets set, so we need to set it ourselves
-                    ___simpleTooltip_0 = tooltip;
+                    ____tooltip = tooltip;
                 }
             }
             catch (Exception ex)
@@ -393,7 +392,7 @@ namespace MoreCheckmarks
         // If there is one, the postfix for the QuestItemViewPanel will always have run before
         // This patch just changes the sprite to a default white one so we can set its color to whatever we need
         [HarmonyPatch(typeof(ItemSpecificationPanel), "method_2")]
-        static void Postfix(ref Item ___item_0, ref QuestItemViewPanel ____questItemViewPanel)
+        static void Postfix(ref Item ____item, ref QuestItemViewPanel ____questItemViewPanel)
         {
             try
             {
@@ -423,12 +422,13 @@ namespace MoreCheckmarks
     class AvailableActionsPatch
     {
         // This postfix will run after we get a list of all actions available to interact with the item we are pointing at
-        [HarmonyPatch(typeof(GetActionsClass), "smethod_8")]
-        static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref ActionsReturnClass __result)
+        [HarmonyPatch(typeof(InteractionContextHelper), nameof(InteractionContextHelper.GetAvailableActions),
+            new Type[] { typeof(GamePlayerOwner), typeof(LootItem) })]
+        static void Postfix(GamePlayerOwner owner, LootItem lootItem, ref AvailableInteractionState __result)
         {
             try
             {
-                foreach (ActionsTypesClass action in __result.Actions)
+                foreach (InteractionAction action in __result.Actions)
                 {
                     if (action.Name.Equals("Take"))
                     {
@@ -485,20 +485,20 @@ namespace MoreCheckmarks
 
 
     [HarmonyPatch]
-    class QuestClassStatusPatch
+    class QuestStatusPatch
     {
         private static EQuestStatus preStatus;
 
         // This prefix will run before a quest's status has been set
-        [HarmonyPatch(typeof(QuestClass), "SetStatus")]
-        static void Prefix(QuestClass __instance)
+        [HarmonyPatch(typeof(Quest), nameof(Quest.SetStatus))]
+        static void Prefix(Quest __instance)
         {
             preStatus = __instance.QuestStatus;
         }
 
         // This postfix will run after a quest's status has been set
-        [HarmonyPatch(typeof(QuestClass), "SetStatus")]
-        static void Postfix(QuestClass __instance)
+        [HarmonyPatch(typeof(Quest), nameof(Quest.SetStatus))]
+        static void Postfix(Quest __instance)
         {
             if (__instance == null)
             {

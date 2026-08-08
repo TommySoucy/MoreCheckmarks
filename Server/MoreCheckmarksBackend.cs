@@ -1,66 +1,64 @@
+using SPTarkov.Common.Models.Logging;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Extensions;
-using SPTarkov.Server.Core.Helpers;
+using SPTarkov.Server.Core.Helpers.Profile;
+using SPTarkov.Server.Core.Helpers.Quest;
+using SPTarkov.Server.Core.Helpers.Server;
 using SPTarkov.Server.Core.Models.Common;
-using SPTarkov.Server.Core.Models.Logging;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Eft.Hideout;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Spt.Mod;
-using SPTarkov.Server.Core.Models.Spt.Server;
-using SPTarkov.Server.Core.Models.Utils;
-using SPTarkov.Server.Core.Servers;
-using SPTarkov.Server.Core.Services;
+using SPTarkov.Server.Core.Models.Spt.Tables;
+using SPTarkov.Server.Core.Services.Commerce;
+using System.Reflection;
 using Path = System.IO.Path;
+using Range = SemanticVersioning.Range;
+using Version = SemanticVersioning.Version;
 
 namespace MoreCheckmarks;
 
 /// <summary>
 /// This is the replacement for the former package.json data. This is required for all mods.
-///
-/// This is where we define all the metadata associated with this mod.
-/// You don't have to do anything with it, other than fill it out.
-/// All properties must be overriden, properties you don't use may be left null.
-/// It is read by the mod loader when this mod is loaded.
 /// </summary>
-public record ModMetadata : AbstractModMetadata
+public record ModMetadata : IModMetadata
 {
-    public override string ModGuid { get; init; } = "custom-static-MoreCheckmarksRoutes";
-    public override string Name { get; init; } = "MoreCheckmarksBackend";
-    public override string Author { get; init; } = "VIP";
-    public override List<string>? Contributors { get; init; }
-    public override SemanticVersioning.Version Version { get; init; } = new("2.3.0");
-    public override SemanticVersioning.Range SptVersion { get; init; } = new("~4.0.0");
-
-    public override List<string>? Incompatibilities { get; init; }
-    public override Dictionary<string, SemanticVersioning.Range>? ModDependencies { get; init; }
-    public override string? Url { get; init; }
-    public override bool? IsBundleMod { get; init; }
-    public override string License { get; init; } = "MIT";
+    public string ModGuid { get; init; } = "custom-static-MoreCheckmarksRoutes";
+    public string Name { get; init; } = "MoreCheckmarksBackend";
+    public string Author { get; init; } = "VIP";
+    public List<string>? Contributors { get; init; }
+    public Version Version { get; init; } = new("2.4.0");
+    public Range SptVersion { get; init; } = new("~4.1.0");
+    public bool HasPrepatcher { get; init; } = false;
+    public List<string>? Incompatibilities { get; init; }
+    public Dictionary<string, Range>? ModDependencies { get; init; }
+    public string? Url { get; init; }
+    public string License { get; init; } = "MIT";
 }
 
-[Injectable(InjectionType = InjectionType.Singleton, TypePriority = OnLoadOrder.PostDBModLoader + 90000)]
+[Injectable(InjectionType = InjectionType.Singleton, TypePriority = OnLoadOrder.PostLoad + 1)]
 public class MoreCheckmarksServer(
     ISptLogger<MoreCheckmarksServer> logger,
     CustomStaticRouter customStaticRouter,
     ProfileHelper profileHelper,
     QuestHelper questHelper,
-    ConfigServer configServer,
-    DatabaseServer databaseServer,
-    FenceService fenceService
+    QuestConfig questConfig,
+    TradersTable tradersTable,
+    HideoutTable hideoutTable,
+    FenceService fenceService,
+    ModHelper modHelper
     ) : IOnLoad
 {
-    private readonly QuestConfig questConfig = configServer.GetConfig<QuestConfig>();
     private MoreCheckmarksServerConfig modConfig = new();
     private string modFolder = "";
 
-    public Task OnLoad()
+    public Task OnLoadAsync(CancellationToken cancellationToken)
     {
         customStaticRouter.Set(this);
         customStaticRouter.Set(logger);
-        modFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "";
+        modFolder = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
         modConfig = MoreCheckmarksServerConfig.LoadOrCreate(modFolder, msg => logger.Error(msg));
         WriteQuestReference();
         logger.Success("MoreCheckmarks data loaded.");
@@ -150,16 +148,21 @@ public class MoreCheckmarksServer(
     {
         var result = new List<(string name, TraderAssort assort)>();
         var fenceAssorts = fenceService.GetRawFenceAssorts();
-        var traderFields = typeof(Traders).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+        var traderFields = typeof(Traders).GetFields(BindingFlags.Static | BindingFlags.Public);
         foreach (var traderField in traderFields)
         {
-            var traderValue = traderField.GetValue(null) as MongoId?;
-            if (traderValue!.Value == Traders.FENCE && fenceAssorts != null)
+            if (traderField.GetValue(null) is not MongoId traderId)
+            {
+                continue;
+            }
+
+            if (traderId == Traders.FENCE && fenceAssorts != null)
             {
                 result.Add(("Fence", fenceAssorts));
                 continue;
             }
-            var traderDBEntry = databaseServer.GetTables().Traders[traderValue!.Value];
+
+            var traderDBEntry = tradersTable.GetTrader(traderId);
             if (traderDBEntry != null && traderDBEntry.Assort != null)
             {
                 var name = traderDBEntry.Base?.Nickname ?? traderField.Name;
@@ -202,19 +205,20 @@ public class MoreCheckmarksServer(
     public HideoutProductionData? HandleProductions()
     {
         logger.Debug("MoreCheckmarks making productions request");
-        try {
-            return databaseServer.GetTables().Hideout.Production;
+        try
+        {
+            return hideoutTable.Production;
         }
         catch
         {
-            logger.Error("Could not get tables from database when trying to access hideout and production.");
+            logger.Error("Could not get hideout production data.");
             return null;
         }
     }
 
-    private bool ShouldHideQuest(string questId)
+    private bool ShouldHideQuest(MongoId questId)
     {
-        if (modConfig.ExcludedQuestIds != null && modConfig.ExcludedQuestIds.Contains(questId))
+        if (modConfig.ExcludedQuestIds != null && modConfig.ExcludedQuestIds.Contains(questId.ToString()))
         {
             return true;
         }
@@ -263,16 +267,12 @@ public class MoreCheckmarksServer(
         var map = new Dictionary<MongoId, string>();
         try
         {
-            var traders = databaseServer.GetTables().Traders;
-            if (traders != null)
+            foreach (var kvp in tradersTable)
             {
-                foreach (var kvp in traders)
+                var nickname = kvp.Value?.Base?.Nickname;
+                if (!string.IsNullOrEmpty(nickname))
                 {
-                    var nickname = kvp.Value?.Base?.Nickname;
-                    if (!string.IsNullOrEmpty(nickname))
-                    {
-                        map[kvp.Key] = nickname!;
-                    }
+                    map[kvp.Key] = nickname!;
                 }
             }
         }
@@ -283,7 +283,7 @@ public class MoreCheckmarksServer(
         return map;
     }
 
-    private bool QuestIsForOtherSide(string playerSide, string questId)
+    private bool QuestIsForOtherSide(string playerSide, MongoId questId)
     {
         bool isUsec = string.Equals("usec", playerSide, StringComparison.OrdinalIgnoreCase);
         if (isUsec)
