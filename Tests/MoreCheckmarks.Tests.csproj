@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
@@ -18,7 +19,14 @@
     <Compile Include="..\Client\QuestPrerequisites.cs" />
     <Compile Include="..\Client\Models.cs" />
     <Compile Include="..\Client\InventoryCounts.cs" />
+    <Compile Include="..\Client\Localization.cs" />
     <Compile Include="..\Client\QuestFirFilter.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The language files as they ship, so the tests check the real ones. -->
+    <None Include="..\Client\Locales\*.json" Link="Locales\%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

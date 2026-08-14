@@ -50,6 +50,7 @@
     <Compile Include="DataLoader.cs" />
     <Compile Include="Models.cs" />
     <Compile Include="InventoryCounts.cs" />
+    <Compile Include="Localization.cs" />
     <Compile Include="MoreCheckmarks.cs" />
     <Compile Include="QuestFirFilter.cs" />
     <Compile Include="QuestPrerequisites.cs" />
@@ -67,7 +68,20 @@
       <Link>MoreCheckmarksAssets</Link>
     </Content>
   </ItemGroup>
-  
+
+  <!-- Language files, copied into a Locales folder next to the DLL. Adding a translation only
+       means dropping a new .json in Locales, no project change needed. en.json is embedded as
+       well so a deleted or broken file on disk can never leave the UI without text. -->
+  <ItemGroup>
+    <Content Include="Locales\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Locales\README.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <EmbeddedResource Include="Locales\en.json" />
+  </ItemGroup>
+
   <!-- Reference assemblies - Private=false prevents copying to output -->
   <ItemGroup>
     <Reference Include="0Harmony">
@@ -138,7 +152,11 @@
   
   <!-- Optional: Copy to local SPT installation for testing -->
   <Target Name="CopyToSPT" AfterTargets="CleanupOutput" Condition="Exists('$(SPTPath)')">
+    <ItemGroup>
+      <LocaleFilesToCopy Include="$(OutputPath)Locales\*" />
+    </ItemGroup>
     <Copy SourceFiles="$(OutputPath)MoreCheckmarks.dll" DestinationFolder="$(SPTPath)\BepInEx\plugins\MoreCheckmarks" />
     <Copy SourceFiles="$(OutputPath)MoreCheckmarksAssets" DestinationFolder="$(SPTPath)\BepInEx\plugins\MoreCheckmarks" />
+    <Copy SourceFiles="@(LocaleFilesToCopy)" DestinationFolder="$(SPTPath)\BepInEx\plugins\MoreCheckmarks\Locales" />
   </Target>
 </Project>

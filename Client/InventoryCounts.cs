@@ -9,9 +9,6 @@ namespace MoreCheckmarks
     /// </summary>
     public static class InventoryCounts
     {
-        // Orange used game-wide for the "found in raid" number.
-        private const string FirColorHex = "dd831a";
-
         /// <summary>
         /// Sums stack counts over a sequence of (stackCount, isFoundInRaid) pairs.
         /// Returns (fir, total) where fir counts only found-in-raid stacks.
@@ -37,13 +34,13 @@ namespace MoreCheckmarks
         /// </summary>
         public static string BuildCountLines(ItemCounts counts, string stashLabel, string onYouLabel)
         {
-            string result = stashLabel + ": <color=#" + FirColorHex + ">" + counts.stashFir +
-                            "</color> found in raid / " + counts.stashTotal + " total";
+            string result = Localization.Format("tooltip.counts.line",
+                ("label", stashLabel), ("fir", counts.stashFir), ("total", counts.stashTotal));
 
             if (counts.equipmentTotal > 0)
             {
-                result += "\n" + onYouLabel + ": <color=#" + FirColorHex + ">" + counts.equipmentFir +
-                          "</color> found in raid / " + counts.equipmentTotal + " total";
+                result += "\n" + Localization.Format("tooltip.counts.line",
+                    ("label", onYouLabel), ("fir", counts.equipmentFir), ("total", counts.equipmentTotal));
             }
 
             return result;
