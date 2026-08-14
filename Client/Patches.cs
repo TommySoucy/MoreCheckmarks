@@ -466,8 +466,11 @@ namespace MoreCheckmarks
                         if (MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
                                 craftRequired, lootItem.Item.MarkedAsSpawnedInSession, out Color checkmarkColor))
                         {
+                            // Wrapping the name in rich text stops the game from localizing it, so
+                            // localize it ourselves to keep the label translated for non-English clients
                             action.Name = "<font=\"BenderBold\"><color=#" +
-                                          ColorUtility.ToHtmlStringRGB(checkmarkColor) + ">Take</color></font>";
+                                          ColorUtility.ToHtmlStringRGB(checkmarkColor) + ">" +
+                                          "Take".Localized(null) + "</color></font>";
                         }
                         //else leave it as it is
 
