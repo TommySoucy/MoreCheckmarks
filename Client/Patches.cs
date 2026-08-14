@@ -74,7 +74,7 @@ namespace MoreCheckmarks
                     // Since being quest item could be set by future quests, need to make sure we have "QUEST ITEM" label
                     if (questItem)
                     {
-                        ____questItemLabel.text = "QUEST ITEM";
+                        ____questItemLabel.text = Localization.Get("label.questItem");
                     }
 
                     ____questItemLabel.gameObject.SetActive(questItem);
@@ -141,7 +141,8 @@ namespace MoreCheckmarks
             try
             {
                 // Reset string
-                ___string_5 = InventoryCounts.BuildCountLines(counts, "STASH".Localized(null), "ON YOU");
+                ___string_5 = InventoryCounts.BuildCountLines(counts, "STASH".Localized(null),
+                    Localization.Get("tooltip.counts.onYou"));
 
                 // Show found in raid if found in raid
                 if (item.MarkedAsSpawnedInSession)
@@ -155,14 +156,16 @@ namespace MoreCheckmarks
                 {
                     if (MoreCheckmarksConfig.includeFutureQuests)
                     {
-                        var startString = BuildQuestNeededString(startQuests, profile, counts.stashFir, "start");
+                        var startString = BuildQuestNeededString(startQuests, profile, counts.stashFir,
+                            "tooltip.quests.needed.start");
                         if (!string.IsNullOrEmpty(startString))
                         {
                             gotQuest = true;
                             ___string_5 += startString;
                         }
 
-                        var completeString = BuildQuestNeededString(completeQuests, profile, counts.stashFir, "complete");
+                        var completeString = BuildQuestNeededString(completeQuests, profile, counts.stashFir,
+                            "tooltip.quests.needed.complete");
                         if (!string.IsNullOrEmpty(completeString))
                         {
                             gotQuest = true;
@@ -236,7 +239,7 @@ namespace MoreCheckmarks
                     var areaNamesString = "";
                     for (var i = 0; i < areaNames.Count; ++i)
                     {
-                        areaNamesString += "\n  " + areaNames[i];
+                        areaNamesString += Localization.Format("tooltip.hideout.areaEntry", ("area", areaNames[i]));
                     }
 
                     if (!areaNamesString.Equals(""))
@@ -244,24 +247,23 @@ namespace MoreCheckmarks
                         var areaPossessedCount = MoreCheckmarksConfig.onlyShowHideoutCheckmarkOnFIR
                             ? counts.stashFir
                             : counts.stashTotal;
-                        ___string_5 +=
-                            string.Format("\nNeeded ({1}/{2}) for area" + (areaNames.Count == 1 ? "" : "s") + ":{0}",
-                                areaNamesString, areaPossessedCount, requiredCount);
+                        ___string_5 += Localization.Plural("tooltip.hideout.needed", areaNames.Count,
+                            ("possessed", areaPossessedCount), ("required", requiredCount),
+                            ("areas", areaNamesString));
                     }
                 }
 
                 // Add wishlist
                 if (wishlist)
                 {
-                    ___string_5 += string.Format("\nOn {0}",
-                        "<color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.wishlistColor) +
-                        ">Wish List</color>");
+                    ___string_5 += Localization.Format("tooltip.wishlist.line",
+                        ("color", ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.wishlistColor)));
                 }
 
                 // Add craft
                 if (craftRequired)
                 {
-                    ___string_5 += string.Format("\nNeeded for crafting:{0}", craftTooltip);
+                    ___string_5 += Localization.Format("tooltip.craft.header", ("recipes", craftTooltip));
                 }
 
                 // Add barters
@@ -276,19 +278,22 @@ namespace MoreCheckmarks
                             {
                                 if (!firstBarter)
                                 {
-                                    ___string_5 += "\n" + "Barter".Localized(null) + ":";
+                                    ___string_5 += Localization.Format("tooltip.barter.header",
+                                        ("barter", "Barter".Localized(null)));
                                     firstBarter = true;
                                 }
 
-                                var bartersString = "\n With " + (DataLoader.traders.Length > i
+                                var traderName = DataLoader.traders.Length > i
                                     ? DataLoader.traders[i]
-                                    : "Custom Trader " + i) + ":";
+                                    : Localization.Format("tooltip.barter.customTrader", ("index", i));
+                                var bartersString = Localization.Format("tooltip.barter.trader",
+                                    ("trader", traderName));
                                 for (var j = 0; j < bartersByTrader[i].Count; ++j)
                                 {
-                                    bartersString += "\n  <color=#" +
-                                                     ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.barterColor) + ">" +
-                                                     (bartersByTrader[i][j].Key + " Name").Localized() + "</color> (" +
-                                                     bartersByTrader[i][j].Value + ")";
+                                    bartersString += Localization.Format("tooltip.barter.offer",
+                                        ("color", ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.barterColor)),
+                                        ("item", (bartersByTrader[i][j].Key + " Name").Localized()),
+                                        ("amount", bartersByTrader[i][j].Value));
                                 }
 
                                 ___string_5 += bartersString;
@@ -310,12 +315,16 @@ namespace MoreCheckmarks
         }
 
         /// <summary>
-        /// Builds the "Needed (x/total) to {verb} quest(s):" tooltip fragment for a set of quests,
-        /// filtering out completed quests and optionally sorting by prerequisite count.
+        /// Builds the "Needed (x/total) to start/complete quest(s):" tooltip fragment for a set of
+        /// quests, filtering out completed quests and optionally sorting by prerequisite count.
         /// Returns an empty string if there are no applicable quests.
+        ///
+        /// <paramref name="keyPrefix"/> selects which wording to use; starting and completing are
+        /// two separate messages in the language files rather than one message with the verb
+        /// swapped, because only English lets you build the sentence that way.
         /// </summary>
         private static string BuildQuestNeededString(QuestPair quests, Profile profile,
-            int possessedQuestCount, string verb)
+            int possessedQuestCount, string keyPrefix)
         {
             if (quests == null)
             {
@@ -354,7 +363,7 @@ namespace MoreCheckmarks
                     // Could not localize name, just use default name
                     if (string.IsNullOrEmpty(questEntry.Value.questName))
                     {
-                        questString += "Unknown Quest";
+                        questString += Localization.Get("tooltip.quests.unknownName");
                     }
                     else
                     {
@@ -371,7 +380,7 @@ namespace MoreCheckmarks
 
                 if (index != count - 1)
                 {
-                    questString += ",\n  ";
+                    questString += Localization.Get("tooltip.quests.separator");
                 }
                 else
                 {
@@ -381,8 +390,8 @@ namespace MoreCheckmarks
                 ++index;
             }
 
-            return "\nNeeded (" + possessedQuestCount + "/" + quests.count +
-                   ") to " + verb + " quest" + (count > 1 ? "s" : "") + ":\n  " + questString;
+            return Localization.Plural(keyPrefix, count,
+                ("possessed", possessedQuestCount), ("required", quests.count), ("quests", questString));
         }
     }
 
@@ -466,8 +475,11 @@ namespace MoreCheckmarks
                         if (MoreCheckmarksMod.TryGetCheckmarkColor(questItem, neededStruct, wishlist, gotBarters,
                                 craftRequired, lootItem.Item.MarkedAsSpawnedInSession, out Color checkmarkColor))
                         {
+                            // Wrapping the name in rich text stops the game from localizing it, so
+                            // localize it ourselves to keep the label translated for non-English clients
                             action.Name = "<font=\"BenderBold\"><color=#" +
-                                          ColorUtility.ToHtmlStringRGB(checkmarkColor) + ">Take</color></font>";
+                                          ColorUtility.ToHtmlStringRGB(checkmarkColor) + ">" +
+                                          "Take".Localized(null) + "</color></font>";
                         }
                         //else leave it as it is
 
@@ -622,6 +634,10 @@ namespace MoreCheckmarks
         // This postfix will run right after a profile has been selected
         static void Postfix()
         {
+            // Second chance to settle the language, for the case where the game could not answer
+            // while the plugin was starting. Does nothing once it has been settled.
+            Localization.RefreshLanguage();
+
             DataLoader.LoadData();
         }
     }

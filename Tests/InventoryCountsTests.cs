@@ -2,8 +2,16 @@ using Xunit;
 
 namespace MoreCheckmarks.Tests
 {
+    [Collection(LocaleFiles.Collection)]
     public class InventoryCountsTests
     {
+        public InventoryCountsTests()
+        {
+            // BuildCountLines now takes its wording from the language files. Loading English keeps
+            // these assertions a check that the shipped en.json reproduces the original output.
+            LocaleFiles.UseEnglish();
+        }
+
         [Fact]
         public void SumStacks_Empty_ReturnsZero()
         {

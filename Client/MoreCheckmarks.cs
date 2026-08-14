@@ -52,14 +52,66 @@ namespace MoreCheckmarks
 
             modPath = modPath.Replace('\\', '/');
 
-            MoreCheckmarksConfig.Bind(Config);
+            // English is available straight away; the wanted language is resolved later, once the
+            // game has a locale manager to ask. Labels bound before that happens get refreshed then.
+            Localization.Initialize(modPath, ResolveLanguage, LogError);
+            Localization.onLanguageLoaded = MoreCheckmarksConfig.RefreshLabels;
+            Logger.LogDebug("Localization loaded");
+
+            MoreCheckmarksConfig.Bind(Config, Localization.AvailableLanguages(modPath));
             Logger.LogDebug("Configs loaded");
+            Logger.LogInfo("MoreCheckmarks language: " + Localization.loadedLanguage);
 
             LoadAssets();
 
             DataLoader.LoadData();
 
             DoPatching();
+        }
+
+        /// <summary>
+        /// The language to load strings for: whatever the config forces, or the one the game itself
+        /// is running in when the setting is left on "Auto".
+        /// </summary>
+        private static string ResolveLanguage()
+        {
+            string configured = MoreCheckmarksConfig.language;
+
+            if (!string.IsNullOrEmpty(configured) &&
+                !configured.Equals(Localization.automaticLanguage, StringComparison.OrdinalIgnoreCase))
+            {
+                return configured;
+            }
+
+            return DetectGameLanguage();
+        }
+
+        /// <summary>
+        /// The code of the language the game is running in, or null while the game is not far enough
+        /// along to answer. Returning null rather than a default is what lets the caller ask again
+        /// later instead of settling on the wrong language. These are the game's own codes, which are
+        /// not always the usual two letter ones: German is "ge", not "de".
+        /// </summary>
+        private static string DetectGameLanguage()
+        {
+            // DefaultLanguage is the language the player picked, and it is already set by the time the
+            // plugin starts. Deliberately not the locale manager's current culture: that one reads
+            // "en" until the game has finished loading its locales, which happens long after this, so
+            // reading it here silently answers English for everyone.
+            try
+            {
+                string language = LocaleManagerClass.DefaultLanguage;
+
+                // Empty would mean the game is not ready after all; say so rather than guess, and the
+                // caller will ask again later
+                return string.IsNullOrEmpty(language) ? null : language;
+            }
+            catch (Exception e)
+            {
+                LogError("Failed to read the game language, using " + Localization.defaultLanguage +
+                         ": " + e.Message);
+                return Localization.defaultLanguage;
+            }
         }
 
         private void LoadAssets()
@@ -256,10 +308,10 @@ namespace MoreCheckmarks
                                         neededStruct.foundFulfilled = true;
                                     }
 
-                                    areaNames?.Add("<color=#" +
-                                                   ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.fulfilledColor) + ">" +
-                                                   ad.Template.Name +
-                                                   " lvl" + stage.Level + "</color>");
+                                    areaNames?.Add(Localization.Format("tooltip.hideout.area",
+                                        ("color", ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.fulfilledColor)),
+                                        ("area", ad.Template.Name),
+                                        ("level", stage.Level)));
                                 }
                                 else
                                 {
@@ -268,10 +320,10 @@ namespace MoreCheckmarks
                                         neededStruct.foundNeeded = true;
                                     }
 
-                                    areaNames?.Add("<color=#" +
-                                                   ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.needMoreColor) + ">" +
-                                                   ad.Template.Name +
-                                                   " lvl" + stage.Level + "</color>");
+                                    areaNames?.Add(Localization.Format("tooltip.hideout.area",
+                                        ("color", ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.needMoreColor)),
+                                        ("area", ad.Template.Name),
+                                        ("level", stage.Level)));
                                 }
                             }
                         }
@@ -358,14 +410,16 @@ namespace MoreCheckmarks
                                                 gotTooltip = true;
                                                 if (!areaNameAdded)
                                                 {
-                                                    tooltip += "\n  " + ad.Template.Name.Localized();
+                                                    tooltip += Localization.Format("tooltip.craft.area",
+                                                        ("area", ad.Template.Name.Localized()));
                                                     areaNameAdded = true;
                                                 }
 
-                                                tooltip += "\n    <color=#" + ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.craftColor) +
-                                                           ">" + (product + " Name").Localized() + " lvl" +
-                                                           productionData.Level + "</color> (" +
-                                                           itemRequirement.IntCount + ")";
+                                                tooltip += Localization.Format("tooltip.craft.recipe",
+                                                    ("color", ColorUtility.ToHtmlStringRGB(MoreCheckmarksConfig.craftColor)),
+                                                    ("item", (product + " Name").Localized()),
+                                                    ("level", productionData.Level),
+                                                    ("amount", itemRequirement.IntCount));
                                             }
                                         }
                                         else
@@ -550,17 +604,17 @@ namespace MoreCheckmarks
             if (remaining == 0)
             {
                 // Green for available quests
-                return " <color=#00ff00>(0 prereqs)</color>";
+                return Localization.Get("tooltip.quests.prereqs.none");
             }
             else if (remaining < 10)
             {
                 // Yellow for quests with few prerequisites (1-9)
-                return $" <color=#ffff00>({remaining} prereq{(remaining == 1 ? "" : "s")})</color>";
+                return Localization.Plural("tooltip.quests.prereqs.few", remaining, ("count", remaining));
             }
             else
             {
                 // Gray for quests with many prerequisites (10+)
-                return $" <color=#888888>({remaining} prereqs)</color>";
+                return Localization.Format("tooltip.quests.prereqs.many", ("count", remaining));
             }
         }
 

@@ -1,4 +1,5 @@
 using BepInEx.Configuration;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MoreCheckmarks
@@ -6,6 +7,8 @@ namespace MoreCheckmarks
     public static class MoreCheckmarksConfig
     {
         // Config Entries (BepInEx F12 menu)
+        public static ConfigEntry<string> configLanguage;
+        public static ConfigEntry<string> configRefreshRequired;
         public static ConfigEntry<bool> configFulfilledAnyCanBeUpgraded;
         public static ConfigEntry<bool> configOnlyShowHideoutCheckmarkOnFIR;
         public static ConfigEntry<bool> configShowHideoutCheckmarks;
@@ -30,6 +33,8 @@ namespace MoreCheckmarks
         public static ConfigEntry<bool> configOnlyFirRequiredQuests;
 
         // Config settings (derived from ConfigEntry values)
+        // Null-safe: the language is asked for while this very entry is still being bound
+        public static string language => configLanguage?.Value;
         public static bool fulfilledAnyCanBeUpgraded => configFulfilledAnyCanBeUpgraded.Value;
         public static bool onlyShowHideoutCheckmarkOnFIR => configOnlyShowHideoutCheckmarkOnFIR.Value;
         public static bool showHideoutCheckmarks => configShowHideoutCheckmarks.Value;
@@ -59,166 +64,193 @@ namespace MoreCheckmarks
         public static int[] priorities = { 0, 1, 2, 3, 4 };
         public static Color[] colors = { Color.yellow, needMoreColor, wishlistColor, barterColor, craftColor };
 
-        public static void Bind(ConfigFile config)
+        // The attribute objects handed to ConfigurationManager, kept so their labels can be
+        // refreshed once the game tells us which language it is running in
+        private static readonly List<LocalizedLabel> labels = new List<LocalizedLabel>();
+
+        private struct LocalizedLabel
         {
+            public readonly ConfigurationManagerAttributes attributes;
+            public readonly string sectionId;
+            public readonly string settingId;
+
+            public LocalizedLabel(ConfigurationManagerAttributes attributes, string sectionId, string settingId)
+            {
+                this.attributes = attributes;
+                this.sectionId = sectionId;
+                this.settingId = settingId;
+            }
+        }
+
+        public static void Bind(ConfigFile config, List<string> availableLanguages)
+        {
+            labels.Clear();
+
+            // Bound before anything else, and deliberately without going through Describe: asking for
+            // a translated label settles which language to use, and that answer depends on this very
+            // setting. Its labels are registered for the refresh below instead.
+            var choices = new List<string> { Localization.automaticLanguage };
+            choices.AddRange(availableLanguages);
+
+            var languageAttributes = new ConfigurationManagerAttributes();
+            labels.Add(new LocalizedLabel(languageAttributes, "language", "language"));
+
+            configLanguage = config.Bind(
+                "Language",
+                "Language",
+                Localization.automaticLanguage,
+                new ConfigDescription(
+                    Localization.GetEnglish("config.language.description"),
+                    new AcceptableValueList<string>(choices.ToArray()),
+                    languageAttributes));
+
+            // The setting can be read now, so settle the language before binding anything that wants
+            // a translated label
+            Localization.RefreshLanguage();
+
             // Note about changes requiring menu refresh
-            config.Bind(
+            configRefreshRequired = config.Bind(
                 "0. Important Note",
                 "Refresh Required",
-                "Switch menus to apply changes",
-                new ConfigDescription("Changes don't apply immediately. To see updates: leave your current menu (e.g. stash), go to main menu, then return.", null, new ConfigurationManagerAttributes { ReadOnly = true, HideDefaultButton = true }));
+                Localization.GetEnglish("config.note.value"),
+                Describe("note", "note", readOnly: true, hideDefaultButton: true));
 
             // Hideout Settings
             configShowHideoutCheckmarks = config.Bind(
                 "Hideout",
                 "Show Hideout Checkmarks",
                 true,
-                "Show checkmark and tooltip for hideout areas this item is needed for. When disabled, no hideout checkmark or 'Needed for area' tooltip section is shown.");
+                Describe("hideout", "hideout.showCheckmarks"));
 
             configFulfilledAnyCanBeUpgraded = config.Bind(
                 "Hideout",
                 "Fulfilled Any Can Be Upgraded",
                 true,
-                "When TRUE, shows fulfilled checkmark when AT LEAST ONE hideout module can be upgraded. When FALSE, shows fulfilled only when ALL modules can be upgraded.");
+                Describe("hideout", "hideout.fulfilledAnyCanBeUpgraded"));
 
             configShowFutureModulesLevels = config.Bind(
                 "Hideout",
                 "Show Future Module Levels",
                 true,
-                "Show requirements for future hideout module levels instead of only the next one.");
+                Describe("hideout", "hideout.showFutureModuleLevels"));
 
             configOnlyShowHideoutCheckmarkOnFIR = config.Bind(
                 "Hideout",
                 "Only Show Hideout Checkmark On FIR Items",
                 true,
-                "When enabled, hideout requirements only drive the checkmark for items that are Found In Raid (FIR). " +
-                "Non-FIR items will not get a checkmark from hideout needs (though quests, wishlist, barters, or crafts can still show one). " +
-                "The 'Needed for area' tooltip lines are still shown.");
+                Describe("hideout", "hideout.onlyShowCheckmarkOnFir"));
 
             // Quest Settings
             configShowQuestCheckmarks = config.Bind(
                 "Quests",
                 "Show Quest Checkmarks",
                 true,
-                "Show checkmark and tooltip for quests this item is needed for. When disabled, no quest checkmark or quest tooltip section is shown.");
+                Describe("quests", "quests.showCheckmarks"));
 
             configIncludeFutureQuests = config.Bind(
                 "Quests",
                 "Include Future Quests",
                 true,
-                "Consider future quests when checking which quests an item is required for. If false, behaves like vanilla.");
+                Describe("quests", "quests.includeFuture"));
 
             configShowPrerequisiteQuests = config.Bind(
                 "Quests",
                 "Show Prerequisite Count",
                 true,
-                "Show the number of prerequisite quests needed before each quest becomes available. Quests are sorted by prerequisite count with color coding: Green (0 prereqs), Yellow (1-9), Gray (10+).");
+                Describe("quests", "quests.showPrerequisiteCount"));
 
             configShowQuestCheckmarksNonFIR = config.Bind(
                 "Quests",
                 "Show Quest Checkmarks for Non-FIR Items",
                 false,
-                "When enabled, quest checkmarks will appear on items even if they aren't found in raid. Useful if your SPT is configured to accept non-FIR items for quest turn-ins.");
+                Describe("quests", "quests.showCheckmarksNonFir"));
 
             configOnlyFirRequiredQuests = config.Bind(
                 "Quests",
                 "Only Show FiR-Required Quests",
                 false,
-                "When enabled, quest checkmarks only appear for quests that REQUIRE the item to be Found-in-Raid. " +
-                "Quests that accept non-FiR items (e.g. Ragman's Hot Delivery) won't show a checkmark. " +
-                "This is about whether the QUEST requires FiR; it is separate from 'Show Quest Checkmarks for Non-FIR Items', " +
-                "which is about whether YOUR stored item is FiR.");
+                Describe("quests", "quests.onlyFirRequired"));
 
             // Barter & Craft Settings
             configShowBarter = config.Bind(
                 "Barter & Craft",
                 "Show Barter",
                 true,
-                "Show checkmark and tooltip for barters/trades this item is needed for.");
+                Describe("barterCraft", "barterCraft.showBarter"));
 
             configShowCraft = config.Bind(
                 "Barter & Craft",
                 "Show Craft",
                 true,
-                "Show checkmark and tooltip for crafting recipes this item is needed for.");
+                Describe("barterCraft", "barterCraft.showCraft"));
 
             configShowFutureCraft = config.Bind(
                 "Barter & Craft",
                 "Show Future Craft",
                 true,
-                "Show crafting recipes that are not yet unlocked.");
+                Describe("barterCraft", "barterCraft.showFutureCraft"));
 
             // Priority Settings (higher = takes precedence, ordered by default priority)
             configQuestPriority = config.Bind(
                 "Priority",
                 "Quest Priority",
                 4,
-                new ConfigDescription("Priority for quest checkmarks. Higher number = higher priority when item is needed for multiple things.",
-                    new AcceptableValueRange<int>(0, 10),
-                    new ConfigurationManagerAttributes { Order = 5 }));
+                Describe("priority", "priority.quest", new AcceptableValueRange<int>(0, 10), order: 5));
 
             configHideoutPriority = config.Bind(
                 "Priority",
                 "Hideout Priority",
                 3,
-                new ConfigDescription("Priority for hideout checkmarks. Higher number = higher priority.",
-                    new AcceptableValueRange<int>(0, 10),
-                    new ConfigurationManagerAttributes { Order = 4 }));
+                Describe("priority", "priority.hideout", new AcceptableValueRange<int>(0, 10), order: 4));
 
             configWishlistPriority = config.Bind(
                 "Priority",
                 "Wishlist Priority",
                 2,
-                new ConfigDescription("Priority for wishlist checkmarks. Higher number = higher priority.",
-                    new AcceptableValueRange<int>(0, 10),
-                    new ConfigurationManagerAttributes { Order = 3 }));
+                Describe("priority", "priority.wishlist", new AcceptableValueRange<int>(0, 10), order: 3));
 
             configBarterPriority = config.Bind(
                 "Priority",
                 "Barter Priority",
                 1,
-                new ConfigDescription("Priority for barter checkmarks. Higher number = higher priority.",
-                    new AcceptableValueRange<int>(0, 10),
-                    new ConfigurationManagerAttributes { Order = 2 }));
+                Describe("priority", "priority.barter", new AcceptableValueRange<int>(0, 10), order: 2));
 
             configCraftPriority = config.Bind(
                 "Priority",
                 "Craft Priority",
                 0,
-                new ConfigDescription("Priority for craft checkmarks. Higher number = higher priority.",
-                    new AcceptableValueRange<int>(0, 10),
-                    new ConfigurationManagerAttributes { Order = 1 }));
+                Describe("priority", "priority.craft", new AcceptableValueRange<int>(0, 10), order: 1));
 
             // Color Settings (RGB sliders in F12 menu)
             configNeedMoreColor = config.Bind(
                 "Colors",
                 "Need More Color",
                 new Color(1f, 0.37255f, 0.37255f),
-                "Color for items where you need more (default: light red)");
+                Describe("colors", "colors.needMore"));
 
             configFulfilledColor = config.Bind(
                 "Colors",
                 "Fulfilled Color",
                 new Color(0.30588f, 1f, 0.27843f),
-                "Color for items where requirement is fulfilled (default: light green)");
+                Describe("colors", "colors.fulfilled"));
 
             configWishlistColor = config.Bind(
                 "Colors",
                 "Wishlist Color",
                 new Color(0.23137f, 0.93725f, 1f),
-                "Color for wishlist items (default: light blue)");
+                Describe("colors", "colors.wishlist"));
 
             configBarterColor = config.Bind(
                 "Colors",
                 "Barter Color",
                 new Color(1f, 0f, 1f),
-                "Color for barter items (default: magenta)");
+                Describe("colors", "colors.barter"));
 
             configCraftColor = config.Bind(
                 "Colors",
                 "Craft Color",
                 new Color(0f, 1f, 1f),
-                "Color for craft items (default: cyan)");
+                Describe("colors", "colors.craft"));
 
             // Subscribe to config changes
             configNeedMoreColor.SettingChanged += (s, e) => UpdateColors();
@@ -235,6 +267,63 @@ namespace MoreCheckmarks
             // Initialize colors and priorities
             UpdateColors();
             UpdatePriorities();
+        }
+
+        /// <summary>
+        /// Builds the description for a setting from the language files.
+        ///
+        /// The text handed to BepInEx is always the English one, because that is what gets written as
+        /// a comment into the .cfg file and existing files should keep reading the same way. The
+        /// translated name, category and description are passed alongside as ConfigurationManager
+        /// attributes, which only affect what the F12 menu draws - the section and key that identify
+        /// the setting are untouched, so existing .cfg files keep working.
+        /// </summary>
+        private static ConfigDescription Describe(string sectionId, string settingId,
+            AcceptableValueBase acceptableValues = null, int? order = null,
+            bool? readOnly = null, bool? hideDefaultButton = null)
+        {
+            var attributes = new ConfigurationManagerAttributes
+            {
+                Order = order,
+                ReadOnly = readOnly,
+                HideDefaultButton = hideDefaultButton
+            };
+
+            labels.Add(new LocalizedLabel(attributes, sectionId, settingId));
+            Apply(labels[labels.Count - 1]);
+
+            return new ConfigDescription(
+                Localization.GetEnglish("config." + settingId + ".description"),
+                acceptableValues,
+                attributes);
+        }
+
+        /// <summary>
+        /// Re-reads every F12 label from the language files. Settings are bound while the game is
+        /// still starting, before it can say which language it runs in, so the labels are filled in
+        /// with English and corrected here once the answer is known. ConfigurationManager reads these
+        /// attributes when it builds its window, which is always long after that.
+        /// </summary>
+        public static void RefreshLabels()
+        {
+            foreach (LocalizedLabel label in labels)
+            {
+                Apply(label);
+            }
+
+            // The note's value is displayed text rather than a stored preference, so it follows the
+            // language too. Assigning it rewrites the .cfg entry, which is harmless for a note.
+            if (configRefreshRequired != null)
+            {
+                configRefreshRequired.Value = Localization.Get("config.note.value");
+            }
+        }
+
+        private static void Apply(LocalizedLabel label)
+        {
+            label.attributes.Category = Localization.Get("config.section." + label.sectionId);
+            label.attributes.DispName = Localization.Get("config." + label.settingId + ".name");
+            label.attributes.Description = Localization.Get("config." + label.settingId + ".description");
         }
 
         public static void UpdateColors()
@@ -270,6 +359,11 @@ namespace MoreCheckmarks
 #pragma warning disable CS0649 // Field is never assigned to
     internal sealed class ConfigurationManagerAttributes
     {
+        // Localized labels. These only change what the F12 menu draws; the section and key that
+        // identify a setting in the .cfg file are set when binding and are not affected.
+        public string DispName;
+        public string Category;
+        public string Description;
         public bool? ReadOnly;
         public bool? HideDefaultButton;
         public int? Order;
