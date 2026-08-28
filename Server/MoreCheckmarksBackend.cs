@@ -1,18 +1,17 @@
+using SPTarkov.Common.Models.Logging;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Extensions;
-using SPTarkov.Server.Core.Helpers;
+using SPTarkov.Server.Core.Helpers.Profile;
+using SPTarkov.Server.Core.Helpers.Quest;
 using SPTarkov.Server.Core.Models.Common;
-using SPTarkov.Server.Core.Models.Logging;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Eft.Hideout;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Spt.Mod;
-using SPTarkov.Server.Core.Models.Spt.Server;
-using SPTarkov.Server.Core.Models.Utils;
-using SPTarkov.Server.Core.Servers;
-using SPTarkov.Server.Core.Services;
+using SPTarkov.Server.Core.Models.Spt.Tables;
+using SPTarkov.Server.Core.Services.Commerce;
 using Path = System.IO.Path;
 
 namespace MoreCheckmarks;
@@ -22,41 +21,52 @@ namespace MoreCheckmarks;
 ///
 /// This is where we define all the metadata associated with this mod.
 /// You don't have to do anything with it, other than fill it out.
-/// All properties must be overriden, properties you don't use may be left null.
+/// All properties must be implemented; properties you don't use may be left null.
 /// It is read by the mod loader when this mod is loaded.
+///
+/// SPT 4.1 replaced the AbstractModMetadata abstract class with the IModMetadata interface, so
+/// these are interface implementations rather than overrides, and IsBundleMod became HasPrepatcher.
 /// </summary>
-public record ModMetadata : AbstractModMetadata
+public record ModMetadata : IModMetadata
 {
-    public override string ModGuid { get; init; } = "custom-static-MoreCheckmarksRoutes";
-    public override string Name { get; init; } = "MoreCheckmarksBackend";
-    public override string Author { get; init; } = "VIP";
-    public override List<string>? Contributors { get; init; }
-    public override SemanticVersioning.Version Version { get; init; } = new("2.3.0");
-    public override SemanticVersioning.Range SptVersion { get; init; } = new("~4.0.0");
+    public string ModGuid { get; init; } = "custom-static-MoreCheckmarksRoutes";
+    public string Name { get; init; } = "MoreCheckmarksBackend";
+    public string Author { get; init; } = "VIP";
+    public List<string>? Contributors { get; init; }
+    // Taken from <Version> in the csproj so the two cannot drift (they already had: the csproj
+    // said 2.2.0 while this said 2.3.0).
+    public SemanticVersioning.Version Version { get; init; } =
+        new(typeof(ModMetadata).Assembly.GetName().Version!.ToString(3));
+    public SemanticVersioning.Range SptVersion { get; init; } = new("~4.1.0");
 
-    public override List<string>? Incompatibilities { get; init; }
-    public override Dictionary<string, SemanticVersioning.Range>? ModDependencies { get; init; }
-    public override string? Url { get; init; }
-    public override bool? IsBundleMod { get; init; }
-    public override string License { get; init; } = "MIT";
+    public bool HasPrepatcher { get; init; }
+    public List<string>? Incompatibilities { get; init; }
+    public Dictionary<string, SemanticVersioning.Range>? ModDependencies { get; init; }
+    public string? Url { get; init; }
+    public string License { get; init; } = "MIT";
 }
 
-[Injectable(InjectionType = InjectionType.Singleton, TypePriority = OnLoadOrder.PostDBModLoader + 90000)]
+// 4.1 removed OnLoadOrder.Database and OnLoadOrder.PostDBModLoader (the tables are injected
+// directly now, so they are always populated). PostLoad runs after trader registration and the
+// callback stages, which is what this mod's reads actually need.
+[Injectable(InjectionType = InjectionType.Singleton, TypePriority = OnLoadOrder.PostLoad)]
 public class MoreCheckmarksServer(
     ISptLogger<MoreCheckmarksServer> logger,
     CustomStaticRouter customStaticRouter,
     ProfileHelper profileHelper,
     QuestHelper questHelper,
-    ConfigServer configServer,
-    DatabaseServer databaseServer,
+    // 4.1 dropped ConfigServer.GetConfig<T>() and DatabaseServer.GetTables(); configs and tables
+    // are injected directly instead.
+    QuestConfig questConfig,
+    TradersTable tradersTable,
+    HideoutTable hideoutTable,
     FenceService fenceService
     ) : IOnLoad
 {
-    private readonly QuestConfig questConfig = configServer.GetConfig<QuestConfig>();
     private MoreCheckmarksServerConfig modConfig = new();
     private string modFolder = "";
 
-    public Task OnLoad()
+    public Task OnLoadAsync(CancellationToken cancellationToken)
     {
         customStaticRouter.Set(this);
         customStaticRouter.Set(logger);
@@ -159,7 +169,7 @@ public class MoreCheckmarksServer(
                 result.Add(("Fence", fenceAssorts));
                 continue;
             }
-            var traderDBEntry = databaseServer.GetTables().Traders[traderValue!.Value];
+            var traderDBEntry = tradersTable[traderValue!.Value];
             if (traderDBEntry != null && traderDBEntry.Assort != null)
             {
                 var name = traderDBEntry.Base?.Nickname ?? traderField.Name;
@@ -203,7 +213,7 @@ public class MoreCheckmarksServer(
     {
         logger.Debug("MoreCheckmarks making productions request");
         try {
-            return databaseServer.GetTables().Hideout.Production;
+            return hideoutTable.Production;
         }
         catch
         {
@@ -263,7 +273,7 @@ public class MoreCheckmarksServer(
         var map = new Dictionary<MongoId, string>();
         try
         {
-            var traders = databaseServer.GetTables().Traders;
+            var traders = tradersTable;
             if (traders != null)
             {
                 foreach (var kvp in traders)

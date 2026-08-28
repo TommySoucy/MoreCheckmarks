@@ -398,3 +398,6 @@ plans/*
 .claude
 *.cursorrules
 VERSION-*.md
+
+# Packaged mod archives produced by the PackageMod target
+MoreCheckmarks-*.zip
