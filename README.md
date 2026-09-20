@@ -170,11 +170,6 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 
 ## Changelog
 
-### Unreleased
-
-- Refresh checkmark counts when hovering an inventory item, including stacks changed by splitting or moving items. The checkmark color on an item you haven't hovered may still lag until you hover it or reopen the inventory.
-- Build release and debug archives from a clean staging directory containing only required distribution files, excluding old SPT 4.0 output and local configuration. Packaging fails if a required file is missing.
-
 ### v3.0.0
 
 **Requires SPT 4.1.x.** This is a major version bump because the compatibility break is hard in both
@@ -183,8 +178,8 @@ are still on SPT 4.0.
 
 Player-facing:
 
-- Updated for **SPT 4.1.x**. Existing settings and behaviour are unchanged - this release is a
-  compatibility port, not a feature change.
+- Updated for **SPT 4.1.x**, preserving existing settings and checkmark rules.
+- Refresh checkmark counts when hovering an inventory item, including stacks changed by splitting or moving items. The checkmark color on an item you haven't hovered may still lag until you hover it or reopen the inventory.
 - The mod now checks the running SPT version at startup and refuses to patch, with a clear log line,
   outside 4.1.x. Previously a version mismatch produced wrong checkmarks instead of an error.
 - Fixed the loose-loot "Take" colour coding, which would not have worked at all on 4.1.
@@ -203,6 +198,7 @@ Under the hood:
 
 Build and packaging (contributors):
 
+- Build release and debug archives from a clean staging directory containing only required distribution files, excluding old SPT 4.0 output and local configuration. Packaging fails if a required file is missing.
 - Reference paths resolve relative to the SPT install instead of a hardcoded `C:\SPT`, overridable with
   `-p:SPTPath=<path>` or the `SPTPATH` environment variable.
 - The client project is now SDK-style and globs its sources, so adding a file no longer means editing
