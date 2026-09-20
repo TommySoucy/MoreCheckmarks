@@ -1,6 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -9,10 +7,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MoreCheckmarks</RootNamespace>
     <AssemblyName>MoreCheckmarks</AssemblyName>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <TargetFramework>net472</TargetFramework>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>latest</LangVersion>
     <!-- Don't generate PDB files -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
@@ -22,42 +20,62 @@
     <DisableFastUpToDateCheck>false</DisableFastUpToDateCheck>
     <!-- Prevent copying .NET Framework facade assemblies -->
     <ExcludeDeploymentUrl>true</ExcludeDeploymentUrl>
+    <!-- OutputPath below is already the final BepInEx layout - don't append net472/ to it. -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!-- Properties\AssemblyInfo.cs owns the assembly attributes; the SDK must not also emit them. -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   
+  <!-- Plugin path written once, mirroring <ServerModDir> in the server project.
+       Must precede the OutputPath definitions below: MSBuild evaluates properties top-down. -->
+  <PropertyGroup>
+    <ClientPluginDir>BepInEx\plugins\MoreCheckmarks</ClientPluginDir>
+    <DistDir>$(MSBuildProjectDirectory)\..\dist</DistDir>
+  </PropertyGroup>
+
   <!-- Build output goes to dist folder, matching SPT/BepInEx structure -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Optimize>false</Optimize>
-    <OutputPath>..\dist\BepInEx\plugins\MoreCheckmarks\</OutputPath>
+    <OutputPath>$(DistDir)\$(ClientPluginDir)\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
-    <OutputPath>..\dist\BepInEx\plugins\MoreCheckmarks\</OutputPath>
+    <OutputPath>$(DistDir)\$(ClientPluginDir)\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   
-  <!-- Local SPT path - update this to match your SPT installation -->
+  <!-- Single source of truth for the mod version. Consumed by PluginInfo.g.cs (see
+       GeneratePluginInfo below), which feeds [BepInPlugin] and the assembly version. -->
   <PropertyGroup>
-    <SPTPath>C:\SPT</SPTPath>
+    <ModVersion>3.0.0</ModVersion>
   </PropertyGroup>
+
+  <!--
+    SPT install root, resolved in this order:
+      1. -p:SPTPath=<path> on the command line
+      2. the SPTPATH environment variable
+      3. three directories up - this repo is expected to live at <SPT>/moddev/MoreCheckmarks
+    Keep this relative so the project stays buildable for everyone, not just one machine.
+  -->
+  <PropertyGroup>
+    <SPTPath Condition="'$(SPTPath)' == '' AND '$(SPTPATH)' != ''">$(SPTPATH)</SPTPath>
+    <SPTPath Condition="'$(SPTPath)' == ''">$(MSBuildProjectDirectory)\..\..\..</SPTPath>
+    <EftManaged>$(SPTPath)\EscapeFromTarkov_Data\Managed</EftManaged>
+    <BepInExCore>$(SPTPath)\BepInEx\core</BepInExCore>
+    <SptPlugins>$(SPTPath)\BepInEx\plugins\spt</SptPlugins>
+  </PropertyGroup>
+
   
+  <!-- Sources come from the SDK's **/*.cs glob. The generated version file is written under
+       obj/ (outside the glob) and included explicitly, so a fresh clone compiles before the
+       file exists on disk. -->
   <ItemGroup>
-    <Compile Include="Config.cs" />
-    <Compile Include="DataLoader.cs" />
-    <Compile Include="Models.cs" />
-    <Compile Include="InventoryCounts.cs" />
-    <Compile Include="MoreCheckmarks.cs" />
-    <Compile Include="QuestFirFilter.cs" />
-    <Compile Include="QuestPrerequisites.cs" />
-    <Compile Include="Patches.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <Compile Include="$(IntermediateOutputPath)PluginInfo.g.cs" />
   </ItemGroup>
   
   <!-- Assets to copy alongside the DLL (Config.json no longer needed - using BepInEx config) -->
@@ -71,58 +89,70 @@
   <!-- Reference assemblies - Private=false prevents copying to output -->
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>$(SPTPath)\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>$(BepInExCore)\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(EftManaged)\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>$(SPTPath)\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>$(BepInExCore)\BepInEx.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Comfort">
-      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Comfort.dll</HintPath>
+      <HintPath>$(EftManaged)\Comfort.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(EftManaged)\Newtonsoft.Json.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Sirenix.Serialization">
-      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Sirenix.Serialization.dll</HintPath>
+      <HintPath>$(EftManaged)\Sirenix.Serialization.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="spt-common">
-      <HintPath>$(SPTPath)\BepInEx\plugins\spt\spt-common.dll</HintPath>
+      <HintPath>$(SptPlugins)\spt-common.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="System">
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>$(EftManaged)\Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(EftManaged)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>$(EftManaged)\UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(EftManaged)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>$(SPTPath)\EscapeFromTarkov_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(EftManaged)\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <!-- Without this, a wrong SPTPath surfaces as dozens of "type not found" errors. -->
+  <Target Name="ValidateSptPath" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(EftManaged)\Assembly-CSharp.dll')"
+           Text="Assembly-CSharp.dll not found under '$(EftManaged)'. Set the SPT install root with -p:SPTPath=&lt;path&gt; or the SPTPATH environment variable." />
+  </Target>
+
+  <!-- Generate the version constant so [BepInPlugin] and $(ModVersion) cannot drift apart. -->
+  <Target Name="GeneratePluginInfo" BeforeTargets="BeforeBuild">
+    <WriteLinesToFile File="$(IntermediateOutputPath)PluginInfo.g.cs"
+                      Lines="// Generated by the GeneratePluginInfo target - do not edit.%0Anamespace MoreCheckmarks { internal static class PluginInfo { public const string Version = &quot;$(ModVersion)&quot;%3B } }"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
   
   <!-- Clean up unwanted files from output (System.*.dll facade assemblies) -->
   <Target Name="CleanupOutput" AfterTargets="Build">
@@ -136,9 +166,19 @@
     <Message Text="Cleaned up $(OutputPath)" Importance="high" />
   </Target>
   
-  <!-- Optional: Copy to local SPT installation for testing -->
-  <Target Name="CopyToSPT" AfterTargets="CleanupOutput" Condition="Exists('$(SPTPath)')">
-    <Copy SourceFiles="$(OutputPath)MoreCheckmarks.dll" DestinationFolder="$(SPTPath)\BepInEx\plugins\MoreCheckmarks" />
-    <Copy SourceFiles="$(OutputPath)MoreCheckmarksAssets" DestinationFolder="$(SPTPath)\BepInEx\plugins\MoreCheckmarks" />
+  <!--
+    Debug: deploy straight into the local SPT install so the dev environment picks the plugin up.
+    Runs after CleanupOutput so the facade/pdb files it deletes are never deployed. Copies whatever
+    is staged rather than a fixed file list, so a new asset can't be silently left behind.
+    Matches CopyToSPT in the server project.
+  -->
+  <Target Name="CopyToSPT" AfterTargets="CleanupOutput"
+          Condition="'$(Configuration)' == 'Debug' AND Exists('$(SPTPath)\BepInEx\plugins')">
+    <ItemGroup>
+      <_StagedPlugin Include="$(OutputPath)**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_StagedPlugin)"
+          DestinationFolder="$(SPTPath)\$(ClientPluginDir)\%(RecursiveDir)" />
+    <Message Text="Deployed MoreCheckmarks to $(SPTPath)\$(ClientPluginDir)" Importance="high" />
   </Target>
 </Project>

@@ -1,4 +1,4 @@
-# MoreCheckmarks v2.3.0 - SPT 4.0 Update
+# MoreCheckmarks v3.0.0 - SPT 4.1 Update
 
 ## Overview
 
@@ -68,7 +68,11 @@ When enabled, the tooltip now shows how many prerequisite quests you need to com
 2. You should end up with:
    - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarks.dll`
    - `BepInEx/plugins/MoreCheckmarks/MoreCheckmarksAssets`
-   - `SPT/user/mods/MoreCheckmarksBackend/MoreCheckmarksBackend.dll`
+   - `SPT_Runtime/user/mods/MoreCheckmarksBackend/MoreCheckmarksBackend.dll`
+
+> **Upgrading from v2.x / SPT 4.0?** The server mod directory moved from `SPT/user/mods/` to
+> `SPT_Runtime/user/mods/` in SPT 4.1. Delete the old `SPT/user/mods/MoreCheckmarksBackend` folder if
+> it is still there.
 
 ---
 
@@ -131,14 +135,14 @@ All colors can be customized using RGB sliders. Default colors:
 
 Some quest-hiding options live in a server-side config file rather than the F12 menu, since they require server data. The file is created automatically with defaults on first server start at:
 
-`SPT/user/mods/MoreCheckmarksBackend/config.json`
+`SPT_Runtime/user/mods/MoreCheckmarksBackend/config.json`
 
 | Setting                    | Default | Description                                                                                                                                                                  |
 | -------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`hideInactiveEventQuests`** | `true`  | Hide checkmarks for inactive seasonal/event quests (Christmas, Halloween, etc.) that aren't currently active. Set to `false` to show them like before.                       |
 | **`excludedQuestIds`**     | `[]`    | A list of quest IDs to completely ignore (no checkmarks). Useful for quests you never do (e.g. *Compensation For Damage*).                                                    |
 
-**Finding quest IDs:** On every server start, the mod writes a readable lookup file next to the config at `SPT/user/mods/MoreCheckmarksBackend/quest-id-reference.txt`, listing every quest as `Quest Name [Trader] = questId`. Copy the IDs you want to hide into `excludedQuestIds`, for example:
+**Finding quest IDs:** On every server start, the mod writes a readable lookup file next to the config at `SPT_Runtime/user/mods/MoreCheckmarksBackend/quest-id-reference.txt`, listing every quest as `Quest Name [Trader] = questId`. Copy the IDs you want to hide into `excludedQuestIds`, for example:
 
 ```json
 {
@@ -153,7 +157,7 @@ Changes to `config.json` take effect after a server restart.
 
 ## Compatibility
 
-- **SPT Version**: 4.0.x
+- **SPT Version**: 4.1.x
 - **Required**: BepInEx (included with SPT)
 
 ---
@@ -165,6 +169,43 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 ---
 
 ## Changelog
+
+### v3.0.0
+
+**Requires SPT 4.1.x.** This is a major version bump because the compatibility break is hard in both
+directions: v3.0.0 will not run on SPT 4.0, and v2.3.0 will not run on SPT 4.1. Stay on v2.3.0 if you
+are still on SPT 4.0.
+
+Player-facing:
+
+- Updated for **SPT 4.1.x**. Existing settings and behaviour are unchanged - this release is a
+  compatibility port, not a feature change.
+- The mod now checks the running SPT version at startup and refuses to patch, with a clear log line,
+  outside 4.1.x. Previously a version mismatch produced wrong checkmarks instead of an error.
+- Fixed the loose-loot "Take" colour coding, which would not have worked at all on 4.1.
+
+Under the hood:
+
+- Rebuilt against the 4.1 de-obfuscated `Assembly-CSharp`. Types the mod reads were renamed - the
+  hideout singleton, the loose-loot interaction types, the quest and production types, and two
+  `QuestItemViewPanel` tooltip fields - so v2.3.0 cannot work on 4.1 at all.
+- The "Take" patch now names its argument types: the 4.1 method it hooks has 21 overloads, so without
+  them the patch silently never attached.
+- The server mod declared `SptVersion` as `~4.0.0`, which SPT 4.1's mod loader rejects outright. It now
+  declares `~4.1.0`.
+- SPT 4.1 renamed the server mod directory from `SPT/user/mods/` to `SPT_Runtime/user/mods/`; the
+  packaged layout follows.
+
+Build and packaging (contributors):
+
+- Reference paths resolve relative to the SPT install instead of a hardcoded `C:\SPT`, overridable with
+  `-p:SPTPath=<path>` or the `SPTPATH` environment variable.
+- The client project is now SDK-style and globs its sources, so adding a file no longer means editing
+  the `.csproj`.
+- Each half takes its version from one place (`$(ModVersion)` client-side, `$(Version)` server-side).
+- `dotnet build -c Release` now writes an installable `MoreCheckmarks-<version>.zip` to the repo root,
+  laid out to extract straight over the SPT install root. `-c Debug` additionally deploys both halves
+  into the local SPT install for testing.
 
 ### v2.3.0
 

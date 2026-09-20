@@ -1,4 +1,5 @@
 using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using Comfort.Common;
 using EFT;
@@ -17,12 +18,15 @@ using UnityEngine;
 namespace MoreCheckmarks
 {
     [BepInPlugin(pluginGuid, pluginName, pluginVersion)]
+    [BepInDependency(SptCoreGuid, "4.1.0")]
     public class MoreCheckmarksMod : BaseUnityPlugin
     {
         // BepinEx
         public const string pluginGuid = "VIP.TommySoucy.MoreCheckmarks";
         public const string pluginName = "MoreCheckmarks";
-        public const string pluginVersion = "2.3.0";
+        // Generated from $(ModVersion) in the csproj - see the GeneratePluginInfo target.
+        public const string pluginVersion = PluginInfo.Version;
+        private const string SptCoreGuid = "com.SPT.core";
 
         // Assets
         public static Sprite whiteCheckmark;
@@ -38,7 +42,41 @@ namespace MoreCheckmarks
 
             modInstance = this;
 
+            // The [BepInDependency] above pins a minimum SPT. This pins a maximum: 4.1 de-obfuscated
+            // large parts of Assembly-CSharp, and this build reads members by their 4.1 names. On a
+            // newer SPT those reads would silently return defaults rather than fail, so refuse to
+            // patch at all instead of misbehaving quietly.
+            if (!SptVersionSupported())
+            {
+                enabled = false;
+                return;
+            }
+
             Init();
+        }
+
+        /// <summary>
+        /// True when the running SPT is 4.1.x. Patches target 4.1 member names, so a newer
+        /// minor version is refused rather than trusted.
+        /// </summary>
+        private bool SptVersionSupported()
+        {
+            if (!Chainloader.PluginInfos.TryGetValue(SptCoreGuid, out var sptCore) || sptCore == null)
+            {
+                Logger.LogError("Could not determine the SPT version (" + SptCoreGuid +
+                                " not loaded) - MoreCheckmarks will not patch.");
+                return false;
+            }
+
+            var version = sptCore.Metadata.Version;
+            if (version.Major != 4 || version.Minor != 1)
+            {
+                Logger.LogError("MoreCheckmarks " + pluginVersion + " supports SPT 4.1.x but found SPT " +
+                                version + " - not patching. Install a build of MoreCheckmarks made for this SPT version.");
+                return false;
+            }
+
+            return true;
         }
 
         private void Init()
@@ -93,31 +131,23 @@ namespace MoreCheckmarks
 
         private static void DoPatching()
         {
-            const string profileTypeString = "Class308"; // Class303
-            const string derivedTypeString = "Class1596"; // Class1470
-            // Get assemblies
-            Type profileSelector = null;
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            foreach (var t in assemblies)
-            {
-                if (t.GetName().Name.Equals("Assembly-CSharp"))
-                {
-                    // UPDATE: This is to know when a new profile is selected so we can load up to date data
-                    // We want to do this when client makes request "/client/game/profile/select"
-                    // Look for that string in dnspy, this creates a callback with a method_0, that is the method we want to postfix
-                    profileSelector = t.GetType(profileTypeString).GetNestedType(derivedTypeString, BindingFlags.Public);
-                }
-            }
+            // This is to know when a new profile is selected so we can load up to date data.
+            // EftClientBackendSession.SetMainProfile sends "/client/game/profile/select"; the method we
+            // want is method_0 on its compiler-generated callback closure, which runs once the request
+            // has succeeded and the new profile is live. Postfixing SetMainProfile itself would fire at
+            // the first await, before the profile is set.
+            var profileSelector =
+                typeof(EftClientBackendSession).GetNestedType("CG_SetMainProfile", BindingFlags.Public);
 
             var harmony = new Harmony("VIP.TommySoucy.MoreCheckmarks");
             harmony.PatchAll(); // Auto patch
 
             // Manual patch
-            if (profileSelector != null)
-            {
-                var profileSelectorOriginal =
-                    profileSelector.GetMethod("method_0", BindingFlags.Public | BindingFlags.Instance);
+            var profileSelectorOriginal =
+                profileSelector?.GetMethod("method_0", BindingFlags.Public | BindingFlags.Instance);
 
+            if (profileSelectorOriginal != null)
+            {
                 var profileSelectorPostfix =
                     typeof(ProfileSelectionPatch).GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static);
 
@@ -125,7 +155,7 @@ namespace MoreCheckmarks
             }
             else
             {
-                LogError("Failed to Patch Profile Selector - Missing profileSelector");
+                LogError("Failed to Patch Profile Selector - EftClientBackendSession.CG_SetMainProfile.method_0 not found");
             }
         }
 
@@ -154,7 +184,7 @@ namespace MoreCheckmarks
 
             // Stash: live out of raid; frozen snapshot in raid.
             IEnumerable<Item> stashItems = IsInRaid()
-                ? Singleton<HideoutClass>.Instance?.AllStashItems ?? Enumerable.Empty<Item>()
+                ? Singleton<HideoutRepresentation>.Instance?.AllStashItems ?? Enumerable.Empty<Item>()
                 : profile.Inventory.GetPlayerItems(
                       EPlayerItems.Stash | EPlayerItems.HideoutStashes | EPlayerItems.SortingTable);
 
@@ -182,7 +212,7 @@ namespace MoreCheckmarks
 
             try
             {
-                var hideoutInstance = Singleton<HideoutClass>.Instance;
+                var hideoutInstance = Singleton<HideoutRepresentation>.Instance;
                 if (hideoutInstance?.AreaDatas == null)
                 {
                     return neededStruct;
@@ -298,7 +328,7 @@ namespace MoreCheckmarks
             bool gotTooltip = false;
             try
             {
-                HideoutClass hideoutInstance = Singleton<HideoutClass>.Instance;
+                HideoutRepresentation hideoutInstance = Singleton<HideoutRepresentation>.Instance;
                 if (hideoutInstance?.AreaDatas == null)
                 {
                     return false;
@@ -336,7 +366,7 @@ namespace MoreCheckmarks
                     if (currentStage.Production != null && currentStage.Production.Data != null)
                     {
                         bool areaNameAdded = false;
-                        foreach (ProductionBuildAbstractClass productionData in currentStage.Production.Data)
+                        foreach (BaseHideoutScheme productionData in currentStage.Production.Data)
                         {
                             Requirement[] requirements = productionData.requirements;
 

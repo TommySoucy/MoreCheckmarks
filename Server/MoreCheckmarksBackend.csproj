@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
-        <TargetFramework>net9.0-windows</TargetFramework>
+        <!-- SPT 4.1 server runs on net10.0; the 4.1.x SPTarkov packages ship lib/net10.0 only. -->
+        <TargetFramework>net10.0</TargetFramework>
         <RootNamespace>MoreCheckmarks</RootNamespace>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <OutputType>Library</OutputType>
-        <Version>2.2.0</Version>
+        <!-- Single source of truth: MoreCheckmarksBackend.Version reads this off the assembly. -->
+        <Version>3.0.0</Version>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
         <PlatformTarget>x64</PlatformTarget>
@@ -20,14 +22,23 @@
         <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     </PropertyGroup>
 
-    <!-- Build output goes to dist folder, matching SPT structure -->
+    <!-- Build output goes to dist folder, mirroring the install root. SPT 4.1 renamed the
+         server tree from SPT\ to SPT_Runtime; the subpaths below it are unchanged. -->
     <PropertyGroup>
-        <OutputPath>..\dist\SPT\user\mods\MoreCheckmarksBackend\</OutputPath>
+        <ServerModDir>SPT_Runtime\user\mods\MoreCheckmarksBackend</ServerModDir>
+        <DistDir>$(MSBuildProjectDirectory)\..\dist</DistDir>
+        <OutputPath>$(DistDir)\$(ServerModDir)\</OutputPath>
     </PropertyGroup>
 
-    <!-- Optional: Also copy to local SPT installation for testing -->
+    <!--
+      SPT install root for the local dev copy, resolved in this order (same as the client project):
+        1. -p:SPTPath=<path> on the command line
+        2. the SPTPATH environment variable
+        3. three directories up - this repo is expected to live at <SPT>/moddev/MoreCheckmarks
+    -->
     <PropertyGroup>
-        <SPTPath>C:\SPT</SPTPath>
+        <SPTPath Condition="'$(SPTPath)' == '' AND '$(SPTPATH)' != ''">$(SPTPATH)</SPTPath>
+        <SPTPath Condition="'$(SPTPath)' == ''">$(MSBuildProjectDirectory)\..\..\..</SPTPath>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -38,17 +49,67 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="SPTarkov.Common" Version="4.0.0" PrivateAssets="all" />
-        <PackageReference Include="SPTarkov.DI" Version="4.0.0" PrivateAssets="all" />
-        <PackageReference Include="SPTarkov.Server.Core" Version="4.0.0" PrivateAssets="all" />
+        <!--
+          Must track the installed server: 4.0 packages compile fine but fail to load at runtime
+          ("Could not load type ... AbstractModMetadata"), because 4.1 replaced that abstract class
+          with the IModMetadata interface. Installed runtime is 4.1.3; 4.1.2 is the newest published
+          package, and is binary-compatible for the surface this mod uses.
+        -->
+        <PackageReference Include="SPTarkov.Common" Version="4.1.2" PrivateAssets="all" />
+        <PackageReference Include="SPTarkov.DI" Version="4.1.2" PrivateAssets="all" />
+        <PackageReference Include="SPTarkov.Server.Core" Version="4.1.2" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
         <None Include="quest-id-reference.txt" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
-    <!-- Copy to local SPT installation after build (optional, for testing) -->
-    <Target Name="CopyToSPT" AfterTargets="Build" Condition="Exists('$(SPTPath)')">
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SPTPath)\SPT\user\mods\MoreCheckmarksBackend" />
+    <!--
+      Build-order only: PackageMod (below) zips dist\, which the client project also writes into,
+      so the client must build first. ReferenceOutputAssembly=false means this adds ordering
+      without referencing the net472 assembly from this net9.0 project.
+    -->
+    <ItemGroup>
+        <ProjectReference Include="..\Client\MoreCheckmarks.csproj"
+                          ReferenceOutputAssembly="false"
+                          SkipGetTargetFrameworkProperties="true"
+                          Private="false"
+                          ExcludeAssets="all"
+                          PrivateAssets="all" />
+    </ItemGroup>
+
+    <!--
+      Debug: deploy straight into the local SPT install so the dev environment picks the mod up.
+      Copies the whole staged mod folder (dll + deps.json + quest-id-reference.txt), not just the
+      dll, so a stale reference file can't linger next to a fresh build.
+    -->
+    <Target Name="CopyToSPT" AfterTargets="Build"
+            Condition="'$(Configuration)' == 'Debug' AND Exists('$(SPTPath)\SPT_Runtime\user\mods')">
+        <ItemGroup>
+            <_StagedServerMod Include="$(OutputPath)**\*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(_StagedServerMod)"
+              DestinationFolder="$(SPTPath)\$(ServerModDir)\%(RecursiveDir)" />
+        <Message Text="Deployed MoreCheckmarksBackend to $(SPTPath)\$(ServerModDir)" Importance="high" />
+    </Target>
+
+    <!--
+      Package the full mod - client plugin and server mod together - as one archive at the repo
+      root, laid out so it extracts directly over the SPT install root.
+      This zips dist\, which the *client* project also writes into; the build-order ProjectReference
+      above guarantees the client is built first. The Warning below is a backstop in case that
+      reference is ever removed.
+    -->
+    <Target Name="PackageMod" AfterTargets="CopyToSPT">
+        <Warning Condition="!Exists('$(DistDir)\BepInEx\plugins\MoreCheckmarks\MoreCheckmarks.dll')"
+                 Text="dist\ has no client plugin dll - the archive will contain only the server mod. Build the solution to package both halves." />
+        <ZipDirectory SourceDirectory="$(DistDir)"
+                      DestinationFile="$(MSBuildProjectDirectory)\..\MoreCheckmarks-$(Version).zip"
+                      Overwrite="true"
+                      Condition="'$(Configuration)' == 'Release'" />
+        <ZipDirectory SourceDirectory="$(DistDir)"
+                      DestinationFile="$(MSBuildProjectDirectory)\..\MoreCheckmarks-Debug-$(Version).zip"
+                      Overwrite="true"
+                      Condition="'$(Configuration)' == 'Debug'" />
     </Target>
 </Project>

@@ -1,7 +1,7 @@
+using SPTarkov.Common.Models.Logging;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Common;
-using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Utils;
 using System.Text.Json;
 
@@ -44,7 +44,8 @@ public class CustomStaticRouter : StaticRouter
                     url,
                     info,
                     sessionId,
-                    output
+                    output,
+                    cancellationToken
                 ) => await HandleQuestsRoute(sessionId)
             ),
             new RouteAction(
@@ -53,7 +54,8 @@ public class CustomStaticRouter : StaticRouter
                     url,
                     info,
                     sessionId,
-                    output
+                    output,
+                    cancellationToken
                 ) => await HandleAssortsRoute()
             ),
             new RouteAction(
@@ -62,7 +64,8 @@ public class CustomStaticRouter : StaticRouter
                     url,
                     info,
                     sessionId,
-                    output
+                    output,
+                    cancellationToken
                 ) => await HandleTraderNamesRoute()
             ),
             new RouteAction(
@@ -71,7 +74,8 @@ public class CustomStaticRouter : StaticRouter
                     url,
                     info,
                     sessionId,
-                    output
+                    output,
+                    cancellationToken
                 ) => await HandleProductionsRoute()
             ),
         ];
