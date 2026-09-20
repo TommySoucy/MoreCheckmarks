@@ -386,6 +386,32 @@ namespace MoreCheckmarks
     }
 
     [HarmonyPatch]
+    class GridItemViewShowTooltipPatch
+    {
+        // The checkmark tooltip text (and checkmark color) is baked in QuestItemViewPanel.Show,
+        // which the game only runs when an item view is (re)created - NOT when a stack's count
+        // changes in place. So splitting a stack (e.g. 5 -> 4) leaves the un-moved stack's view
+        // showing stale counts until the inventory is reopened.
+        //
+        // ShowTooltip fires on hover (OnPointerEnter -> ShowTooltip). Re-running the game's own
+        // SetQuestItemViewPanel here rebuilds the checkmark/tooltip with live counts, so hovering
+        // any item always shows current numbers. Once per hover - not a hot path. The method is
+        // the vanilla one (sources profile/tooltip itself) and is idempotent, so re-calling is safe.
+        [HarmonyPatch(typeof(GridItemView), nameof(GridItemView.ShowTooltip))]
+        static void Postfix(GridItemView __instance)
+        {
+            try
+            {
+                __instance.SetQuestItemViewPanel();
+            }
+            catch (Exception ex)
+            {
+                MoreCheckmarksMod.LogError("GridItemView hover refresh failed: " + ex.Message);
+            }
+        }
+    }
+
+    [HarmonyPatch]
     class ItemSpecificationPanelShowPatch
     {
         // This postfix will run after the inspect window sets its checkmark if there is one
