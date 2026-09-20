@@ -173,6 +173,7 @@ Original mod by **TommySoucy**. SPT 4.0 port and new features by TommySoucy & Be
 ### Unreleased
 
 - Refresh checkmark counts when hovering an inventory item, including stacks changed by splitting or moving items. The checkmark color on an item you haven't hovered may still lag until you hover it or reopen the inventory.
+- Build release and debug archives from a clean staging directory containing only required distribution files, excluding old SPT 4.0 output and local configuration. Packaging fails if a required file is missing.
 
 ### v3.0.0
 

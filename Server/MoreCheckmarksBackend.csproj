@@ -28,6 +28,7 @@
         <ServerModDir>SPT_Runtime\user\mods\MoreCheckmarksBackend</ServerModDir>
         <DistDir>$(MSBuildProjectDirectory)\..\dist</DistDir>
         <OutputPath>$(DistDir)\$(ServerModDir)\</OutputPath>
+        <PackageOutputDir Condition="'$(PackageOutputDir)' == ''">$(MSBuildProjectDirectory)\..</PackageOutputDir>
     </PropertyGroup>
 
     <!--
@@ -65,9 +66,9 @@
     </ItemGroup>
 
     <!--
-      Build-order only: PackageMod (below) zips dist\, which the client project also writes into,
+      Build-order only: PackageMod (below) reads dist\, which the client project also writes into,
       so the client must build first. ReferenceOutputAssembly=false means this adds ordering
-      without referencing the net472 assembly from this net9.0 project.
+      without referencing the net472 assembly from this net10.0 project.
     -->
     <ItemGroup>
         <ProjectReference Include="..\Client\MoreCheckmarks.csproj"
@@ -96,19 +97,34 @@
     <!--
       Package the full mod - client plugin and server mod together - as one archive at the repo
       root, laid out so it extracts directly over the SPT install root.
-      This zips dist\, which the *client* project also writes into; the build-order ProjectReference
-      above guarantees the client is built first. The Warning below is a backstop in case that
-      reference is ever removed.
+      dist\ can contain old SPT 4.0 output, obsolete assets, or local config files. Copy only the
+      distribution manifest into a fresh staging directory before zipping. Add new shipped assets
+      to this manifest. The build-order ProjectReference above guarantees the client is built first.
     -->
-    <Target Name="PackageMod" AfterTargets="CopyToSPT">
-        <Warning Condition="!Exists('$(DistDir)\BepInEx\plugins\MoreCheckmarks\MoreCheckmarks.dll')"
-                 Text="dist\ has no client plugin dll - the archive will contain only the server mod. Build the solution to package both halves." />
-        <ZipDirectory SourceDirectory="$(DistDir)"
-                      DestinationFile="$(MSBuildProjectDirectory)\..\MoreCheckmarks-$(Version).zip"
+    <Target Name="PackageMod" AfterTargets="CopyToSPT"
+            Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'Debug'">
+        <PropertyGroup>
+            <_PackageStagingDir>$(IntermediateOutputPath)package\</_PackageStagingDir>
+        </PropertyGroup>
+        <ItemGroup>
+            <_PackageFile Include="BepInEx\plugins\MoreCheckmarks\MoreCheckmarks.dll" />
+            <_PackageFile Include="BepInEx\plugins\MoreCheckmarks\MoreCheckmarksAssets" />
+            <_PackageFile Include="$(ServerModDir)\$(TargetFileName)" />
+            <_PackageFile Include="$(ServerModDir)\$(AssemblyName).deps.json" />
+            <_PackageFile Include="$(ServerModDir)\quest-id-reference.txt" />
+        </ItemGroup>
+        <Error Condition="!Exists('$(DistDir)\%(_PackageFile.Identity)')"
+               Text="Missing package file: $(DistDir)\%(_PackageFile.Identity). Build both projects before packaging." />
+        <RemoveDir Directories="$(_PackageStagingDir)" />
+        <Copy SourceFiles="@(_PackageFile->'$(DistDir)\%(Identity)')"
+              DestinationFiles="@(_PackageFile->'$(_PackageStagingDir)%(Identity)')" />
+        <MakeDir Directories="$(PackageOutputDir)" />
+        <ZipDirectory SourceDirectory="$(_PackageStagingDir)"
+                      DestinationFile="$(PackageOutputDir)\MoreCheckmarks-$(Version).zip"
                       Overwrite="true"
                       Condition="'$(Configuration)' == 'Release'" />
-        <ZipDirectory SourceDirectory="$(DistDir)"
-                      DestinationFile="$(MSBuildProjectDirectory)\..\MoreCheckmarks-Debug-$(Version).zip"
+        <ZipDirectory SourceDirectory="$(_PackageStagingDir)"
+                      DestinationFile="$(PackageOutputDir)\MoreCheckmarks-Debug-$(Version).zip"
                       Overwrite="true"
                       Condition="'$(Configuration)' == 'Debug'" />
     </Target>
